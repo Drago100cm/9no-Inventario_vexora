@@ -1,0 +1,282 @@
+{% load static %}
+<link href="{% static 'libs/quill/dist/quill.snow.css' %}" rel="stylesheet" type="text/css" />
+<script src="{% static 'bootstrap-select/dist/js/bootstrap-select.min.js' %}"></script>
+
+<!-- Agregar Bootstrap CSS si no está incluido -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+
+<div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-content">
+    <div class="modal-header bg-light p-3">
+      <h5 class="modal-title" id="exampleModalLabel">
+          Editar Usuario
+
+      </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+    </div>
+      <ul class="nav nav-tabs nav-justified" role="tablist">
+         <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#general_info" role="tab">
+               <i class="ri-information-line me-1"></i> Información General
+            </a>
+         </li>
+
+      </ul>
+
+
+    <form method="POST" enctype="multipart/form-data" action="{% url 'vexora:user_create'%}">
+      {% csrf_token %}
+      <div class="modal-body">
+        <!-- CONTENIDO DE LOS TABS -->
+          <div class="tab-content mt-3">
+            <!-- TAB 1: Información General -->
+            <div class="tab-pane active" id="general_info" role="tabpanel">
+              <div class="row gy-4 mb-4">
+
+                <!-- Información General -->
+
+                <div class="col-md-12">
+                  <label>Foto de perfil <span class="text-danger">*</span></label>
+                  {{ form.avatar }}
+                </div>
+                <div class="col-md-4">
+                  <label>Email <span class="text-danger">*</span></label>
+                  {{ form.email }}
+                </div>
+                  <div class="col-md-4">
+                    <label>Nombre<span class="text-danger">*</span></label>
+                    {{ form.username }}
+                  </div>
+                  <div class="col-md-4">
+                    <label>Nombre<span class="text-danger">*</span></label>
+                    {{ form.groups }}
+                  </div>
+
+                    <div class="col-md-4">
+                      <label>apellido Paterno</label>
+                      {{ form.first_name }}
+                    </div>
+
+                <div class="col-md-4">
+                  <label>apellido Materno</label>
+                  {{ form.last_name }}
+                </div>
+                
+                <div class="col-md-4">
+                  <label>Telefono</label>
+                  {{ form.phone }}
+                </div>
+                <div class="col-md-4">
+                  <label>is staf</label>
+                  {{ form.is_staff }}
+                </div>
+                <div class="col-md-4">
+                  <label>Contraseña</label>
+                  {{ form.password1 }}
+                </div>
+                <div class="col-md-4">
+                  <label>Confirmar Contraseña</label>
+                  {{ form.password2 }}
+                </div>
+
+
+
+              </div>
+            </div>
+
+          </div>
+
+      </div>
+      <div class="modal-footer">
+        <div class="hstack gap-2 justify-content-end">
+          <button type="button" class="btn btn-sm btn-secondary" id="next-tab-btn">Siguiente</button>
+          <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-sm btn-success" id="update-btn">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- Scripts -->
+<script src="{% static 'libs/quill/dist/quill.min.js' %}"></script>
+<script src="{% static 'libs/quill/dist/quill-resize-module.js' %}"></script>
+<!-- Scripts al final para mejor rendimiento -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+
+<script>
+  $(document).ready(function () {
+    // Inicializar selectpicker
+    $('.selectpicker').selectpicker('render');
+
+    // Inicializa Quill
+    Quill.register('modules/resize', window.QuillResizeModule);
+    const quill = new Quill('#service_description_editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [[{ font: [] }, { size: [] }], ['bold', 'italic', 'underline', 'strike'],
+        [{ color: [] }, { background: [] }], [{ script: 'super' }, { script: 'sub' }],
+        [{ header: [false, 1, 2, 3, 4, 5, 6] }, 'blockquote', 'code-block'],
+        [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
+        ['direction', { align: [] }], ['link', 'image', 'video'], ['clean']],
+        resize: { locale: {} }
+      }
+    });
+
+    const textarea = document.getElementById('notes');
+    quill.root.innerHTML = textarea.value;
+    quill.on('text-change', function () {
+      textarea.value = quill.root.innerHTML;
+    });
+
+    const form = textarea.closest('form');
+    form.onsubmit = function () {
+      textarea.value = quill.root.innerHTML;
+    };
+    const montoFinalField = $("#id_final_amount");
+    const descuentoField = $("#id_discount");
+    const mensualidadField = $("#id_final_month");
+    const plazosField = $("#id_installments");
+    const adelantoField = $("#id_promise_month");
+
+    $("#id_is_descuento").closest(".form-check").hide();
+
+    let montoOriginal = parseFloat(montoFinalField.val()) || 0;
+    let usuarioEditandoFinal = false;
+
+    // Cuando el usuario está escribiendo en final_amount
+    montoFinalField.on("input", function () {
+      usuarioEditandoFinal = true;
+    });
+
+    // Cuando el usuario termina de editar (sale del campo)
+    montoFinalField.on("blur", function () {
+      let valor = parseFloat($(this).val());
+      if (isNaN(valor) || valor < 0) {
+        // Si el valor no es válido, restauramos el original
+        $(this).val(montoOriginal.toFixed(2));
+      } else {
+        // Actualizamos el montoOriginal para que los cálculos usen el nuevo valor
+        montoOriginal = valor;
+      }
+      usuarioEditandoFinal = false;
+      calcularMontos();
+    });
+
+    function aplicarDescuentoSegunPlazos() {
+      const plazos = parseInt(plazosField.val());
+
+      let descuento = 0;
+      let activar = false;
+
+      switch (plazos) {
+        case 3:
+          descuento = 75;
+          activar = true;
+          break;
+        case 6:
+          descuento = 70;
+          activar = true;
+          break;
+        case 9:
+          descuento = 65;
+          activar = true;
+          break;
+        case 12:
+          descuento = 60;
+          activar = true;
+          break;
+        default:
+          descuento = 0;
+          activar = false;
+      }
+
+      if (activar) {
+        descuentoField.val(descuento);
+        $("#discount-group").show();
+      } else {
+        descuentoField.val('');
+        $("#discount-group").show();
+      }
+    }
+
+    function calcularMontos() {
+      const descuento = parseFloat(descuentoField.val()) || 0;
+      const plazos = parseInt(plazosField.val()) || 1;
+      const adelanto = parseFloat(adelantoField.val()) || 0;
+
+      if (!usuarioEditandoFinal) {
+        // Solo recalcular montoFinal si NO está editando usuario
+        let montoConDescuento = montoOriginal;
+
+        if (descuento > 0) {
+          montoConDescuento = montoOriginal - (montoOriginal * descuento / 100);
+        }
+
+        montoFinalField.val(montoConDescuento.toFixed(2));
+      }
+
+      const montoConDescuento = parseFloat(montoFinalField.val()) || 0;
+      const montoConAdelanto = montoConDescuento - adelanto;
+      const mensualidad = montoConAdelanto / plazos;
+
+      mensualidadField.val(mensualidad.toFixed(2));
+    }
+
+    // Eventos
+    descuentoField.on("input", calcularMontos);
+    adelantoField.on("input", calcularMontos);
+    plazosField.on("change", function () {
+      aplicarDescuentoSegunPlazos();
+      calcularMontos();
+    });
+
+    // Inicialización
+    aplicarDescuentoSegunPlazos();
+    calcularMontos();
+
+
+  });
+</script>
+
+<script>
+  const tabOrder = ["general_info", "Detalles_tab", "Complemento_tab"];
+  const nextBtn = document.getElementById("next-tab-btn");
+
+  nextBtn.addEventListener("click", function () {
+    const currentTab = document.querySelector(".tab-pane.active").id;
+    const currentIndex = tabOrder.indexOf(currentTab);
+    if (currentIndex < tabOrder.length - 1) {
+      const nextTabId = tabOrder[currentIndex + 1];
+      const nextTabLink = document.querySelector(a[href="#${nextTabId}"]);
+      if (nextTabLink) {
+        new bootstrap.Tab(nextTabLink).show();
+      }
+    }
+    updateNextBtn();
+  });
+
+  // Oculta el botón "Siguiente" si estás en la última pestaña
+  function updateNextBtn() {
+    const currentTab = document.querySelector(".tab-pane.active").id;
+    nextBtn.style.display = currentTab === "Complemento_tab" ? "none" : "inline-block";
+  }
+
+  // Detecta cambio de pestaña manual también
+  const tabLinks = document.querySelectorAll('[data-bs-toggle="tab"]');
+  tabLinks.forEach(tab => {
+    tab.addEventListener("shown.bs.tab", updateNextBtn);
+  });
+
+  // Inicial
+  updateNextBtn();
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById("id_discount").readOnly = true;
+  });
+</script>

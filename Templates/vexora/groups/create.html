@@ -1,0 +1,95 @@
+<div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-content">
+    <div class="modal-header bg-light p-3">
+      <h5 class="modal-title">Crear grupo</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <form method="POST" action="{% url 'vexora:group_create' %}">
+      {% csrf_token %}
+
+      <div class="modal-body">
+
+        <div class="mb-4">
+          <label for="group_name" class="form-label fw-bold">Nombre del grupo</label>
+          <input
+            type="text"
+            name="group_name"
+            id="group_name"
+            class="form-control"
+            placeholder="Ej: administradores"
+            required
+          >
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold mb-3">Permisos del grupo</label>
+
+          <div class="card mb-3">
+            <div class="card-header bg-light">
+              <strong>👥 Gestión de Usuarios</strong>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input
+                      type="checkbox"
+                      name="permissions"
+                      value="add_customuser"
+                      id="add_user"
+                      class="form-check-input"
+                    >
+                    <label for="add_user" class="form-check-label">Crear</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input
+                      type="checkbox"
+                      name="permissions"
+                      value="change_customuser"
+                      id="change_user"
+                      class="form-check-input"
+                    >
+                    <label for="change_user" class="form-check-label">Editar</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input
+                      type="checkbox"
+                      name="permissions"
+                      value="delete_customuser"
+                      id="delete_user"
+                      class="form-check-input"
+                    >
+                    <label for="delete_user" class="form-check-label">Eliminar</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input
+                      type="checkbox"
+                      name="permissions"
+                      value="view_customuser"
+                      id="view_user"
+                      class="form-check-input"
+                    >
+                    <label for="view_user" class="form-check-label">Ver</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>

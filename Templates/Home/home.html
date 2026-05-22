@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Organizador de Tareas</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        /* Personalización de colores */
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --accent-color: #4cc9f0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+        
+        .bg-primary-custom {
+            background-color: var(--primary-color) !important;
+        }
+        
+        .text-primary-custom {
+            color: var(--primary-color) !important;
+        }
+        
+        .btn-primary-custom {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary-custom:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+        
+        /* Efectos hover para tarjetas */
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Hero section */
+        .hero-section {
+            padding: 150px 0 100px;
+            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), 
+                        url('https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        /* Animación sutil para elementos */
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Estilo para testimonios */
+        .testimonial-card {
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        /* Footer */
+        footer a {
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        footer a:hover {
+            color: var(--accent-color) !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary-custom" href="#">
+                <i class="bi bi-check2-square me-2"></i>TaskFlow
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Características</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#testimonials">Testimonios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#pricing">Precios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#faq">FAQ</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <a href="{% url 'vexora:login' %}" class="btn btn-outline-primary-custom me-2">Iniciar Sesión</a>
+                    <a href="{% url 'vexora:registro' %}" class="btn btn-primary-custom">Registrarse</a>
+                    <a href="{% url 'vexora:logout' %}" class="btn btn-primary-custom">Cerrar Sesión</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 fade-in">
+                    <h1 class="display-4 fw-bold mb-4">Organiza tus tareas de manera eficiente</h1>
+                    <p class="lead mb-4">TaskFlow te ayuda a gestionar tus proyectos, establecer prioridades y aumentar tu productividad con herramientas intuitivas y colaborativas.</p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{% url 'vexora:home' %}" class="btn btn-primary-custom btn-lg">Comenzar Gratis</a>
+                        <a href="#features" class="btn btn-outline-primary-custom btn-lg">Saber Más</a>
+                    </div>
+                </div>
+                <div class="col-lg-6 mt-5 mt-lg-0 fade-in">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
+                         alt="Dashboard de TaskFlow" class="img-fluid rounded shadow">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">Características Principales</h2>
+                <p class="lead">Descubre cómo TaskFlow puede transformar tu forma de trabajar</p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                <i class="bi bi-kanban text-white fs-3"></i>
+                            </div>
+                            <h4 class="card-title">Tableros Kanban</h4>
+                            <p class="card-text">Organiza tus tareas en columnas visuales para un seguimiento claro del progreso de tus proyectos.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                <i class="bi bi-bell text-white fs-3"></i>
+                            </div>
+                            <h4 class="card-title">Recordatorios Inteligentes</h4>
+                            <p class="card-text">Nunca olvides una fecha límite con nuestro sistema de notificaciones y alertas personalizables.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                <i class="bi bi-people text-white fs-3"></i>
+                            </div>
+                            <h4 class="card-title">Colaboración en Equipo</h4>
+                            <p class="card-text">Trabaja junto a tu equipo asignando tareas, comentando y compartiendo archivos en tiempo real.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                <i class="bi bi-bar-chart text-white fs-3"></i>
+                            </div>
+                            <h4 class="card-title">Reportes y Análisis</h4>
+                            <p class="card-text">Obtén insights sobre tu productividad con reportes detallados y métricas de rendimiento.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                <i class="bi bi-phone text-white fs-3"></i>
+                            </div>
+                            <h4 class="card-title">Aplicación Móvil</h4>
+                            <p class="card-text">Accede a tus tareas desde cualquier lugar con nuestras aplicaciones para iOS y Android.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                <i class="bi bi-shield-check text-white fs-3"></i>
+                            </div>
+                            <h4 class="card-title">Seguridad Avanzada</h4>
+                            <p class="card-text">Tus datos están protegidos con encriptación de grado empresarial y backups automáticos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-5 gradient-bg text-white">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-md-3 col-6 mb-4 mb-md-0">
+                    <h3 class="display-4 fw-bold">50K+</h3>
+                    <p class="lead">Usuarios Activos</p>
+                </div>
+                <div class="col-md-3 col-6 mb-4 mb-md-0">
+                    <h3 class="display-4 fw-bold">1M+</h3>
+                    <p class="lead">Tareas Completadas</p>
+                </div>
+                <div class="col-md-3 col-6">
+                    <h3 class="display-4 fw-bold">500+</h3>
+                    <p class="lead">Empresas Confían en Nosotros</p>
+                </div>
+                <div class="col-md-3 col-6">
+                    <h3 class="display-4 fw-bold">99%</h3>
+                    <p class="lead">Satisfacción del Cliente</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">Lo que Dicen Nuestros Usuarios</h2>
+                <p class="lead">Descubre cómo TaskFlow ha mejorado la productividad de equipos y individuos</p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card testimonial-card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="https://randomuser.me/api/portraits/women/32.jpg" class="rounded-circle me-3" width="60" height="60" alt="Usuario">
+                                <div>
+                                    <h5 class="mb-0">María González</h5>
+                                    <small class="text-muted">Project Manager</small>
+                                </div>
+                            </div>
+                            <p class="card-text">"TaskFlow ha revolucionado la forma en que nuestro equipo gestiona proyectos. La colaboración es mucho más fluida y hemos reducido los tiempos de entrega en un 30%."</p>
+                            <div class="text-warning">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card testimonial-card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="https://randomuser.me/api/portraits/men/45.jpg" class="rounded-circle me-3" width="60" height="60" alt="Usuario">
+                                <div>
+                                    <h5 class="mb-0">Carlos Rodríguez</h5>
+                                    <small class="text-muted">Freelancer</small>
+                                </div>
+                            </div>
+                            <p class="card-text">"Como freelancer, necesito organizar múltiples proyectos simultáneamente. TaskFlow me permite mantener el control de todo sin perder detalle. ¡Es imprescindible para mi trabajo!"</p>
+                            <div class="text-warning">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card testimonial-card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="https://randomuser.me/api/portraits/women/67.jpg" class="rounded-circle me-3" width="60" height="60" alt="Usuario">
+                                <div>
+                                    <h5 class="mb-0">Laura Martínez</h5>
+                                    <small class="text-muted">Estudiante</small>
+                                </div>
+                            </div>
+                            <p class="card-text">"Uso TaskFlow para organizar mis estudios y actividades extracurriculares. Me ha ayudado a ser más disciplinada y a no procrastinar. ¡Mi rendimiento académico ha mejorado notablemente!"</p>
+                            <div class="text-warning">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-half"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-5 bg-primary-custom text-white">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h2 class="display-6 fw-bold mb-3">¿Listo para aumentar tu productividad?</h2>
+                    <p class="lead mb-0">Únete a miles de usuarios que ya están organizando sus tareas con TaskFlow.</p>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+                    <a href="{% url 'vexora:home' %}" class="btn btn-light btn-lg">Crear Cuenta Gratis</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-check2-square me-2"></i>TaskFlow
+                    </h4>
+                    <p>La plataforma de gestión de tareas más intuitiva y eficiente del mercado. Diseñada para individuos y equipos que buscan maximizar su productividad.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white"><i class="bi bi-facebook fs-5"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-twitter fs-5"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-linkedin fs-5"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-instagram fs-5"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4 mb-lg-0">
+                    <h5 class="fw-bold mb-3">Enlaces Rápidos</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-white-50">Inicio</a></li>
+                        <li class="mb-2"><a href="#features" class="text-white-50">Características</a></li>
+                        <li class="mb-2"><a href="#testimonials" class="text-white-50">Testimonios</a></li>
+                        <li class="mb-2"><a href="#pricing" class="text-white-50">Precios</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4 mb-lg-0">
+                    <h5 class="fw-bold mb-3">Recursos</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-white-50">Blog</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50">Centro de Ayuda</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50">Tutoriales</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50">API</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <h5 class="fw-bold mb-3">Contacto</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-geo-alt me-2"></i>Av. Principal 123, Ciudad
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-telephone me-2"></i>+1 234 567 8900
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-envelope me-2"></i>info@taskflow.com
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2023 TaskFlow. Todos los derechos reservados.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="#" class="text-white-50 me-3">Política de Privacidad</a>
+                    <a href="#" class="text-white-50">Términos de Servicio</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

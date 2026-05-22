@@ -1,0 +1,243 @@
+<!-- =========================
+SIDEBAR.HTML
+========================= -->
+
+{% load static %}
+
+<div class="sidebar-container" id="sidebarContainer">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-header">
+
+            {% if site_config.logo %}
+
+                <img src="{{ site_config.logo.url }}"
+                     class="sidebar-logo">
+
+            {% else %}
+
+                <img src="{% static 'images/default-logo.png' %}"
+                     class="sidebar-logo">
+
+            {% endif %}
+
+            <h2 class="sidebar-title">
+
+                {{ site_config.company.name|default:"Vexora" }}
+
+            </h2>
+
+            <p class="sidebar-subtitle">
+
+                SaaS Platform
+
+            </p>
+
+        </div>
+
+        {% with url_name=request.resolver_match.url_name %}
+
+        <nav class="sidebar-menu">
+
+            <a href="{% url 'vexora:home' %}"
+               class="menu-item {% if url_name == 'home' %}active{% endif %}">
+
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+
+            </a>
+
+            {% if "vexora.view_customuser" in request.user.get_all_permissions %}
+
+            <a href="{% url 'vexora:user_list' %}"
+               class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
+
+                <i class="fas fa-users"></i>
+                <span>Usuarios</span>
+
+            </a>
+
+            {% endif %}
+
+            <a href="{% url 'vexora:group_list' %}"
+               class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
+
+                <i class="fas fa-users"></i>
+                <span>Grupos</span>
+
+            </a>
+
+
+            {% if "vexora.view_company" in request.user.get_all_permissions %}
+
+            <a href="{% url 'vexora:company_list' %}"
+               class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
+
+                <i class="fas fa-building"></i>
+                <span>Empresas</span>
+
+            </a>
+
+            {% endif %}
+
+            {% if "vexora.view_siteconfiguration" in request.user.get_all_permissions %}
+
+            <a href="{% url 'vexora:site_configuration' %}"
+               class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}">
+
+                <i class="fas fa-cog"></i>
+                <span>Configuración</span>
+
+            </a>
+
+            {% endif %}
+
+        </nav>
+
+        {% endwith %}
+
+    </aside>
+
+</div>
+
+<style>
+
+.sidebar-container{
+
+    position:fixed;
+
+    top:0;
+    left:0;
+
+    width:var(--sidebar-width);
+
+    height:100vh;
+
+    background:linear-gradient(
+        180deg,
+        var(--secondary-color),
+        var(--background-color)
+    );
+
+    border-right:1px solid var(--border-color);
+
+    z-index:1055;
+
+    transition:.3s ease;
+}
+
+.sidebar{
+
+    height:100%;
+
+    padding:20px;
+
+    display:flex;
+
+    flex-direction:column;
+}
+
+.sidebar-header{
+
+    text-align:center;
+
+    margin-bottom:40px;
+}
+
+.sidebar-logo{
+
+    width:90px;
+    height:90px;
+
+    border-radius:20px;
+
+    object-fit:cover;
+
+    border:3px solid rgba(255,255,255,.08);
+
+    margin-bottom:15px;
+}
+
+.sidebar-title{
+
+    color:white;
+
+    font-weight:800;
+}
+
+.sidebar-subtitle{
+
+    color:rgba(255,255,255,.5);
+}
+
+.sidebar-menu{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:10px;
+}
+
+.menu-item{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    padding:14px 18px;
+
+    text-decoration:none;
+
+    color:rgba(255,255,255,.8);
+
+    border-radius:16px;
+
+    transition:.3s ease;
+}
+
+.menu-item:hover{
+
+    background:rgba(255,255,255,.06);
+
+    color:white;
+
+    transform:translateX(4px);
+}
+
+.menu-item.active{
+
+    background:linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--accent-color)
+    );
+
+    color:white;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.25);
+}
+
+.menu-item i{
+
+    font-size:18px;
+}
+
+@media(max-width:991px){
+
+    .sidebar-container{
+
+        transform:translateX(-100%);
+    }
+
+    body.sidebar-open .sidebar-container{
+
+        transform:translateX(0);
+    }
+
+}
+
+</style>

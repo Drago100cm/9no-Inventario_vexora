@@ -1,0 +1,188 @@
+<div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-content">
+    <div class="modal-header bg-light p-3">
+      <h5 class="modal-title" id="exampleModalLabel">
+        Editar usuario
+      </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" action="{% url 'vexora:user_edit' object.id %}">
+      {% csrf_token %}
+      <div class="modal-body">
+        <div class="row gy-4">
+
+          <!-- PREVIEW COVER ANCHO + AVATAR + INPUTS INTEGRADOS -->
+          <div class="col-12">
+            <div class="position-relative w-100">
+
+              <!-- Cover ancho (tipo banner) -->
+              <div class="bg-light border rounded w-100"
+                   style="height: 220px; position: relative; overflow: hidden;">
+
+                <img
+                  id="coverPreview"
+                  src="{% if object.cover %}{{ object.cover.url }}{% endif %}"
+                  alt="Cover"
+                  class="position-absolute top-0 start-0 w-100 h-100 {% if not object.cover %}d-none{% endif %}"
+                  style="object-fit: cover;"
+                >
+
+                {% if not object.cover %}
+                  <div id="coverPlaceholder"
+                       class="position-absolute top-50 start-50 translate-middle text-muted text-center">
+                    <i class="ri-image-line" style="font-size: 2.5rem;"></i>
+                    <p class="mb-0 small">Sin portada</p>
+                  </div>
+                {% endif %}
+
+                <!-- Botón para cambiar cover -->
+                <label for="{{ form.cover.auto_id }}"
+                       class="btn btn-sm btn-light border position-absolute m-2"
+                       style="right: 0; top: 0; backdrop-filter: blur(4px);">
+                  <i class="ri-camera-line me-1"></i> Cambiar portada
+                </label>
+              </div>
+
+              <!-- Avatar circular sobre el cover -->
+              <div class="position-absolute start-50 translate-middle" style="bottom: -40px;">
+                <div class="position-relative">
+
+                  {% if object.avatar %}
+                    <img
+                      id="avatarPreview"
+                      src="{{ object.avatar.url }}"
+                      alt="Avatar"
+                      class="rounded-circle border border-3 border-white shadow"
+                      style="width: 100px; height: 100px; object-fit: cover;"
+                    >
+                  {% else %}
+                    <img
+                      id="avatarPreview"
+                      src=""
+                      alt="Avatar"
+                      class="rounded-circle border border-3 border-white shadow d-none"
+                      style="width: 100px; height: 100px; object-fit: cover;"
+                    >
+                    <div id="avatarPlaceholder"
+                         class="rounded-circle bg-secondary d-flex align-items-center justify-content-center border border-3 border-white shadow"
+                         style="width: 100px; height: 100px;">
+                      <i class="ri-user-3-line text-light" style="font-size: 2.5rem;"></i>
+                    </div>
+                  {% endif %}
+
+                  <!-- Botón para cambiar avatar -->
+                  <label for="{{ form.avatar.auto_id }}"
+                         class="btn btn-sm btn-primary rounded-circle d-flex align-items-center justify-content-center position-absolute"
+                         style="width: 32px; height: 32px; bottom: 0; right: 0;">
+                    <i class="ri-camera-line" style="font-size: 1.1rem;"></i>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Inputs file ocultos -->
+              <div class="visually-hidden">
+                {{ form.cover }}
+                {{ form.avatar }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Espacio bajo el avatar para que no se monte con el resto -->
+          <div class="col-12" style="margin-top: 60px;"></div>
+
+          <!-- CAMPOS DE FORMULARIO -->
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="{{ form.email.id_for_label }}" class="form-label">
+                Email <span class="text-danger">*</span>
+              </label>
+              {{ form.email }}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.username.id_for_label }}" class="form-label">
+                Nombre de usuario <span class="text-danger">*</span>
+              </label>
+              {{ form.username }}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.phone.id_for_label }}" class="form-label">
+                Teléfono
+              </label>
+              {{ form.phone }}
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                Apellido paterno
+              </label>
+              {{ form.first_name }}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                Apellido materno
+              </label>
+              {{ form.last_name }}
+            </div>
+            {% if request.user.is_superuser %}
+              <div class="form-check mt-4">
+                {{ form.is_staff }}
+                <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">
+                  Es staff
+                </label>
+              </div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="hstack gap-2 justify-content-end">
+          <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-sm btn-success" id="update-btn">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Tomamos los inputs por name (más seguro con Django)
+  const coverInput = document.querySelector('input[name="{{ form.cover.html_name }}"]');
+  const avatarInput = document.querySelector('input[name="{{ form.avatar.html_name }}"]');
+
+  const coverPreview = document.getElementById('coverPreview');
+  const coverPlaceholder = document.getElementById('coverPlaceholder');
+
+  const avatarPreview = document.getElementById('avatarPreview');
+  const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+
+  function bindPreview(input, imgEl, placeholderEl) {
+    if (!input || !imgEl) return;
+    input.addEventListener('change', function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        imgEl.src = ev.target.result;
+        imgEl.classList.remove('d-none');
+        if (placeholderEl) {
+          placeholderEl.style.display = 'none';
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  bindPreview(coverInput, coverPreview, coverPlaceholder);
+  bindPreview(avatarInput, avatarPreview, avatarPlaceholder);
+})();
+</script>

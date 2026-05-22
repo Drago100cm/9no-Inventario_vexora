@@ -1,0 +1,168 @@
+    {% extends 'partials/base.html' %}
+
+{% block title %}
+Configuración
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-10">
+
+            <div class="card shadow-lg border-0">
+
+                <div class="card-body p-4">
+
+                    <div class="d-flex align-items-center mb-4">
+
+                        <div>
+
+                            <h2 class="fw-bold mb-1">
+                                Configuración SaaS
+                            </h2>
+
+                            <p class="text-muted mb-0">
+                                Personaliza tu plataforma
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <form method="POST"
+                          enctype="multipart/form-data">
+
+                        {% csrf_token %}
+
+                        <div class="row">
+
+                            <!-- Empresa -->
+
+                            <div class="col-md-6 mb-4">
+
+                                <label class="form-label fw-bold">
+                                    Nombre empresa
+                                </label>
+
+                                {{ form.company_name }}
+
+                            </div>
+
+                            <!-- Logo -->
+
+                            <div class="col-md-6 mb-4">
+
+                                <label class="form-label fw-bold">
+                                    Logo
+                                </label>
+
+                                {{ form.logo }}
+
+                            </div>
+
+                            <!-- Colores -->
+
+                            <div class="col-md-4 mb-4">
+
+                                <label class="form-label fw-bold">
+                                    Color Primario
+                                </label>
+
+                                {{ form.primary_color }}
+
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+
+                                <label class="form-label fw-bold">
+                                    Color Secundario
+                                </label>
+
+                                {{ form.secondary_color }}
+
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+
+                                <label class="form-label fw-bold">
+                                    Color Accent
+                                </label>
+
+                                {{ form.accent_color }}
+
+                            </div>
+
+                            <!-- Fondos -->
+
+                            <div class="col-md-4 mb-4">
+
+                                <label class="form-label fw-bold">
+                                    Fondo
+                                </label>
+
+                                {{ form.background_color }}
+
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+
+                                <label class="form-label fw-bold">
+                                    Card
+                                </label>
+
+                                {{ form.card_background }}
+
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+
+                                <label class="form-label fw-bold">
+                                    Texto
+                                </label>
+
+                                {{ form.text_color }}
+
+                            </div>
+
+                            <!-- Favicon -->
+
+                            <div class="col-md-6 mb-4">
+
+                                <label class="form-label fw-bold">
+                                    Favicon
+                                </label>
+
+                                {{ form.favicon }}
+
+                            </div>
+
+                        </div>
+
+                        <div class="mt-4">
+
+                            <button class="btn btn-primary px-5">
+
+                                <i class="fas fa-save me-2"></i>
+
+                                Guardar configuración
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

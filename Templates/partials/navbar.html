@@ -1,0 +1,233 @@
+<!-- =========================
+NAVBAR.HTML
+========================= -->
+
+<nav class="navbar navbar-expand-lg fixed-top" id="mainNavbar">
+
+    <div class="container-fluid">
+
+        <!-- Sidebar Toggle -->
+
+        <button class="btn me-3" id="sidebarToggle">
+
+            <i class="fas fa-bars"></i>
+
+        </button>
+
+        <!-- Brand -->
+
+        <a class="navbar-brand" href="{% url 'vexora:home' %}">
+            {{ site_config.company.name|default:"Vexora" }}
+        </a>
+
+        <!-- Mobile -->
+
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarContent">
+
+            <span class="navbar-toggler-icon"></span>
+
+        </button>
+
+        <!-- Content -->
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+
+            <ul class="navbar-nav ms-auto align-items-center">
+
+                <!-- Dark Mode -->
+
+                <li class="nav-item me-3">
+
+                    <button id="darkModeToggle">
+
+                        🌙
+
+                    </button>
+
+                </li>
+
+                <!-- Profile -->
+
+                <li class="nav-item dropdown">
+
+                    <a class="nav-link dropdown-toggle"
+                       href="#"
+                       role="button"
+                       data-bs-toggle="dropdown">
+
+                        {{ request.user.username }}
+
+                    </a>
+
+                    <ul class="dropdown-menu dropdown-menu-end">
+
+                        <li>
+
+                            <a class="dropdown-item"
+                               href="{% url 'vexora:profil' pk=request.user.id %}">
+
+                                <i class="fas fa-user me-2"></i>
+                                Perfil
+
+                            </a>
+
+                        </li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+
+                            <a class="dropdown-item"
+                               href="{% url 'vexora:logout' %}">
+
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Cerrar sesión
+
+                            </a>
+
+                        </li>
+
+                    </ul>
+
+                </li>
+
+            </ul>
+
+        </div>
+
+    </div>
+
+</nav>
+
+<style>
+
+#mainNavbar{
+
+    background:linear-gradient(
+        135deg,
+        var(--secondary-color),
+        var(--background-color)
+    );
+
+    backdrop-filter:blur(20px);
+
+    border-bottom:1px solid var(--border-color);
+
+    padding:12px 0;
+
+    box-shadow:0 8px 30px rgba(0,0,0,.25);
+
+    z-index:1040;
+}
+
+.navbar-brand{
+
+    font-size:1.4rem;
+
+    font-weight:800;
+
+    background:linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--accent-color)
+    );
+
+    -webkit-background-clip:text;
+
+    -webkit-text-fill-color:transparent;
+
+}
+
+.navbar-nav .nav-link{
+
+    color:white !important;
+
+    font-weight:600;
+
+    transition:.3s ease;
+}
+
+.navbar-nav .nav-link:hover{
+
+    color:var(--primary-color) !important;
+
+}
+
+#sidebarToggle{
+
+    background:rgba(255,255,255,.06);
+
+    color:white;
+
+    border-radius:12px;
+
+    border:none;
+
+    padding:10px 14px;
+
+    transition:.3s ease;
+}
+
+#sidebarToggle:hover{
+
+    background:var(--primary-color);
+
+}
+
+#darkModeToggle{
+
+    border:none;
+
+    background:linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--accent-color)
+    );
+
+    color:white;
+
+    border-radius:50px;
+
+    padding:8px 14px;
+
+    transition:.3s ease;
+}
+
+#darkModeToggle:hover{
+
+    transform:scale(1.08);
+
+}
+
+.dropdown-menu{
+
+    background:var(--secondary-color);
+
+    border:1px solid var(--border-color);
+
+    border-radius:16px;
+
+    overflow:hidden;
+}
+
+.dropdown-item{
+
+    color:white;
+
+    transition:.3s ease;
+}
+
+.dropdown-item:hover{
+
+    background:rgba(255,255,255,.06);
+
+    color:white;
+
+}
+
+</style>

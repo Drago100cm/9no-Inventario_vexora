@@ -1,0 +1,92 @@
+{% load static %}
+
+<div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-content">
+
+    <div class="modal-header bg-light p-3">
+      <h5 class="modal-title">
+        Crear Empresa
+      </h5>
+
+      <button type="button"
+              class="btn-close"
+              data-bs-dismiss="modal">
+      </button>
+    </div>
+
+    <form method="POST"
+          enctype="multipart/form-data"
+          action="{% url 'vexora:company_create' %}">
+
+      {% csrf_token %}
+
+      <div class="modal-body">
+
+        <div class="tab-content mt-3">
+
+          <div class="tab-pane active"
+               id="general_info">
+
+            <div class="row gy-4 mb-4">
+
+              <div class="col-md-12">
+                <label>
+                  Nombre de la empresa
+                  <span class="text-danger">*</span>
+                </label>
+                {{ form.name }}
+              </div>
+
+              <div class="col-md-4">
+                <label>
+                  Email
+                  <span class="text-danger">*</span>
+                </label>
+                {{ form.email }}
+              </div>
+
+              <div class="col-md-4">
+                <label>
+                  Dirección
+                  <span class="text-danger">*</span>
+                </label>
+                {{ form.address }}
+              </div>
+
+              <div class="col-md-4">
+                <label>
+                  Teléfono
+                  <span class="text-danger">*</span>
+                </label>
+                {{ form.phone }}
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <div class="hstack gap-2 justify-content-end">
+
+          <button type="button"
+                  class="btn btn-sm btn-light"
+                  data-bs-dismiss="modal">
+            Cerrar
+          </button>
+
+          <button type="submit"
+                  class="btn btn-sm btn-success">
+            Guardar
+          </button>
+
+        </div>
+      </div>
+
+    </form>
+
+  </div>
+</div>
