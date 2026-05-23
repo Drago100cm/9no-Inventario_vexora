@@ -12,3 +12,4 @@ PyMySQL==1.1.1
 sqlparse==0.5.3
 tzdata==2025.2
 virtualenv==20.30.0
+PyJWT==2.8.0

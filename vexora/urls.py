@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import *
 from . import views
+from .api import api_register, api_login
 app_name = 'vexora'
 urlpatterns = [
     path('configuration/',SiteConfigurationUpdateView.as_view(),name='site_configuration'),
@@ -21,4 +22,9 @@ urlpatterns = [
     path("company_create", CompanyCreateView.as_view(), name="company_create"),
     path("company_edit/<int:pk>", CompanyUpdateView.as_view(), name="company_edit"),
     path("company_delete/<int:pk>", views.delete_company, name="company_delete"),
+    
+    
+    # API endpoints
+    path('api/register/', api_register, name='api_register'),
+    path('api/login/', api_login, name='api_login'),
 ]
