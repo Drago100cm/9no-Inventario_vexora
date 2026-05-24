@@ -34,55 +34,16 @@ class Company(models.Model):
         return self.name
 #--- Models para la configuración del sitio y el usuario personalizado
 class SiteConfiguration(models.Model):
-    company = models.OneToOneField(
-        Company,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
-    )
-    background_color = models.CharField(
-        max_length=7,
-        default="#0f172a"
-    )
-
-    card_background = models.CharField(
-        max_length=7,
-        default="#1e293b"
-    )
-
-    text_color = models.CharField(
-        max_length=7,
-        default="#ffffff"
-    )
-    primary_color = models.CharField(
-        max_length=7,
-        default="#2563EB"
-    )
-
-    secondary_color = models.CharField(
-        max_length=7,
-        default="#1E293B"
-    )
-
-    accent_color = models.CharField(
-        max_length=7,
-        default="#F59E0B"
-    )
-
-    logo = models.ImageField(
-        upload_to='logos/',
-        blank=True,
-        null=True
-    )
-
-    favicon = models.ImageField(
-        upload_to='favicons/',
-        blank=True,
-        null=True
-    )
-
+    company = models.OneToOneField(Company,on_delete=models.CASCADE,null=True,blank=True)
+    background_color = models.CharField(max_length=7,default="#0f172a")
+    card_background = models.CharField(max_length=7,default="#1e293b")
+    text_color = models.CharField(max_length=7,default="#ffffff")
+    primary_color = models.CharField(max_length=7,default="#2563EB")
+    secondary_color = models.CharField(max_length=7,default="#1E293B")
+    accent_color = models.CharField(max_length=7,default="#F59E0B")
+    logo = models.ImageField(upload_to='logos/',blank=True,null=True)
+    favicon = models.ImageField(upload_to='favicons/',blank=True,null=True)
     dark_mode = models.BooleanField(default=False)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
@@ -166,54 +127,17 @@ class Plan(models.Model):
         ('yearly', 'Anual'),
     )
 
-    name = models.CharField(
-        max_length=100
-    )
-
-    description = models.TextField(
-        blank=True,
-        null=True
-    )
-
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2
-    )
-
-    billing_type = models.CharField(
-        max_length=20,
-        choices=PLAN_TYPES,
-        default='monthly'
-    )
-
-    max_users = models.IntegerField(
-        default=1
-    )
-
-    max_products = models.IntegerField(
-        default=100
-    )
-
-    max_branches = models.IntegerField(
-        default=1
-    )
-
-    custom_domain = models.BooleanField(
-        default=False
-    )
-
-    priority_support = models.BooleanField(
-        default=False
-    )
-
-    active = models.BooleanField(
-        default=True
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-
-    )
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True,null=True)
+    price = models.DecimalField(max_digits=10,decimal_places=2)
+    billing_type = models.CharField(max_length=20,choices=PLAN_TYPES,default='monthly')
+    max_users = models.IntegerField(default=1)
+    max_products = models.IntegerField(default=100)
+    max_branches = models.IntegerField(default=1)
+    custom_domain = models.BooleanField(default=False)
+    priority_support = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True,)
 
     def __str__(self):
 
@@ -227,42 +151,15 @@ class Subscription(models.Model):
         ('cancelled', 'Cancelada'),
         ('pending', 'Pendiente'),
     )
-
-    company = models.OneToOneField(
-        Company,
-        on_delete=models.CASCADE
-    )
-
-    plan = models.ForeignKey(
-        Plan,
-        on_delete=models.CASCADE
-    )
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending'
-    )
-
+    company = models.OneToOneField(Company,on_delete=models.CASCADE)
+    plan = models.ForeignKey(Plan,on_delete=models.CASCADE)
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
     start_date = models.DateField()
-
     end_date = models.DateField()
-
-    trial = models.BooleanField(
-        default=False
-    )
-
-    active = models.BooleanField(
-        default=True
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
-
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    trial = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
 
@@ -283,79 +180,27 @@ class payment(models.Model):
         ('failed', 'Fallido'),
         ('refunded', 'Reembolsado'),
     )
-
-    company = models.ForeignKey(
-        Company,
-        on_delete=models.CASCADE
-    )
-
-    subscription = models.ForeignKey(
-        Subscription,
-        on_delete=models.CASCADE
-    )
-
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2
-    )
-
-    payment_method = models.CharField(
-        max_length=20,
-        choices=PAYMENT_METHODS
-    )
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending'
-    )
-
-    transaction_id = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True
-    )
-
-    paid_at = models.DateTimeField(
-        null=True,
-        blank=True
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    company = models.ForeignKey(Company,on_delete=models.CASCADE)
+    subscription = models.ForeignKey(Subscription,on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10,decimal_places=2)
+    payment_method = models.CharField(max_length=20,choices=PAYMENT_METHODS)
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
+    transaction_id = models.CharField(max_length=255,blank=True,null=True)
+    paid_at = models.DateTimeField(null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 #--------------------Features-------------------
 class Feature(models.Model):
-
     name = models.CharField(max_length=100)
-
-    code = models.CharField(
-        max_length=100,
-        unique=True
-    )
-
-    description = models.TextField(
-        blank=True,
-        null=True
-    )
-
+    code = models.CharField(max_length=100,unique=True)
+    description = models.TextField(blank=True,null=True)
     active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
 #--------------------Relación entre planes y features-------------------
 class PlanFeature(models.Model):
-
-    plan = models.ForeignKey(
-        Plan,
-        on_delete=models.CASCADE
-    )
-
-    feature = models.ForeignKey(
-        Feature,
-        on_delete=models.CASCADE
-    )
-
+    plan = models.ForeignKey(Plan,on_delete=models.CASCADE)
+    feature = models.ForeignKey(Feature,on_delete=models.CASCADE)
     enabled = models.BooleanField(default=True)
 
 #--------------------Invitaciones a empresas-------------------
@@ -365,13 +210,9 @@ class CompanyInvitation(models.Model):
         Company,
         on_delete=models.CASCADE
     )
-
     email = models.EmailField()
-
     token = models.UUIDField()
-
     accepted = models.BooleanField(default=False)
-
     created_at = models.DateTimeField(auto_now_add=True)
     
 #--------------------Logs de suscripción-------------------
@@ -381,49 +222,20 @@ class SubscriptionLog(models.Model):
         Subscription,
         on_delete=models.CASCADE
     )
-
     action = models.CharField(max_length=100)
-
     description = models.TextField()
-
     created_at = models.DateTimeField(auto_now_add=True)
     
 #--------------------Configuración SMTP para envíos de email-------------------
     
 class SMTPConfiguration(models.Model):
 
-    company = models.OneToOneField(
-        Company,
-        on_delete=models.CASCADE, null=True, blank=True
-    )
-
-    email_host = models.CharField(
-        max_length=255,
-        default='smtp.gmail.com'
-    )
-
-    email_port = models.IntegerField(
-        default=587
-    )
-
+    company = models.OneToOneField(Company,on_delete=models.CASCADE, null=True, blank=True)
+    email_host = models.CharField(max_length=255,default='smtp.gmail.com')
+    email_port = models.IntegerField(default=587)
     email_host_user = models.EmailField()
-
-    email_host_password = models.CharField(
-        max_length=255
-    )
-
-    use_tls = models.BooleanField(
-        default=True
-    )
-
-    use_ssl = models.BooleanField(
-        default=False
-    )
-
-    active = models.BooleanField(
-        default=True
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    email_host_password = models.CharField(max_length=255)
+    use_tls = models.BooleanField(default=True)
+    use_ssl = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
