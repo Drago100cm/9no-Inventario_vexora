@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proveedores</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%); padding: 20px; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn { display: inline-block; padding: 10px 20px; margin: 5px; border-radius: 5px; text-decoration: none; font-weight: bold; transition: all 0.3s; }
+        .btn-nuevo { background: #28a745; color: white; }
+        .btn-nuevo:hover { background: #218838; transform: translateY(-2px); }
+        .btn-editar { background: #007bff; color: white; }
+        .btn-editar:hover { background: #0056b3; transform: translateY(-2px); }
+        .btn-eliminar { background: #dc3545; color: white; }
+        .btn-eliminar:hover { background: #c82333; transform: translateY(-2px); }
+        .btn-volver { background: #6c757d; color: white; }
+        .btn-volver:hover { background: #5a6268; transform: translateY(-2px); }
+        table { width: 100%; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        th { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e9d5ff; color: #4c1d95; }
+        tr:hover { background: #f3e8ff; }
+        .menu { background: #f3e8ff; padding: 10px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: white; margin: 20px 0 10px 0; }
+        .alert-success { background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #28a745; }
+        .alert-error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 Gestión de Proveedores</h1>
+            <p>Administra tus proveedores registrados</p>
+        </div>
+        
+        <div class="menu">
+            <a href="{% url 'home' %}" class="btn btn-volver">🏠 Inicio</a>
+            <a href="{% url 'lista_clientes' %}" class="btn btn-volver">👥 Clientes</a>
+            <a href="{% url 'lista_productos' %}" class="btn btn-volver">📦 Productos</a>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="{% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <h2>Proveedores Registrados</h2>
+        <a href="{% url 'crear_proveedor' %}" class="btn btn-nuevo">+ Nuevo Proveedor</a>
+        
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Nombre</th><th>Dirección</th><th>Productos</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+                {% for proveedor in proveedores %}
+                <tr>
+                    <td>{{ proveedor.id }}</td>
+                    <td><strong>{{ proveedor.nombre }}</strong></td>
+                    <td>{{ proveedor.direccion }}</td>
+                    <td>{{ proveedor.productos.count }}</td>
+                    <td>
+                        <a href="{% url 'editar_proveedor' proveedor.id %}" class="btn btn-editar">✏️ Editar</a>
+                        <a href="{% url 'eliminar_proveedor' proveedor.id %}" class="btn btn-eliminar">🗑️ Eliminar</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" style="text-align: center;">No hay proveedores registrados</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
