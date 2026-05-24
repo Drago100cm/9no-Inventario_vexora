@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Confirmar Eliminación</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial; background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%); padding: 20px; text-align: center; min-height: 100vh; }
+        .container { max-width: 500px; margin: 50px auto; background: #f3e8ff; padding: 30px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        h1 { color: #dc3545; margin-bottom: 20px; }
+        p { color: #4c1d95; font-size: 18px; margin-bottom: 20px; }
+        button { padding: 10px 20px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .btn-eliminar { background: #dc3545; color: white; }
+        .btn-eliminar:hover { background: #c82333; }
+        .btn-cancelar { background: #6c757d; color: white; text-decoration: none; display: inline-block; padding: 10px 20px; border-radius: 5px; }
+        .btn-cancelar:hover { background: #5a6268; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚠️ Confirmar Eliminación</h1>
+        <p>¿Estás seguro de eliminar {{ tipo }} <strong>{{ cliente.nombre }}</strong>?</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn-eliminar">Sí, Eliminar</button>
+            <a href="{% url 'lista_clientes' %}" class="btn-cancelar">Cancelar</a>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ titulo }}</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial; background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%); padding: 20px; min-height: 100vh; }
+        .container { max-width: 600px; margin: 0 auto; background: #f3e8ff; padding: 30px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        h1 { color: #4c1d95; margin-bottom: 20px; border-left: 4px solid #7c3aed; padding-left: 15px; }
+        label { color: #4c1d95; font-weight: bold; display: block; margin-top: 10px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #c084fc; border-radius: 5px; font-size: 14px; margin: 5px 0 15px 0; background: white; }
+        input:focus, select:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 5px rgba(124, 58, 237, 0.3); }
+        button { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: all 0.3s; }
+        button:hover { background: #218838; transform: translateY(-2px); }
+        .btn-volver { background: #6c757d; margin-left: 10px; text-decoration: none; padding: 10px 20px; border-radius: 5px; color: white; display: inline-block; transition: all 0.3s; }
+        .btn-volver:hover { background: #5a6268; transform: translateY(-2px); }
+        .errorlist { color: #dc3545; list-style: none; margin-bottom: 10px; }
+        .helptext { font-size: 12px; color: #6c757d; display: block; margin-top: -10px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ titulo }}</h1>
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <div class="errorlist">{{ field.errors }}</div>
+                {% endif %}
+                {% if field.help_text %}
+                <div class="helptext">{{ field.help_text }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <button type="submit">💾 Guardar</button>
+            <a href="{% url 'lista_proveedores' %}" class="btn-volver">⬅️ Volver</a>
+        </form>
+    </div>
+</body>
+</html>

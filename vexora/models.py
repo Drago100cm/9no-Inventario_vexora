@@ -1,4 +1,3 @@
-
 # Create your models here.
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
@@ -427,3 +426,71 @@ class SMTPConfiguration(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True
     )
+
+#--------------------Clientes, Proveedores y Productos-------------------
+
+class Cliente(models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre completo")
+    email = models.EmailField(unique=True, verbose_name="Correo electrónico")
+    telefono = models.CharField(max_length=20, verbose_name="Teléfono")
+    ciudad = models.CharField(max_length=100, verbose_name="Ciudad")
+    fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
+    
+    # Opcional: relación con Company para multi-tenencia
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='clientes'
+    )
+    
+    def __str__(self):
+        return self.nombre
+    
+    class Meta:
+        verbose_name = "Cliente"
+        verbose_name_plural = "Clientes"
+        ordering = ['-fecha_registro']
+
+class Proveedor(models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre del Proveedor")
+    direccion = models.CharField(max_length=200, verbose_name="Dirección")
+    
+    # Opcional: relación con Company para multi-tenencia
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='proveedores'
+    )
+    
+    def __str__(self):
+        return self.nombre
+    
+    class Meta:
+        verbose_name = "Proveedor"
+        verbose_name_plural = "Proveedores"
+
+class Producto(models.Model):
+    nombre_producto = models.CharField(max_length=150, verbose_name="Nombre del Producto")
+    fecha_compra = models.DateField(verbose_name="Fecha de Compra")
+    precio = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio")
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE, related_name='productos', verbose_name="Proveedor")
+    
+    # Opcional: relación con Company para multi-tenencia
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='productos'
+    )
+    
+    def __str__(self):
+        return f"{self.nombre_producto} - {self.proveedor.nombre}"
+    
+    class Meta:
+        verbose_name = "Producto"
+        verbose_name_plural = "Productos"
