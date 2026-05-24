@@ -1,0 +1,86 @@
+{% extends 'partials/base.html' %}
+
+{% block title %}Mi Suscripción{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Detalles de tu suscripción</h2>
+        <p class="text-muted">Consulta el estado de tu plan y los pagos realizados.</p>
+    </div>
+    <a href="{% url 'vexora:subscription_list' %}" class="btn btn-outline-light">Cambiar plan</a>
+</div>
+
+{% if not company %}
+    <div class="alert alert-warning">
+        No tienes empresa asociada todavía. <a href="{% url 'vexora:company_create' %}">Crear empresa</a>
+    </div>
+{% else %}
+
+    {% if not subscription %}
+        <div class="alert alert-info">
+            No hay suscripción activa. Elige un plan para comenzar.
+        </div>
+    {% else %}
+        <div class="row gy-4">
+            <div class="col-lg-6">
+                <div class="card p-4">
+                    <h4>{{ subscription.plan.name }}</h4>
+                    <p class="text-muted">{{ subscription.plan.description|default:'Este plan no tiene descripción.' }}</p>
+                    <div class="mb-3">
+                        <strong>Estado:</strong>
+                        <span class="badge bg-{{ subscription.status|lower|default:'secondary' }}">{{ subscription.get_status_display }}</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-2"><strong>Inicio:</strong> {{ subscription.start_date }}</div>
+                        <div class="col-6 mb-2"><strong>Vence:</strong> {{ subscription.end_date }}</div>
+                        <div class="col-6 mb-2"><strong>Prueba:</strong> {{ subscription.trial|yesno:'Sí,No' }}</div>
+                        <div class="col-6 mb-2"><strong>Activa:</strong> {{ subscription.active|yesno:'Sí,No' }}</div>
+                    </div>
+                    <hr>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-user me-2 text-primary"></i>{{ subscription.plan.max_users }} usuarios</li>
+                        <li><i class="fas fa-box me-2 text-primary"></i>{{ subscription.plan.max_products }} productos</li>
+                        <li><i class="fas fa-store me-2 text-primary"></i>{{ subscription.plan.max_branches }} sucursales</li>
+                        <li><i class="fas fa-globe me-2 text-primary"></i>{% if subscription.plan.custom_domain %}Dominio personalizado incluido{% else %}Sin dominio personalizado{% endif %}</li>
+                        <li><i class="fas fa-headset me-2 text-primary"></i>{% if subscription.plan.priority_support %}Soporte prioritario{% else %}Soporte estándar{% endif %}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card p-4">
+                    <h5>Historial de pagos</h5>
+                    {% if payments and payments.exists %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Monto</th>
+                                        <th>Método</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pay in payments %}
+                                        <tr>
+                                            <td>{{ pay.paid_at|date:'Y-m-d H:i' }}</td>
+                                            <td>{{ pay.amount|floatformat:2 }} MXN</td>
+                                            <td>{{ pay.get_payment_method_display }}</td>
+                                            <td>{{ pay.get_status_display }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="mb-0">Aún no se ha registrado ningún pago.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endif %}
+
+{% endblock %}

@@ -14,26 +14,25 @@ BASE.HTML
           content="width=device-width, initial-scale=1.0">
 
     <title>
+            {{ site_config.company.name|default:"Vexora" }}
 
         {% block title %}
-            {{ site_config.company.name|default:"Vexora" }}
         {% endblock %}
 
     </title>
 
     <!-- Favicon -->
 
+
+
     {% if site_config.favicon %}
-
-        <link rel="icon"
-              href="{{ site_config.favicon.url }}">
-
-    {% else %}
-
-        <link rel="icon"
-              href="{% static 'images/default-favicon.ico' %}">
-
+    <link
+        rel="icon"
+        type="image/png"
+        href="{{ site_config.favicon.url }}"
+    >
     {% endif %}
+
 
     <!-- Bootstrap -->
 

@@ -1,0 +1,102 @@
+{% extends 'partials/base.html' %}
+
+{% block title %}
+    - Configuración SMTP
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div>
+                            <h2 class="fw-bold mb-1">
+                                Configuración SMTP
+                            </h2>
+                            <p class="text-muted mb-0">
+                                Ajusta los datos de servidor de correo de tu empresa.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Servidor SMTP</label>
+                                {{ form.email_host }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Puerto</label>
+                                {{ form.email_port }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Usuario SMTP</label>
+                                {{ form.email_host_user }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Contraseña SMTP</label>
+                                {{ form.email_host_password }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.use_tls }}
+                                    <label class="form-check-label" for="id_use_tls">Usar TLS</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+
+    <div class="form-check">
+
+        {{ form.use_ssl }}
+
+        <label class="form-check-label">
+
+            Usar SSL
+
+        </label>
+
+    </div>
+
+</div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.active }}
+                                    <label class="form-check-label" for="id_active">Activo</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button class="btn btn-primary px-5">
+                                <i class="fas fa-save me-2"></i>
+                                Guardar SMTP
+                            </button>
+                        </div>
+
+                    </form>
+                        <form method="POST"
+                            action="{% url 'vexora:smtp_test' %}">
+
+                            {% csrf_token %}
+
+                            <button class="btn btn-outline-primary">
+
+                                <i class="fas fa-paper-plane me-2"></i>
+
+                                Probar conexión SMTP
+
+                            </button>
+
+                        </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

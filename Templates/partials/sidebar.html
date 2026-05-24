@@ -50,6 +50,17 @@ SIDEBAR.HTML
 
             {% if "vexora.view_customuser" in request.user.get_all_permissions %}
 
+            <a href="{% url 'vexora:smtp_configuration' %}"
+               class="menu-item {% if url_name == 'smtp_configuration' %}active{% endif %}">
+
+                <i class="fas fa-users"></i>
+                <span>Smpt</span>
+
+            </a>
+
+            {% endif %}
+            {% if "vexora.view_customuser" in request.user.get_all_permissions %}
+
             <a href="{% url 'vexora:user_list' %}"
                class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
 
@@ -76,6 +87,18 @@ SIDEBAR.HTML
 
                 <i class="fas fa-building"></i>
                 <span>Empresas</span>
+
+            </a>
+
+            {% endif %}
+
+            {% if request.user.is_authenticated and request.user.company %}
+
+            <a href="{% url 'vexora:subscription_list' %}"
+               class="menu-item {% if url_name == 'subscription_list' or url_name == 'subscription_detail' %}active{% endif %}">
+
+                <i class="fas fa-star"></i>
+                <span>Suscripción</span>
 
             </a>
 

@@ -1,7 +1,7 @@
     {% extends 'partials/base.html' %}
 
 {% block title %}
-Configuración
+    - Configuración
 {% endblock %}
 
 {% block content %}
@@ -39,33 +39,87 @@ Configuración
 
                         <div class="row">
 
-                            <!-- Empresa -->
-
-                            <div class="col-md-6 mb-4">
-
-                                <label class="form-label fw-bold">
-                                    Nombre empresa
-                                </label>
-
-                                {{ form.company_name }}
-
-                            </div>
-
                             <!-- Logo -->
+<!-- Logo -->
 
-                            <div class="col-md-6 mb-4">
+<div class="col-md-6 mb-4">
 
-                                <label class="form-label fw-bold">
-                                    Logo
-                                </label>
+    <label class="form-label fw-bold mb-3">
+        Logo
+    </label>
 
-                                {{ form.logo }}
+    <!-- Input oculto -->
+    <input
+        type="file"
+        name="logo"
+        id="id_logo"
+        accept="image/*"
+        hidden
+    >
 
-                            </div>
+    <!-- Upload box -->
+    <div
+        id="logo-upload-box"
+        class="border rounded-4 d-flex flex-column justify-content-center align-items-center text-center position-relative overflow-hidden"
+        style="
+            height: 260px;
+            cursor: pointer;
+            background: #f8fafc;
+            transition: 0.3s;
+        "
+    >
+
+        <!-- Imagen -->
+        <img
+            id="logo-preview"
+            src=""
+            alt="Preview"
+            style="
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+                display: none;
+            "
+        >
+
+        <!-- Placeholder -->
+        <div id="logo-placeholder">
+
+            <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+
+            <h6 class="fw-bold">
+                Subir logo
+            </h6>
+
+            <p class="text-muted small mb-0">
+                Haz clic para seleccionar una imagen
+            </p>
+
+        </div>
+
+    </div>
+
+    <!-- Botón eliminar -->
+    <button
+        type="button"
+        id="remove-logo"
+        class="btn btn-outline-danger btn-sm mt-3 w-100"
+        style="display: none;"
+    >
+
+        <i class="fas fa-trash me-2"></i>
+
+        Quitar logo
+
+    </button>
+
+</div>
+
+
 
                             <!-- Colores -->
 
-                            <div class="col-md-4 mb-4">
+                            <div class="col-md-2 mb-4">
 
                                 <label class="form-label fw-bold">
                                     Color Primario
@@ -75,7 +129,7 @@ Configuración
 
                             </div>
 
-                            <div class="col-md-4 mb-4">
+                            <div class="col-md-2 mb-4">
 
                                 <label class="form-label fw-bold">
                                     Color Secundario
@@ -85,7 +139,7 @@ Configuración
 
                             </div>
 
-                            <div class="col-md-4 mb-4">
+                            <div class="col-md-2 mb-4">
 
                                 <label class="form-label fw-bold">
                                     Color Accent
@@ -97,7 +151,7 @@ Configuración
 
                             <!-- Fondos -->
 
-                            <div class="col-md-4 mb-4">
+                            <div class="col-md-2 mb-4">
 
                                 <label class="form-label fw-bold">
                                     Fondo
@@ -165,4 +219,96 @@ Configuración
 
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+    const uploadBox = document.getElementById(
+        'logo-upload-box'
+    );
+
+    const logoInput = document.getElementById(
+        'id_logo'
+    );
+
+    const logoPreview = document.getElementById(
+        'logo-preview'
+    );
+
+    const logoPlaceholder = document.getElementById(
+        'logo-placeholder'
+    );
+
+    const removeLogoBtn = document.getElementById(
+        'remove-logo'
+    );
+
+    // Abrir selector
+    uploadBox.addEventListener('click', () => {
+
+        logoInput.click();
+
+    });
+
+    // Mostrar preview
+    logoInput.addEventListener('change', function(event) {
+
+        const file = event.target.files[0];
+
+        if (file) {
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+
+                logoPreview.src = e.target.result;
+
+                logoPreview.style.display = 'block';
+
+                logoPlaceholder.style.display = 'none';
+
+                removeLogoBtn.style.display = 'block';
+
+            };
+
+            reader.readAsDataURL(file);
+
+        }
+
+    });
+
+    // Eliminar imagen
+    removeLogoBtn.addEventListener('click', function() {
+
+        logoInput.value = '';
+
+        logoPreview.src = '';
+
+        logoPreview.style.display = 'none';
+
+        logoPlaceholder.style.display = 'block';
+
+        removeLogoBtn.style.display = 'none';
+
+    });
+
+    // Hover effects
+    uploadBox.addEventListener('mouseenter', () => {
+
+        uploadBox.style.borderColor = '#2563eb';
+
+        uploadBox.style.transform = 'scale(1.01)';
+
+    });
+
+    uploadBox.addEventListener('mouseleave', () => {
+
+        uploadBox.style.borderColor = '#dee2e6';
+
+        uploadBox.style.transform = 'scale(1)';
+
+    });
+
+</script>
 {% endblock %}

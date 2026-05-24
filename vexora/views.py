@@ -3,7 +3,6 @@ from urllib import request
 from django.contrib.auth import  login, logout
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LoginView
 from django.urls import reverse, reverse_lazy
 from .forms import *
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView,RedirectView, DetailView, TemplateView
@@ -14,23 +13,32 @@ import logging
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission
+from django.utils import timezone
+from datetime import timedelta
+from django.views import View
+from django.core.mail import EmailMessage
+from django.core.mail.backends.smtp import (
+    EmailBackend
+)
+
+from .models import Plan, Subscription, payment, PlanFeature
+#---------------------email de bienvenida-------------------
+from vexora.services.email_service import (
+    send_welcome_email
+)
 # Create your views here.
 
 class HomeView(TemplateView):
     template_name = 'Home/home.html'
 
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
-from django.views.generic import UpdateView
 
-from .models import SiteConfiguration
-from .forms import SiteConfigurationForm
+from .models import SiteConfiguration, SMTPConfiguration
+from .forms import SiteConfigurationForm, SMTPConfigurationForm
+# views.py
+
 
 #--------------------Configuración del sitio-------------------
-class SiteConfigurationUpdateView(
-    LoginRequiredMixin,
-    UpdateView
-):
+class SiteConfigurationUpdateView(LoginRequiredMixin,UpdateView):
 
     model = SiteConfiguration
     form_class = SiteConfigurationForm
@@ -51,6 +59,85 @@ class SiteConfigurationUpdateView(
         )
 
         return obj
+
+#--------------------Configuración SMTP-------------------
+class SMTPConfigurationUpdateView(LoginRequiredMixin,UpdateView):
+
+    model = SMTPConfiguration
+    form_class = SMTPConfigurationForm
+    template_name = 'vexora/configuration/smtp_configuration.html'
+    success_url = reverse_lazy('vexora:smtp_configuration')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.company:
+            return redirect('vexora:company_create')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self):
+        obj, created = SMTPConfiguration.objects.get_or_create(
+            company=self.request.user.company
+        )
+        return obj
+class SMTPTestView(LoginRequiredMixin, View):
+
+    def post(self, request):
+
+        smtp = get_object_or_404(
+            SMTPConfiguration,
+            company=request.user.company
+        )
+
+        try:
+
+            connection = EmailBackend(
+
+                host=smtp.email_host,
+
+                port=smtp.email_port,
+
+                username=smtp.email_host_user,
+
+                password=smtp.email_host_password,
+
+                use_tls=smtp.use_tls,
+                    
+                use_ssl=smtp.use_ssl,
+
+                timeout=10
+            )
+
+            email = EmailMessage(
+
+                subject='Prueba SMTP Vexora 🚀',
+
+                body='Tu configuración SMTP funciona correctamente.',
+
+                from_email=smtp.email_host_user,
+
+                to=[request.user.email],
+
+                connection=connection
+
+            )
+
+            email.send()
+
+            messages.success(
+                request,
+                'Correo de prueba enviado.'
+            )
+
+        except Exception as e:
+
+            messages.error(
+                request,
+                f'Error SMTP: {str(e)}'
+            )
+
+        return redirect(
+            'vexora:smtp_configuration'
+        )
+
 #--------------------Grupos y permisos-------------------
 class GroupListView(LoginRequiredMixin,ListView):
 
@@ -150,6 +237,135 @@ class LogoutRedirectView(RedirectView):
     def dispatch(self, request, *args, **kwargs):
         logout(request)
         return super().dispatch(request, *args, **kwargs)
+
+#==================== Subscription support ====================
+
+def ensure_default_plans():
+    plans = Plan.objects.filter(active=True)
+    if not plans.exists():
+        Plan.objects.create(
+            name='Trial',
+            description='Prueba gratuita de 14 días para empezar.',
+            price=0.00,
+            billing_type='monthly',
+            max_users=2,
+            max_products=50,
+            max_branches=1,
+            custom_domain=False,
+            priority_support=False,
+            active=True,
+        )
+        Plan.objects.create(
+            name='Básico',
+            description='Ideal para equipos pequeños y proyectos iniciales.',
+            price=19.99,
+            billing_type='monthly',
+            max_users=5,
+            max_products=200,
+            max_branches=2,
+            custom_domain=False,
+            priority_support=False,
+            active=True,
+        )
+        Plan.objects.create(
+            name='Pro',
+            description='Para organizaciones con más usuarios y soporte prioritario.',
+            price=49.99,
+            billing_type='monthly',
+            max_users=20,
+            max_products=1000,
+            max_branches=5,
+            custom_domain=True,
+            priority_support=True,
+            active=True,
+        )
+        plans = Plan.objects.filter(active=True)
+    return plans
+
+
+def subscription_end_date(start_date, billing_type):
+    if billing_type == 'yearly':
+        return start_date + timedelta(days=365)
+    return start_date + timedelta(days=30)
+
+
+class SubscriptionPlanListView(LoginRequiredMixin, TemplateView):
+    template_name = 'vexora/subscriptions/list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['plans'] = ensure_default_plans()
+        context['company'] = self.request.user.company
+        context['subscription'] = None
+        if context['company']:
+            context['subscription'] = getattr(context['company'], 'subscription', None)
+        return context
+
+
+class SubscriptionChooseView(LoginRequiredMixin, View):
+    def post(self, request, plan_id, *args, **kwargs):
+        company = request.user.company
+        if not company:
+            messages.error(request, 'Necesitas crear una empresa antes de elegir un plan.')
+            return redirect('vexora:company_create')
+
+        plan = get_object_or_404(Plan, id=plan_id, active=True)
+        current_subscription = getattr(company, 'subscription', None)
+        start_date = timezone.now().date()
+        end_date = subscription_end_date(start_date, plan.billing_type)
+
+        if current_subscription and current_subscription.plan_id == plan.id and current_subscription.active:
+            messages.info(request, 'Ya tienes ese plan seleccionado.')
+            return redirect('vexora:subscription_detail')
+
+        if current_subscription:
+            current_subscription.plan = plan
+            current_subscription.status = 'active'
+            current_subscription.start_date = start_date
+            current_subscription.end_date = end_date
+            current_subscription.trial = False
+            current_subscription.active = True
+            current_subscription.save()
+            subscription = current_subscription
+        else:
+            subscription = Subscription.objects.create(
+                company=company,
+                plan=plan,
+                status='active',
+                start_date=start_date,
+                end_date=end_date,
+                trial=False,
+                active=True,
+            )
+
+        payment.objects.create(
+            company=company,
+            subscription=subscription,
+            amount=plan.price,
+            payment_method='cash',
+            status='completed',
+            transaction_id=f'PAY-{timezone.now().strftime("%Y%m%d%H%M%S")}',
+            paid_at=timezone.now(),
+        )
+
+        messages.success(request, f'Suscripción a {plan.name} activada correctamente.')
+        return redirect('vexora:subscription_detail')
+
+
+class SubscriptionDetailView(LoginRequiredMixin, TemplateView):
+    template_name = 'vexora/subscriptions/detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['company'] = self.request.user.company
+        context['subscription'] = None
+        context['payments'] = None
+        if context['company']:
+            context['subscription'] = getattr(context['company'], 'subscription', None)
+            context['payments'] = payment.objects.filter(company=context['company']).order_by('-paid_at')
+        return context
+
+
 #---------------------Registro----------------------
 class RegisterView(CreateView):
     model = CustomUser
@@ -161,6 +377,7 @@ class RegisterView(CreateView):
         form.instance.is_active = True
         response = super().form_valid(form)
         # Loguear automáticamente al usuario después del registro
+        send_welcome_email(self.object)  # Enviar email de bienvenida
         login(self.request, self.object)
         return response
     def form_invalid(self, form):
@@ -309,6 +526,7 @@ class CompanyCreateView(LoginRequiredMixin,CreateView):
             user.company = company
             user.save()
             messages.success(request, "✅ ¡Empresa creada correctamente!")
+            return redirect("vexora:subscription_list")
         else:
             messages.error(request, "❌ Error al crear la empresa. Verifica los datos.")
         return redirect("vexora:company_list")

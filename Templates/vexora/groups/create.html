@@ -1,4 +1,4 @@
-<div class="modal-dialog modal-dialog-centered modal-lg">
+<div class="modal-dialog modal-dialog-centered modal-xl">
   <div class="modal-content">
     <div class="modal-header bg-light p-3">
       <h5 class="modal-title">Crear grupo</h5>
@@ -9,7 +9,7 @@
       {% csrf_token %}
 
       <div class="modal-body">
-
+        
         <div class="mb-4">
           <label for="group_name" class="form-label fw-bold">Nombre del grupo</label>
           <input
@@ -22,73 +22,429 @@
           >
         </div>
 
-        <div class="mb-4">
-          <label class="form-label fw-bold mb-3">Permisos del grupo</label>
+        <!-- Pestañas -->
+        <ul class="nav nav-tabs mb-3" id="permissionsTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+              👥 Usuarios
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="company-tab" data-bs-toggle="tab" data-bs-target="#company" type="button" role="tab">
+              🏢 Compañías
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="plans-tab" data-bs-toggle="tab" data-bs-target="#plans" type="button" role="tab">
+              📊 Planes
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="subscriptions-tab" data-bs-toggle="tab" data-bs-target="#subscriptions" type="button" role="tab">
+              💰 Suscripciones
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
+              💳 Pagos
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab">
+              ⚙️ Features
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button" role="tab">
+              ⚙️ Configuración
+            </button>
+          </li>
+        </ul>
 
-          <div class="card mb-3">
-            <div class="card-header bg-light">
-              <strong>👥 Gestión de Usuarios</strong>
-            </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-md-3">
-                  <div class="form-check">
-                    <input
-                      type="checkbox"
-                      name="permissions"
-                      value="add_customuser"
-                      id="add_user"
-                      class="form-check-input"
-                    >
-                    <label for="add_user" class="form-check-label">Crear</label>
+        <div class="tab-content" id="permissionsTabContent">
+          
+          <!-- Pestaña 1: Usuarios -->
+          <div class="tab-pane fade show active" id="users" role="tabpanel">
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong>👥 Gestión de Usuarios</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_customuser" id="add_user" class="form-check-input">
+                      <label for="add_user" class="form-check-label">Crear</label>
+                    </div>
                   </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="form-check">
-                    <input
-                      type="checkbox"
-                      name="permissions"
-                      value="change_customuser"
-                      id="change_user"
-                      class="form-check-input"
-                    >
-                    <label for="change_user" class="form-check-label">Editar</label>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_customuser" id="change_user" class="form-check-input">
+                      <label for="change_user" class="form-check-label">Editar</label>
+                    </div>
                   </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="form-check">
-                    <input
-                      type="checkbox"
-                      name="permissions"
-                      value="delete_customuser"
-                      id="delete_user"
-                      class="form-check-input"
-                    >
-                    <label for="delete_user" class="form-check-label">Eliminar</label>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_customuser" id="delete_user" class="form-check-input">
+                      <label for="delete_user" class="form-check-label">Eliminar</label>
+                    </div>
                   </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="form-check">
-                    <input
-                      type="checkbox"
-                      name="permissions"
-                      value="view_customuser"
-                      id="view_user"
-                      class="form-check-input"
-                    >
-                    <label for="view_user" class="form-check-label">Ver</label>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_customuser" id="view_user" class="form-check-input">
+                      <label for="view_user" class="form-check-label">Ver</label>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
+          <!-- Pestaña 2: Compañías -->
+          <div class="tab-pane fade" id="company" role="tabpanel">
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong>🏢 Gestión de Compañías</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_company" id="add_company" class="form-check-input">
+                      <label for="add_company" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_company" id="change_company" class="form-check-input">
+                      <label for="change_company" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_company" id="delete_company" class="form-check-input">
+                      <label for="delete_company" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_company" id="view_company" class="form-check-input">
+                      <label for="view_company" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pestaña 3: Planes -->
+          <div class="tab-pane fade" id="plans" role="tabpanel">
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong>📊 Gestión de Planes</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_plan" id="add_plan" class="form-check-input">
+                      <label for="add_plan" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_plan" id="change_plan" class="form-check-input">
+                      <label for="change_plan" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_plan" id="delete_plan" class="form-check-input">
+                      <label for="delete_plan" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_plan" id="view_plan" class="form-check-input">
+                      <label for="view_plan" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+                
+                <hr>
+                <strong>🔗 Plan Features</strong>
+                <div class="row mt-2">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_planfeature" id="add_planfeature" class="form-check-input">
+                      <label for="add_planfeature" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_planfeature" id="change_planfeature" class="form-check-input">
+                      <label for="change_planfeature" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_planfeature" id="delete_planfeature" class="form-check-input">
+                      <label for="delete_planfeature" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_planfeature" id="view_planfeature" class="form-check-input">
+                      <label for="view_planfeature" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pestaña 4: Suscripciones -->
+          <div class="tab-pane fade" id="subscriptions" role="tabpanel">
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong>💰 Gestión de Suscripciones</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_subscription" id="add_subscription" class="form-check-input">
+                      <label for="add_subscription" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_subscription" id="change_subscription" class="form-check-input">
+                      <label for="change_subscription" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_subscription" id="delete_subscription" class="form-check-input">
+                      <label for="delete_subscription" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_subscription" id="view_subscription" class="form-check-input">
+                      <label for="view_subscription" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+                
+                <hr>
+                <strong>📝 Logs de Suscripción</strong>
+                <div class="row mt-2">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_subscriptionlog" id="add_subscriptionlog" class="form-check-input">
+                      <label for="add_subscriptionlog" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_subscriptionlog" id="change_subscriptionlog" class="form-check-input">
+                      <label for="change_subscriptionlog" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_subscriptionlog" id="delete_subscriptionlog" class="form-check-input">
+                      <label for="delete_subscriptionlog" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_subscriptionlog" id="view_subscriptionlog" class="form-check-input">
+                      <label for="view_subscriptionlog" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pestaña 5: Pagos -->
+          <div class="tab-pane fade" id="payments" role="tabpanel">
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong>💳 Gestión de Pagos</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_payment" id="add_payment" class="form-check-input">
+                      <label for="add_payment" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_payment" id="change_payment" class="form-check-input">
+                      <label for="change_payment" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_payment" id="delete_payment" class="form-check-input">
+                      <label for="delete_payment" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_payment" id="view_payment" class="form-check-input">
+                      <label for="view_payment" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pestaña 6: Features -->
+          <div class="tab-pane fade" id="features" role="tabpanel">
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong>⚙️ Gestión de Features</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_feature" id="add_feature" class="form-check-input">
+                      <label for="add_feature" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_feature" id="change_feature" class="form-check-input">
+                      <label for="change_feature" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_feature" id="delete_feature" class="form-check-input">
+                      <label for="delete_feature" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_feature" id="view_feature" class="form-check-input">
+                      <label for="view_feature" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pestaña 7: Configuración -->
+          <div class="tab-pane fade" id="config" role="tabpanel">
+            <!-- Invitaciones -->
+            <div class="card mb-3">
+              <div class="card-header bg-light">
+                <strong>📧 Invitaciones</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_companyinvitation" id="add_invitation" class="form-check-input">
+                      <label for="add_invitation" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_companyinvitation" id="change_invitation" class="form-check-input">
+                      <label for="change_invitation" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_companyinvitation" id="delete_invitation" class="form-check-input">
+                      <label for="delete_invitation" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_companyinvitation" id="view_invitation" class="form-check-input">
+                      <label for="view_invitation" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Configuración SMTP -->
+            <div class="card mb-3">
+              <div class="card-header bg-light">
+                <strong>📧 Configuración SMTP</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_smtpconfiguration" id="add_smtp" class="form-check-input">
+                      <label for="add_smtp" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_smtpconfiguration" id="change_smtp" class="form-check-input">
+                      <label for="change_smtp" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_smtpconfiguration" id="delete_smtp" class="form-check-input">
+                      <label for="delete_smtp" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_smtpconfiguration" id="view_smtp" class="form-check-input">
+                      <label for="view_smtp" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Configuración del Sitio -->
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong>🌐 Configuración del Sitio</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_siteconfiguration" id="view_siteconfig" class="form-check-input">
+                      <label for="view_siteconfig" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_siteconfiguration" id="change_siteconfig" class="form-check-input">
+                      <label for="change_siteconfig" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="submit" class="btn btn-primary">Guardar grupo</button>
       </div>
     </form>
   </div>

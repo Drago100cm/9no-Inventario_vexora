@@ -47,6 +47,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'vexora.middleware.subscription_middleware.SubscriptionMiddleware',# Middleware personalizado para verificar suscripción
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -169,4 +170,20 @@ QUILL_CONFIGS = {
         }
     }
 }# settings.py
+EMAIL_BACKEND = (
+    'django.core.mail.backends.smtp.EmailBackend'
+)
 
+EMAIL_HOST = 'smtp.gmail.com'
+
+EMAIL_PORT = 587
+
+EMAIL_USE_TLS = True
+
+EMAIL_USE_SSL = False
+
+EMAIL_HOST_USER = 'tucorreo@gmail.com'
+
+EMAIL_HOST_PASSWORD = 'apppassword'
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

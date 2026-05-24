@@ -2,15 +2,30 @@ from django.urls import path
 from .views import *
 from . import views
 from .api import api_register, api_login
+from .views import SubscriptionPlanListView, SubscriptionChooseView, SubscriptionDetailView
 app_name = 'vexora'
 urlpatterns = [
-    path('configuration/',SiteConfigurationUpdateView.as_view(),name='site_configuration'),
-    path('groups/',GroupListView.as_view(),name='group_list'),
-    path('group_create/',GroupCreateView.as_view(),name='group_create'),
+    
+    #----------------------Home----------------------
+    path('', HomeView.as_view(), name='home'),
+
+    #----------------------Autenticación----------------------
     path("login/", CustomLoginView.as_view(), name="login"),
     path('logout/', LogoutRedirectView.as_view(), name='logout'),
     path("Registro/", RegisterView.as_view(), name="registro"),
-    path('', HomeView.as_view(), name='home'),
+    #----------------------Configuración del sitio----------------------
+    path('configuration/',SiteConfigurationUpdateView.as_view(),name='site_configuration'),
+    path('smtp_configuration/', SMTPConfigurationUpdateView.as_view(), name='smtp_configuration'),
+    path('smtp_test/',SMTPTestView.as_view(),name='smtp_test'),
+    #----------------------Grupos y permisos----------------------
+    path('groups/',GroupListView.as_view(),name='group_list'),
+    path('group_create/',GroupCreateView.as_view(),name='group_create'),
+    
+    #----------------------Suscripciones----------------------
+    path('subscription_list/', SubscriptionPlanListView.as_view(), name='subscription_list'),
+    path('subscriptions/choose/<int:plan_id>/', SubscriptionChooseView.as_view(), name='subscription_choose'),
+    path('subscriptions/detail/', SubscriptionDetailView.as_view(), name='subscription_detail'),
+    
     #----------------------Uuarios----------------------
     path("users/", UserListView.as_view(), name="user_list"),
     path("user_create", UserCreateView.as_view(), name="user_create"),

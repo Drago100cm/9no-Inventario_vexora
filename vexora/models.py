@@ -4,13 +4,27 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from config import settings
 from django.utils import timezone
+from django.utils.text import slugify
+import uuid
+# models.py
+
+
 class Company(models.Model):
 
-    name = models.CharField(max_length=150)
+    name = models.CharField(max_length=150,unique=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     slug = models.SlugField(unique=True)
+    def save(self, *args, **kwargs):
+
+        if not self.slug:
+
+            self.slug = (
+                f"{slugify(self.name)}"
+            )
+
+        super().save(*args, **kwargs)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='owned_companies')
     created_at = models.DateTimeField(auto_now_add=True
     )
@@ -253,3 +267,163 @@ class Subscription(models.Model):
     def __str__(self):
 
         return f"{self.company.name} - {self.plan.name}"
+#--------------------Pagos-------------------
+class payment(models.Model):
+
+    PAYMENT_METHODS = (
+        ('stripe', 'Stripe'),
+        ('paypal', 'PayPal'),
+        ('mercadopago', 'MercadoPago'),
+        ('cash', 'Efectivo'),
+    )
+
+    STATUS_CHOICES = (
+        ('pending', 'Pendiente'),
+        ('completed', 'Completado'),
+        ('failed', 'Fallido'),
+        ('refunded', 'Reembolsado'),
+    )
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE
+    )
+
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.CASCADE
+    )
+
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHODS
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+
+    transaction_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True
+    )
+
+    paid_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+#--------------------Features-------------------
+class Feature(models.Model):
+
+    name = models.CharField(max_length=100)
+
+    code = models.CharField(
+        max_length=100,
+        unique=True
+    )
+
+    description = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+#--------------------Relación entre planes y features-------------------
+class PlanFeature(models.Model):
+
+    plan = models.ForeignKey(
+        Plan,
+        on_delete=models.CASCADE
+    )
+
+    feature = models.ForeignKey(
+        Feature,
+        on_delete=models.CASCADE
+    )
+
+    enabled = models.BooleanField(default=True)
+
+#--------------------Invitaciones a empresas-------------------
+class CompanyInvitation(models.Model):
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE
+    )
+
+    email = models.EmailField()
+
+    token = models.UUIDField()
+
+    accepted = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+#--------------------Logs de suscripción-------------------
+class SubscriptionLog(models.Model):
+
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.CASCADE
+    )
+
+    action = models.CharField(max_length=100)
+
+    description = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+#--------------------Configuración SMTP para envíos de email-------------------
+    
+class SMTPConfiguration(models.Model):
+
+    company = models.OneToOneField(
+        Company,
+        on_delete=models.CASCADE, null=True, blank=True
+    )
+
+    email_host = models.CharField(
+        max_length=255,
+        default='smtp.gmail.com'
+    )
+
+    email_port = models.IntegerField(
+        default=587
+    )
+
+    email_host_user = models.EmailField()
+
+    email_host_password = models.CharField(
+        max_length=255
+    )
+
+    use_tls = models.BooleanField(
+        default=True
+    )
+
+    use_ssl = models.BooleanField(
+        default=False
+    )
+
+    active = models.BooleanField(
+        default=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )

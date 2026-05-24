@@ -74,6 +74,44 @@ class SiteConfigurationForm(forms.ModelForm):
             }),
 
         }
+
+class SMTPConfigurationForm(forms.ModelForm):
+
+    class Meta:
+        model = SMTPConfiguration
+        fields = [
+            'email_host',
+            'email_port',
+            'email_host_user',
+            'email_host_password',
+            'use_tls',
+            'use_ssl',
+            'active',
+        ]
+        widgets = {
+            'email_host': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+            'email_port': forms.NumberInput(attrs={
+                'class': 'form-control'
+            }),
+            'email_host_user': forms.EmailInput(attrs={
+                'class': 'form-control'
+            }),
+            'email_host_password': forms.PasswordInput(attrs={
+                'class': 'form-control'
+            }),
+            'use_tls': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'use_ssl': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
 #----------------Login-------------------
 class CustomAuthenticationForm(forms.Form):
     email = forms.EmailField(
@@ -156,6 +194,10 @@ class CustomUserUpdateForm(forms.ModelForm):   # 👈 Cambié a ModelForm
         self.fields['email'].widget.attrs.update({
             'class': 'form-control'
         })
+        self.fields['groups'].widget.attrs.update({
+            'class': 'form-control selectpicker',
+            'data-live-search': 'true',
+        })
         self.fields['username'].widget.attrs.update({
             'class': 'form-control'
         })
@@ -187,7 +229,7 @@ class CustomUserUpdateForm(forms.ModelForm):   # 👈 Cambié a ModelForm
         
     class Meta:
         model = CustomUser
-        fields = ("email", "username", "first_name", "last_name", "phone", "is_staff", "is_active","cover","avatar")
+        fields = ("email", "username", "first_name", "last_name", "phone", "is_staff", "is_active","cover","avatar", "groups")
         
 #--------------------Formulario de empresas-------------------
 class CompanyForm(forms.ModelForm):

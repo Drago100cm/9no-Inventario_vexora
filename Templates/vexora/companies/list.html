@@ -2,7 +2,7 @@
     {% load static %}
 
     {% block title %}
-    Empresas
+    - Empresas
     {% endblock %}
 
     {% block content %}
@@ -56,6 +56,7 @@
             <table class="table table-nowrap" id="tabla-destinos">
                 <thead>
                 <tr>
+                    <th data-sort="name">Slug</th>
                     <th data-sort="name">Nombre de la empresa</th>
                     <th data-sort="duration">email</th>
                     <th data-sort="questions">Dirección</th>
@@ -68,6 +69,7 @@
                 <tbody>
                 {% for company in list_company %}
                     <tr>
+                    <td>{{ company.slug }}</td>
                     <td>{{ company.name }}</td>
                     <td>{{ company.email }}</td>
                     <td>{{ company.address }}</td>
