@@ -253,36 +253,51 @@ class CompanyForm(forms.ModelForm):
         fields = ["name", "address", "phone", "email"]
         
 
-#--------------------Formulario de cliente, proveedor y producto-------------------
-from .models import Cliente, Proveedor, Producto
+# ============================================
+# SUPPLIER AND PRODUCT FORMS
+# ============================================
 
-class ClienteForm(forms.ModelForm):
+# ============================================
+# SUPPLIER FORM
+# ============================================
+class SupplierForm(forms.ModelForm):
     class Meta:
-        model = Cliente
-        fields = ['nombre', 'email', 'telefono', 'ciudad']
+        model = Supplier
+        fields = ['name', 'address']
         widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Juan Pérez'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Ej: juan@email.com'}),
-            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 555-1234567'}),
-            'ciudad': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Ciudad de México'}),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., XYZ Distributors'
+            }),
+            'address': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., 123 Main Street'
+            }),
         }
 
-class ProveedorForm(forms.ModelForm):
-    class Meta:
-        model = Proveedor
-        fields = ['nombre', 'direccion']
-        widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Distribuidora XYZ'}),
-            'direccion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Calle Falsa 123'}),
-        }
 
-class ProductoForm(forms.ModelForm):
+# ============================================
+# PRODUCT FORM
+# ============================================
+class ProductForm(forms.ModelForm):
     class Meta:
-        model = Producto
-        fields = ['nombre_producto', 'fecha_compra', 'precio', 'proveedor']
+        model = Product
+        fields = ['name', 'purchase_date', 'price', 'supplier']
         widgets = {
-            'nombre_producto': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Laptop HP'}),
-            'fecha_compra': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'precio': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Ej: 599.99'}),
-            'proveedor': forms.Select(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., HP Laptop'
+            }),
+            'purchase_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'e.g., 599.99'
+            }),
+            'supplier': forms.Select(attrs={
+                'class': 'form-control'
+            }),
         }

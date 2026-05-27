@@ -554,3 +554,142 @@ def delete_company(request, pk):
     company.delete()
     messages.success(request, "✅ Empresa eliminada correctamente!")
     return redirect('vexora:company_list')  # ruta a la lista de empresas
+
+# ============================================
+# SUPPLIER VIEWS (Proveedores)
+# ============================================
+
+class SupplierListView(LoginRequiredMixin, ListView):
+    model = Supplier
+    template_name = 'vexora/suppliers/list.html'
+    context_object_name = 'suppliers'
+
+    def get_queryset(self):
+        return Supplier.objects.all().order_by('name')
+
+
+class SupplierCreateView(LoginRequiredMixin, CreateView):
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'vexora/suppliers/form.html'
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Supplier created successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_suppliers')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'New Supplier'
+        return context
+
+
+class SupplierUpdateView(LoginRequiredMixin, UpdateView):
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'vexora/suppliers/form.html'
+    pk_url_kwarg = 'id'
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Supplier updated successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_suppliers')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit Supplier'
+        return context
+
+
+class SupplierDeleteView(LoginRequiredMixin, DeleteView):
+    model = Supplier
+    template_name = 'vexora/suppliers/confirm_delete.html'
+    pk_url_kwarg = 'id'
+
+    def get_success_url(self):
+        messages.success(self.request, "✅ Supplier deleted successfully!")
+        return reverse('vexora:list_suppliers')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['type'] = 'supplier'
+        supplier = self.get_object()
+        context['has_products'] = supplier.products.exists()
+        context['products_count'] = supplier.products.count()
+        return context
+
+    def delete(self, request, *args, **kwargs):
+        supplier = self.get_object()
+        if supplier.products.exists():
+            messages.error(request, f'❌ Cannot delete "{supplier.name}" because it has associated products')
+            return redirect('vexora:list_suppliers')
+        return super().delete(request, *args, **kwargs)
+
+
+# ============================================
+# PRODUCT VIEWS (Productos)
+# ============================================
+
+class ProductListView(LoginRequiredMixin, ListView):
+    model = Product
+    template_name = 'vexora/products/list.html'
+    context_object_name = 'products'
+
+    def get_queryset(self):
+        return Product.objects.all().order_by('-purchase_date')
+
+
+class ProductCreateView(LoginRequiredMixin, CreateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'vexora/products/form.html'
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Product created successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_products')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'New Product'
+        return context
+
+
+class ProductUpdateView(LoginRequiredMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'vexora/products/form.html'
+    pk_url_kwarg = 'id'
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Product updated successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_products')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit Product'
+        return context
+
+
+class ProductDeleteView(LoginRequiredMixin, DeleteView):
+    model = Product
+    template_name = 'vexora/products/confirm_delete.html'
+    pk_url_kwarg = 'id'
+
+    def get_success_url(self):
+        messages.success(self.request, "✅ Product deleted successfully!")
+        return reverse('vexora:list_products')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['type'] = 'product'
+        return context
