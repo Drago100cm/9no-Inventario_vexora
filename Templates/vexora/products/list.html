@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Products</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%); padding: 20px; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn { display: inline-block; padding: 10px 20px; margin: 5px; border-radius: 5px; text-decoration: none; font-weight: bold; transition: all 0.3s; }
+        .btn-nuevo { background: #28a745; color: white; }
+        .btn-nuevo:hover { background: #218838; transform: translateY(-2px); }
+        .btn-editar { background: #007bff; color: white; }
+        .btn-editar:hover { background: #0056b3; transform: translateY(-2px); }
+        .btn-eliminar { background: #dc3545; color: white; }
+        .btn-eliminar:hover { background: #c82333; transform: translateY(-2px); }
+        .btn-volver { background: #6c757d; color: white; }
+        .btn-volver:hover { background: #5a6268; transform: translateY(-2px); }
+        table { width: 100%; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        th { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e9d5ff; color: #4c1d95; }
+        tr:hover { background: #f3e8ff; }
+        .menu { background: #f3e8ff; padding: 10px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: white; margin: 20px 0 10px 0; }
+        .alert-success { background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #28a745; }
+        .precio { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Product Management</h1>
+            <p>Manage your registered products</p>
+        </div>
+        
+        <div class="menu">
+            <a href="{% url 'vexora:home' %}" class="btn btn-volver">🏠 Home</a>
+            <a href="{% url 'vexora:list_users' %}" class="btn btn-volver">👥 Users</a>
+            <a href="{% url 'vexora:list_suppliers' %}" class="btn btn-volver">🏢 Suppliers</a>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-success">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <h2>Registered Products</h2>
+        <a href="{% url 'vexora:create_product' %}" class="btn btn-nuevo">+ New Product</a>
+        
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Name</th><th>Purchase Date</th><th>Price</th><th>Supplier</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.id }}</td>
+                    <td><strong>{{ product.name }}</strong></td>
+                    <td>{{ product.purchase_date|date:"d/m/Y" }}</td>
+                    <td class="precio">${{ product.price }}</td>
+                    <td>{{ product.supplier.name }}</td>
+                    <td>
+                        <a href="{% url 'vexora:edit_product' product.id %}" class="btn btn-editar">✏️ Edit</a>
+                        <a href="{% url 'vexora:delete_product' product.id %}" class="btn btn-eliminar">🗑️ Delete</a>
+                    </td>
+                <tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align: center;">No products registered</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

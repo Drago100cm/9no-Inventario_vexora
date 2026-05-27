@@ -264,24 +264,52 @@ class CompanyForm(forms.ModelForm):
         fields = ["name", "address", "phone", "email"]
         
 
-#--------------------Formulario de cliente, proveedor y producto-------------------
 
-class ProveedorForm(forms.ModelForm):
+# ============================================
+# SUPPLIER AND PRODUCT FORMS
+# ============================================
+
+# ============================================
+# SUPPLIER FORM
+# ============================================
+class SupplierForm(forms.ModelForm):
     class Meta:
-        model = Proveedor
-        fields = ['nombre', 'direccion']
+        model = Supplier
+        fields = ['name', 'address']
         widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Distribuidora XYZ'}),
-            'direccion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Calle Falsa 123'}),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., XYZ Distributors'
+            }),
+            'address': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., 123 Main Street'
+            }),
         }
 
-class ProductoForm(forms.ModelForm):
+
+# ============================================
+# PRODUCT FORM
+# ============================================
+class ProductForm(forms.ModelForm):
     class Meta:
-        model = Producto
-        fields = ['nombre_producto', 'fecha_compra', 'precio', 'proveedor']
+        model = Product
+        fields = ['name', 'purchase_date', 'price', 'supplier']
         widgets = {
-            'nombre_producto': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Laptop HP'}),
-            'fecha_compra': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'precio': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Ej: 599.99'}),
-            'proveedor': forms.Select(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., HP Laptop'
+            }),
+            'purchase_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'e.g., 599.99'
+            }),
+            'supplier': forms.Select(attrs={
+                'class': 'form-control'
+            }),
         }

@@ -47,4 +47,19 @@ urlpatterns = [
 
 
 
+    # ============================================
+    # SUPPLIER URLs (Proveedores)
+    # ============================================
+    path('suppliers/', views.SupplierListView.as_view(), name='list_suppliers'),
+    path('suppliers/create/', views.SupplierCreateView.as_view(), name='create_supplier'),
+    path('suppliers/edit/<int:id>/', views.SupplierUpdateView.as_view(), name='edit_supplier'),
+    path('suppliers/delete/<int:id>/', views.SupplierDeleteView.as_view(), name='delete_supplier'),
+
+    # ============================================
+    # PRODUCT URLs (Productos)
+    # ============================================
+    path('products/', views.ProductListView.as_view(), name='list_products'),
+    path('products/create/', views.ProductCreateView.as_view(), name='create_product'),
+    path('products/edit/<int:id>/', views.ProductUpdateView.as_view(), name='edit_product'),
+    path('products/delete/<int:id>/', views.ProductDeleteView.as_view(), name='delete_product'),
 ]
