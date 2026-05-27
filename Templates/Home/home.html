@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskFlow - Organizador de Tareas</title>
+    <title>StockFlow - Sistema de vexora SaaS</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -11,11 +11,14 @@
     <style>
         /* Personalización de colores */
         :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3a0ca3;
-            --accent-color: #4cc9f0;
-            --light-color: #f8f9fa;
-            --dark-color: #212529;
+            --primary-color: #2c3e50;
+            --secondary-color: #e67e22;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
         }
         
         .bg-primary-custom {
@@ -32,8 +35,20 @@
         }
         
         .btn-primary-custom:hover {
+            background-color: #34495e;
+            border-color: #34495e;
+        }
+        
+        .btn-secondary-custom {
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-secondary-custom:hover {
+            background-color: #d35400;
+            border-color: #d35400;
+            color: white;
         }
         
         .gradient-bg {
@@ -53,10 +68,11 @@
         /* Hero section */
         .hero-section {
             padding: 150px 0 100px;
-            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), 
-                        url('https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80');
+            background: linear-gradient(rgba(44, 62, 80, 0.95), rgba(44, 62, 80, 0.95)), 
+                        url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80');
             background-size: cover;
             background-position: center;
+            color: white;
         }
         
         /* Animación sutil para elementos */
@@ -71,7 +87,35 @@
         
         /* Estilo para testimonios */
         .testimonial-card {
-            border-left: 4px solid var(--primary-color);
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        /* Tarjeta de precios */
+        .pricing-card {
+            transition: transform 0.3s ease;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .pricing-card:hover {
+            transform: scale(1.03);
+        }
+        
+        .pricing-card .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 20px;
+        }
+        
+        .price {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .price small {
+            font-size: 0.9rem;
+            color: #7f8c8d;
         }
         
         /* Footer */
@@ -81,16 +125,39 @@
         }
         
         footer a:hover {
-            color: var(--accent-color) !important;
+            color: var(--secondary-color) !important;
+        }
+        
+        /* Badges de stock */
+        .stock-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .stock-low {
+            background-color: var(--warning-color);
+            color: #fff;
+        }
+        
+        .stock-out {
+            background-color: var(--danger-color);
+            color: #fff;
+        }
+        
+        .stock-good {
+            background-color: var(--success-color);
+            color: #fff;
         }
     </style>
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary-custom shadow-sm sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold text-primary-custom" href="#">
-                <i class="bi bi-check2-square me-2"></i>TaskFlow
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-box-seam me-2"></i>StockFlow
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -107,16 +174,28 @@
                         <a class="nav-link" href="#testimonials">Testimonios</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#pricing">Precios</a>
+                        <a class="nav-link" href="#pricing">Planes</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#faq">FAQ</a>
                     </li>
                 </ul>
                 <div class="d-flex">
-                    <a href="{% url 'vexora:login' %}" class="btn btn-outline-primary-custom me-2">Iniciar Sesión</a>
-                    <a href="{% url 'vexora:registro' %}" class="btn btn-primary-custom">Registrarse</a>
-                    <a href="{% url 'vexora:logout' %}" class="btn btn-primary-custom">Cerrar Sesión</a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'vexora:home' %}" class="btn btn-outline-light me-2">
+                            <i class="bi bi-speedometer2"></i> home
+                        </a>
+                        <a href="{% url 'vexora:logout' %}" class="btn btn-secondary-custom">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    {% else %}
+                        <a href="{% url 'vexora:login' %}" class="btn btn-outline-light me-2">
+                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                        </a>
+                        <a href="{% url 'vexora:registro' %}" class="btn btn-secondary-custom">
+                            <i class="bi bi-person-plus"></i> Registrarse
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -127,16 +206,31 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6 fade-in">
-                    <h1 class="display-4 fw-bold mb-4">Organiza tus tareas de manera eficiente</h1>
-                    <p class="lead mb-4">TaskFlow te ayuda a gestionar tus proyectos, establecer prioridades y aumentar tu productividad con herramientas intuitivas y colaborativas.</p>
+                    <h1 class="display-4 fw-bold mb-4">Gestiona tu vexora de forma inteligente</h1>
+                    <p class="lead mb-4">StockFlow te ayuda a controlar tus productos, optimizar el stock y aumentar la rentabilidad de tu negocio con herramientas avanzadas y reportes en tiempo real.</p>
                     <div class="d-flex flex-wrap gap-3">
-                        <a href="{% url 'vexora:home' %}" class="btn btn-primary-custom btn-lg">Comenzar Gratis</a>
-                        <a href="#features" class="btn btn-outline-primary-custom btn-lg">Saber Más</a>
+                        <a href="{% url 'vexora:registro' %}" class="btn btn-secondary-custom btn-lg">
+                            <i class="bi bi-gem"></i> Comenzar Prueba Gratis
+                        </a>
+                        <a href="#features" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-play-circle"></i> Ver Demo
+                        </a>
                     </div>
+                    <p class="mt-3 small">✓ Sin tarjeta de crédito ✓ 14 días gratis ✓ Cancelación en cualquier momento</p>
                 </div>
                 <div class="col-lg-6 mt-5 mt-lg-0 fade-in">
-                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
-                         alt="Dashboard de TaskFlow" class="img-fluid rounded shadow">
+                    <div class="card shadow-lg border-0 rounded-4">
+                        <div class="card-body p-0">
+                            <img src="https://images.unsplash.com/photo-1556742393-d75f468bfcb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
+                                 alt="home de StockFlow" class="img-fluid rounded-4">
+                            <div class="p-3 bg-light rounded-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-database"></i> 1,234 productos</span>
+                                    <span class="stock-badge stock-good"><i class="bi bi-check-circle"></i> Stock óptimo</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -147,7 +241,7 @@
         <div class="container">
             <div class="text-center mb-5">
                 <h2 class="display-5 fw-bold mb-3">Características Principales</h2>
-                <p class="lead">Descubre cómo TaskFlow puede transformar tu forma de trabajar</p>
+                <p class="lead">Descubre cómo StockFlow puede transformar la gestión de tu vexora</p>
             </div>
             
             <div class="row g-4">
@@ -155,10 +249,10 @@
                     <div class="card feature-card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-kanban text-white fs-3"></i>
+                                <i class="bi bi-upc-scan text-white fs-3"></i>
                             </div>
-                            <h4 class="card-title">Tableros Kanban</h4>
-                            <p class="card-text">Organiza tus tareas en columnas visuales para un seguimiento claro del progreso de tus proyectos.</p>
+                            <h4 class="card-title">Escaneo de Códigos de Barras</h4>
+                            <p class="card-text">Registra productos rápidamente con nuestro sistema de escaneo integrado. Compatible con códigos de barras y QR.</p>
                         </div>
                     </div>
                 </div>
@@ -167,10 +261,10 @@
                     <div class="card feature-card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-bell text-white fs-3"></i>
+                                <i class="bi bi-graph-up text-white fs-3"></i>
                             </div>
-                            <h4 class="card-title">Recordatorios Inteligentes</h4>
-                            <p class="card-text">Nunca olvides una fecha límite con nuestro sistema de notificaciones y alertas personalizables.</p>
+                            <h4 class="card-title">Alertas de Stock Bajo</h4>
+                            <p class="card-text">Configura umbrales mínimos y recibe notificaciones automáticas cuando los productos necesitan reabastecimiento.</p>
                         </div>
                     </div>
                 </div>
@@ -179,10 +273,10 @@
                     <div class="card feature-card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-people text-white fs-3"></i>
+                                <i class="bi bi-file-spreadsheet text-white fs-3"></i>
                             </div>
-                            <h4 class="card-title">Colaboración en Equipo</h4>
-                            <p class="card-text">Trabaja junto a tu equipo asignando tareas, comentando y compartiendo archivos en tiempo real.</p>
+                            <h4 class="card-title">Importación/Exportación</h4>
+                            <p class="card-text">Importa tus productos desde Excel/CSV y exporta reportes en múltiples formatos para análisis externo.</p>
                         </div>
                     </div>
                 </div>
@@ -191,10 +285,10 @@
                     <div class="card feature-card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-bar-chart text-white fs-3"></i>
+                                <i class="bi bi-arrow-left-right text-white fs-3"></i>
                             </div>
-                            <h4 class="card-title">Reportes y Análisis</h4>
-                            <p class="card-text">Obtén insights sobre tu productividad con reportes detallados y métricas de rendimiento.</p>
+                            <h4 class="card-title">Movimientos de Stock</h4>
+                            <p class="card-text">Registra entradas, salidas, transferencias y ajustes con trazabilidad completa y auditoría detallada.</p>
                         </div>
                     </div>
                 </div>
@@ -203,10 +297,10 @@
                     <div class="card feature-card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-phone text-white fs-3"></i>
+                                <i class="bi bi-building text-white fs-3"></i>
                             </div>
-                            <h4 class="card-title">Aplicación Móvil</h4>
-                            <p class="card-text">Accede a tus tareas desde cualquier lugar con nuestras aplicaciones para iOS y Android.</p>
+                            <h4 class="card-title">Múltiples Sucursales</h4>
+                            <p class="card-text">Gestiona vexoras de diferentes ubicaciones desde un solo panel de control centralizado.</p>
                         </div>
                     </div>
                 </div>
@@ -215,10 +309,10 @@
                     <div class="card feature-card h-100 border-0 shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-shield-check text-white fs-3"></i>
+                                <i class="bi bi-shield-lock text-white fs-3"></i>
                             </div>
-                            <h4 class="card-title">Seguridad Avanzada</h4>
-                            <p class="card-text">Tus datos están protegidos con encriptación de grado empresarial y backups automáticos.</p>
+                            <h4 class="card-title">Seguridad y Respaldo</h4>
+                            <p class="card-text">Datos encriptados, backups automáticos diarios y accesos por roles de usuario.</p>
                         </div>
                     </div>
                 </div>
@@ -231,31 +325,110 @@
         <div class="container">
             <div class="row text-center">
                 <div class="col-md-3 col-6 mb-4 mb-md-0">
-                    <h3 class="display-4 fw-bold">50K+</h3>
-                    <p class="lead">Usuarios Activos</p>
+                    <h3 class="display-4 fw-bold">10K+</h3>
+                    <p class="lead">Empresas Activas</p>
                 </div>
                 <div class="col-md-3 col-6 mb-4 mb-md-0">
-                    <h3 class="display-4 fw-bold">1M+</h3>
-                    <p class="lead">Tareas Completadas</p>
+                    <h3 class="display-4 fw-bold">2M+</h3>
+                    <p class="lead">Productos Gestionados</p>
                 </div>
                 <div class="col-md-3 col-6">
                     <h3 class="display-4 fw-bold">500+</h3>
-                    <p class="lead">Empresas Confían en Nosotros</p>
+                    <p class="lead">Integraciones</p>
                 </div>
                 <div class="col-md-3 col-6">
-                    <h3 class="display-4 fw-bold">99%</h3>
-                    <p class="lead">Satisfacción del Cliente</p>
+                    <h3 class="display-4 fw-bold">98%</h3>
+                    <p class="lead">Precisión en vexora</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">Planes Flexibles</h2>
+                <p class="lead">Elige el plan que mejor se adapte a tu negocio</p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card pricing-card h-100 shadow">
+                        <div class="card-header text-center">
+                            <h3 class="mb-0">Básico</h3>
+                        </div>
+                        <div class="card-body text-center p-4">
+                            <div class="price">$29 <small>/mes</small></div>
+                            <p class="text-muted">Ideal para pequeños negocios</p>
+                            <hr>
+                            <ul class="list-unstyled text-start">
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Hasta 500 productos</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> 1 usuario</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Reportes básicos</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Exportación a Excel</li>
+                                <li class="mb-2 text-muted"><i class="bi bi-x-circle-fill text-danger me-2"></i> <del>Múltiples sucursales</del></li>
+                                <li class="mb-2 text-muted"><i class="bi bi-x-circle-fill text-danger me-2"></i> <del>API integración</del></li>
+                            </ul>
+                            <a href="{% url 'vexora:registro' %}" class="btn btn-outline-primary-custom w-100">Comenzar</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card pricing-card h-100 shadow-lg border-0">
+                        <div class="card-header text-center position-relative">
+                            <span class="position-absolute top-0 start-50 translate-middle badge bg-secondary-custom">MÁS POPULAR</span>
+                            <h3 class="mb-0">Profesional</h3>
+                        </div>
+                        <div class="card-body text-center p-4">
+                            <div class="price">$79 <small>/mes</small></div>
+                            <p class="text-muted">Perfecto para negocios en crecimiento</p>
+                            <hr>
+                            <ul class="list-unstyled text-start">
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Hasta 5,000 productos</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> 5 usuarios</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Reportes avanzados</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Alertas de stock bajo</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> 2 sucursales</li>
+                                <li class="mb-2"><i class="bi bi-x-circle-fill text-danger me-2"></i> <del>API integración</del></li>
+                            </ul>
+                            <a href="{% url 'vexora:registro' %}" class="btn btn-secondary-custom w-100">Comenzar</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card pricing-card h-100 shadow">
+                        <div class="card-header text-center">
+                            <h3 class="mb-0">Empresarial</h3>
+                        </div>
+                        <div class="card-body text-center p-4">
+                            <div class="price">$199 <small>/mes</small></div>
+                            <p class="text-muted">Para empresas grandes y cadenas</p>
+                            <hr>
+                            <ul class="list-unstyled text-start">
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Productos ilimitados</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Usuarios ilimitados</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Reportes personalizados</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Sucursales ilimitadas</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> API completa</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Soporte prioritario 24/7</li>
+                            </ul>
+                            <a href="#" class="btn btn-outline-primary-custom w-100">Contactar Ventas</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Testimonials Section -->
-    <section id="testimonials" class="py-5">
+    <section id="testimonials" class="py-5 bg-light">
         <div class="container">
             <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Lo que Dicen Nuestros Usuarios</h2>
-                <p class="lead">Descubre cómo TaskFlow ha mejorado la productividad de equipos y individuos</p>
+                <h2 class="display-5 fw-bold mb-3">Lo que Dicen Nuestros Clientes</h2>
+                <p class="lead">Descubre cómo StockFlow ha transformado negocios de todo tipo</p>
             </div>
             
             <div class="row g-4">
@@ -263,13 +436,13 @@
                     <div class="card testimonial-card h-100 border-0 shadow-sm">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
-                                <img src="https://randomuser.me/api/portraits/women/32.jpg" class="rounded-circle me-3" width="60" height="60" alt="Usuario">
+                                <img src="https://randomuser.me/api/portraits/women/32.jpg" class="rounded-circle me-3" width="60" height="60" alt="Cliente">
                                 <div>
-                                    <h5 class="mb-0">María González</h5>
-                                    <small class="text-muted">Project Manager</small>
+                                    <h5 class="mb-0">Ana Rodríguez</h5>
+                                    <small class="text-muted">Dueña de Tienda de Ropa</small>
                                 </div>
                             </div>
-                            <p class="card-text">"TaskFlow ha revolucionado la forma en que nuestro equipo gestiona proyectos. La colaboración es mucho más fluida y hemos reducido los tiempos de entrega en un 30%."</p>
+                            <p class="card-text">"StockFlow nos ayudó a reducir el sobrestock en un 40% y evitar faltantes en temporada alta. El sistema de alertas es increíblemente útil."</p>
                             <div class="text-warning">
                                 <i class="bi bi-star-fill"></i>
                                 <i class="bi bi-star-fill"></i>
@@ -285,35 +458,13 @@
                     <div class="card testimonial-card h-100 border-0 shadow-sm">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
-                                <img src="https://randomuser.me/api/portraits/men/45.jpg" class="rounded-circle me-3" width="60" height="60" alt="Usuario">
+                                <img src="https://randomuser.me/api/portraits/men/45.jpg" class="rounded-circle me-3" width="60" height="60" alt="Cliente">
                                 <div>
-                                    <h5 class="mb-0">Carlos Rodríguez</h5>
-                                    <small class="text-muted">Freelancer</small>
+                                    <h5 class="mb-0">Carlos Méndez</h5>
+                                    <small class="text-muted">Gerente de Logística</small>
                                 </div>
                             </div>
-                            <p class="card-text">"Como freelancer, necesito organizar múltiples proyectos simultáneamente. TaskFlow me permite mantener el control de todo sin perder detalle. ¡Es imprescindible para mi trabajo!"</p>
-                            <div class="text-warning">
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="card testimonial-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <img src="https://randomuser.me/api/portraits/women/67.jpg" class="rounded-circle me-3" width="60" height="60" alt="Usuario">
-                                <div>
-                                    <h5 class="mb-0">Laura Martínez</h5>
-                                    <small class="text-muted">Estudiante</small>
-                                </div>
-                            </div>
-                            <p class="card-text">"Uso TaskFlow para organizar mis estudios y actividades extracurriculares. Me ha ayudado a ser más disciplinada y a no procrastinar. ¡Mi rendimiento académico ha mejorado notablemente!"</p>
+                            <p class="card-text">"Pasamos de 3 horas diarias en control de vexora a solo 20 minutos. La importación masiva y los reportes automáticos nos salvaron."</p>
                             <div class="text-warning">
                                 <i class="bi bi-star-fill"></i>
                                 <i class="bi bi-star-fill"></i>
@@ -324,6 +475,65 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="col-md-4">
+                    <div class="card testimonial-card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="https://randomuser.me/api/portraits/women/67.jpg" class="rounded-circle me-3" width="60" height="60" alt="Cliente">
+                                <div>
+                                    <h5 class="mb-0">Laura Fernández</h5>
+                                    <small class="text-muted">CEO de Ferretería Express</small>
+                                </div>
+                            </div>
+                            <p class="card-text">"Con 3 sucursales, necesitábamos una solución unificada. StockFlow nos permite ver el vexora completo en tiempo real desde cualquier lugar."</p>
+                            <div class="text-warning">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integrations Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">Integraciones con tus Herramientas Favoritas</h2>
+                <p class="lead">Conecta StockFlow con tu ecosistema tecnológico</p>
+            </div>
+            
+            <div class="row text-center g-4">
+                <div class="col-md-2 col-6">
+                    <i class="bi bi-shop fs-1 text-primary-custom"></i>
+                    <p class="mt-2 fw-bold">Shopify</p>
+                </div>
+                <div class="col-md-2 col-6">
+                    <i class="bi bi-wordpress fs-1 text-primary-custom"></i>
+                    <p class="mt-2 fw-bold">WooCommerce</p>
+                </div>
+                <div class="col-md-2 col-6">
+                    <i class="bi bi-file-text fs-1 text-primary-custom"></i>
+                    <p class="mt-2 fw-bold">Excel</p>
+                </div>
+                <div class="col-md-2 col-6">
+                    <i class="bi bi-calculator fs-1 text-primary-custom"></i>
+                    <p class="mt-2 fw-bold">QuickBooks</p>
+                </div>
+                <div class="col-md-2 col-6">
+                    <i class="bi bi-code-square fs-1 text-primary-custom"></i>
+                    <p class="mt-2 fw-bold">API REST</p>
+                </div>
+                <div class="col-md-2 col-6">
+                    <i class="bi bi-qr-code-scan fs-1 text-primary-custom"></i>
+                    <p class="mt-2 fw-bold">Lectores QR</p>
+                </div>
             </div>
         </div>
     </section>
@@ -333,11 +543,94 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-8">
-                    <h2 class="display-6 fw-bold mb-3">¿Listo para aumentar tu productividad?</h2>
-                    <p class="lead mb-0">Únete a miles de usuarios que ya están organizando sus tareas con TaskFlow.</p>
+                    <h2 class="display-6 fw-bold mb-3">¿Listo para optimizar tu vexora?</h2>
+                    <p class="lead mb-0">Únete a miles de negocios que ya confían en StockFlow para gestionar su vexora.</p>
                 </div>
                 <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
-                    <a href="{% url 'vexora:home' %}" class="btn btn-light btn-lg">Crear Cuenta Gratis</a>
+                    <a href="{% url 'vexora:registro' %}" class="btn btn-secondary-custom btn-lg">
+                        <i class="bi bi-gem"></i> Probar 14 días gratis
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">Preguntas Frecuentes</h2>
+                <p class="lead">Resolvemos tus dudas sobre StockFlow</p>
+            </div>
+            
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    ¿Puedo probar StockFlow antes de comprar?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    ¡Sí! Ofrecemos 14 días de prueba gratuita sin necesidad de tarjeta de crédito. Durante la prueba tendrás acceso a todas las funciones del plan Profesional.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    ¿Puedo importar mi vexora actual?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Absolutamente. StockFlow permite importar productos desde archivos Excel o CSV. También ofrecemos asistencia personalizada para migraciones complejas.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    ¿Qué soporte técnico ofrecen?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Todos los planes incluyen soporte por email. Los planes Profesional y Empresarial incluyen soporte prioritario y chat en vivo. El plan Empresarial incluye soporte telefónico 24/7.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                    ¿StockFlow funciona en dispositivos móviles?
+                                </button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Sí, nuestra plataforma es completamente responsive. También tenemos aplicaciones nativas para iOS y Android disponibles en las tiendas oficiales.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                                    ¿Puedo cancelar mi suscripción en cualquier momento?
+                                </button>
+                            </h2>
+                            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Por supuesto. Puedes cancelar tu suscripción en cualquier momento desde la configuración de tu cuenta. No hay permanencias ni costos ocultos.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -349,9 +642,9 @@
             <div class="row">
                 <div class="col-lg-4 mb-4 mb-lg-0">
                     <h4 class="fw-bold mb-3">
-                        <i class="bi bi-check2-square me-2"></i>TaskFlow
+                        <i class="bi bi-box-seam me-2"></i>StockFlow
                     </h4>
-                    <p>La plataforma de gestión de tareas más intuitiva y eficiente del mercado. Diseñada para individuos y equipos que buscan maximizar su productividad.</p>
+                    <p>La plataforma de gestión de vexora más completa y fácil de usar del mercado. Diseñada para negocios que buscan optimizar su cadena de suministro.</p>
                     <div class="d-flex gap-3">
                         <a href="#" class="text-white"><i class="bi bi-facebook fs-5"></i></a>
                         <a href="#" class="text-white"><i class="bi bi-twitter fs-5"></i></a>
@@ -360,12 +653,12 @@
                     </div>
                 </div>
                 <div class="col-lg-2 col-md-4 mb-4 mb-lg-0">
-                    <h5 class="fw-bold mb-3">Enlaces Rápidos</h5>
+                    <h5 class="fw-bold mb-3">Producto</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#" class="text-white-50">Inicio</a></li>
-                        <li class="mb-2"><a href="#features" class="text-white-50">Características</a></li>
-                        <li class="mb-2"><a href="#testimonials" class="text-white-50">Testimonios</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50">Características</a></li>
                         <li class="mb-2"><a href="#pricing" class="text-white-50">Precios</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50">Demo</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50">Integraciones</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-2 col-md-4 mb-4 mb-lg-0">
@@ -374,20 +667,23 @@
                         <li class="mb-2"><a href="#" class="text-white-50">Blog</a></li>
                         <li class="mb-2"><a href="#" class="text-white-50">Centro de Ayuda</a></li>
                         <li class="mb-2"><a href="#" class="text-white-50">Tutoriales</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50">API</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50">Documentación API</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-4 col-md-4">
                     <h5 class="fw-bold mb-3">Contacto</h5>
                     <ul class="list-unstyled">
                         <li class="mb-2">
-                            <i class="bi bi-geo-alt me-2"></i>Av. Principal 123, Ciudad
+                            <i class="bi bi-geo-alt me-2"></i>Av. Tecnológico 456, Ciudad
                         </li>
                         <li class="mb-2">
                             <i class="bi bi-telephone me-2"></i>+1 234 567 8900
                         </li>
                         <li class="mb-2">
-                            <i class="bi bi-envelope me-2"></i>info@taskflow.com
+                            <i class="bi bi-envelope me-2"></i>ventas@stockflow.com
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-headset me-2"></i>Soporte 24/7
                         </li>
                     </ul>
                 </div>
@@ -395,11 +691,12 @@
             <hr class="my-4">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <p class="mb-0">&copy; 2023 TaskFlow. Todos los derechos reservados.</p>
+                    <p class="mb-0">&copy; 2024 StockFlow. Todos los derechos reservados.</p>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <a href="#" class="text-white-50 me-3">Política de Privacidad</a>
-                    <a href="#" class="text-white-50">Términos de Servicio</a>
+                    <a href="#" class="text-white-50 me-3">Términos de Servicio</a>
+                    <a href="#" class="text-white-50">GDPR</a>
                 </div>
             </div>
         </div>

@@ -112,6 +112,17 @@ class SMTPConfigurationForm(forms.ModelForm):
             }),
         }
 
+class AIChatForm(forms.Form):
+    prompt = forms.CharField(
+        label='Pregunta al asistente',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 5,
+            'placeholder': 'Escribe tu consulta aquí...'
+        }),
+        max_length=2000,
+    )
+
 #----------------Login-------------------
 class CustomAuthenticationForm(forms.Form):
     email = forms.EmailField(
@@ -254,18 +265,6 @@ class CompanyForm(forms.ModelForm):
         
 
 #--------------------Formulario de cliente, proveedor y producto-------------------
-from .models import Cliente, Proveedor, Producto
-
-class ClienteForm(forms.ModelForm):
-    class Meta:
-        model = Cliente
-        fields = ['nombre', 'email', 'telefono', 'ciudad']
-        widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Juan Pérez'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Ej: juan@email.com'}),
-            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 555-1234567'}),
-            'ciudad': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Ciudad de México'}),
-        }
 
 class ProveedorForm(forms.ModelForm):
     class Meta:

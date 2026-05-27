@@ -20,11 +20,13 @@ urlpatterns = [
     #----------------------Grupos y permisos----------------------
     path('groups/',GroupListView.as_view(),name='group_list'),
     path('group_create/',GroupCreateView.as_view(),name='group_create'),
+    path('group_delete/<int:pk>/', views.delete_group, name='group_delete'),
     
     #----------------------Suscripciones----------------------
     path('subscription_list/', SubscriptionPlanListView.as_view(), name='subscription_list'),
     path('subscriptions/choose/<int:plan_id>/', SubscriptionChooseView.as_view(), name='subscription_choose'),
     path('subscriptions/detail/', SubscriptionDetailView.as_view(), name='subscription_detail'),
+    path('assistant/', AIChatView.as_view(), name='ai_assistant'),
     
     #----------------------Uuarios----------------------
     path("users/", UserListView.as_view(), name="user_list"),
@@ -44,21 +46,5 @@ urlpatterns = [
     path('api/login/', api_login, name='api_login'),
 
 
-    # URLs para CLIENTES
-    path('clientes/', views.lista_clientes, name='lista_clientes'),
-    path('clientes/crear/', views.crear_cliente, name='crear_cliente'),
-    path('clientes/editar/<int:id>/', views.editar_cliente, name='editar_cliente'),
-    path('clientes/eliminar/<int:id>/', views.eliminar_cliente, name='eliminar_cliente'),
-    
-    # URLs para PROVEEDORES
-    path('proveedores/', views.lista_proveedores, name='lista_proveedores'),
-    path('proveedores/crear/', views.crear_proveedor, name='crear_proveedor'),
-    path('proveedores/editar/<int:id>/', views.editar_proveedor, name='editar_proveedor'),
-    path('proveedores/eliminar/<int:id>/', views.eliminar_proveedor, name='eliminar_proveedor'),
-    
-    # URLs para PRODUCTOS
-    path('productos/', views.lista_productos, name='lista_productos'),
-    path('productos/crear/', views.crear_producto, name='crear_producto'),
-    path('productos/editar/<int:id>/', views.editar_producto, name='editar_producto'),
-    path('productos/eliminar/<int:id>/', views.eliminar_producto, name='eliminar_producto'),
+
 ]

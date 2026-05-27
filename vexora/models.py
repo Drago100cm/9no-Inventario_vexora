@@ -261,29 +261,7 @@ class SMTPConfiguration(models.Model):
 
 #--------------------Clientes, Proveedores y Productos-------------------
 
-class Cliente(models.Model):
-    nombre = models.CharField(max_length=100, verbose_name="Nombre completo")
-    email = models.EmailField(unique=True, verbose_name="Correo electrónico")
-    telefono = models.CharField(max_length=20, verbose_name="Teléfono")
-    ciudad = models.CharField(max_length=100, verbose_name="Ciudad")
-    fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
-    
-    # Opcional: relación con Company para multi-tenencia
-    company = models.ForeignKey(
-        Company,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='clientes'
-    )
-    
-    def __str__(self):
-        return self.nombre
-    
-    class Meta:
-        verbose_name = "Cliente"
-        verbose_name_plural = "Clientes"
-        ordering = ['-fecha_registro']
+
 
 class Proveedor(models.Model):
     nombre = models.CharField(max_length=100, verbose_name="Nombre del Proveedor")

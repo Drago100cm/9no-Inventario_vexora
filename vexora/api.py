@@ -10,7 +10,6 @@ from django.contrib.auth import authenticate
 
 from .models import (
     CustomUser,
-    Cliente,
     Proveedor,
     Producto
 )
@@ -187,36 +186,6 @@ def api_login(request):
         'tokens': tokens
     })
 
-
-# =========================================
-# LISTAR CLIENTES
-# =========================================
-
-@csrf_exempt
-def api_clientes(request):
-
-    if request.method == 'GET':
-
-        clientes = Cliente.objects.all()
-
-        data = []
-
-        for cliente in clientes:
-
-            data.append({
-                'id': cliente.id,
-                'nombre': cliente.nombre,
-                'email': cliente.email,
-                'telefono': cliente.telefono,
-                'ciudad': cliente.ciudad,
-                'fecha_registro': cliente.fecha_registro
-            })
-
-        return JsonResponse(data, safe=False)
-
-    return JsonResponse({
-        'error': 'Método no permitido'
-    }, status=405)
 
 
 # =========================================

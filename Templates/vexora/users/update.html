@@ -143,6 +143,14 @@
                 </label>
               </div>
             {% endif %}
+            {% if request.user.is_superuser %}
+              <div class="form-check mt-4">
+                {{ form.is_active }}
+                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                  Es activo
+                </label>
+              </div>
+            {% endif %}
           </div>
 
         </div>
