@@ -1,75 +1,153 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Products</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%); padding: 20px; min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .btn { display: inline-block; padding: 10px 20px; margin: 5px; border-radius: 5px; text-decoration: none; font-weight: bold; transition: all 0.3s; }
-        .btn-nuevo { background: #28a745; color: white; }
-        .btn-nuevo:hover { background: #218838; transform: translateY(-2px); }
-        .btn-editar { background: #007bff; color: white; }
-        .btn-editar:hover { background: #0056b3; transform: translateY(-2px); }
-        .btn-eliminar { background: #dc3545; color: white; }
-        .btn-eliminar:hover { background: #c82333; transform: translateY(-2px); }
-        .btn-volver { background: #6c757d; color: white; }
-        .btn-volver:hover { background: #5a6268; transform: translateY(-2px); }
-        table { width: 100%; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        th { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #e9d5ff; color: #4c1d95; }
-        tr:hover { background: #f3e8ff; }
-        .menu { background: #f3e8ff; padding: 10px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { color: white; margin: 20px 0 10px 0; }
-        .alert-success { background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #28a745; }
-        .precio { color: #28a745; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🛒 Product Management</h1>
-            <p>Manage your registered products</p>
-        </div>
-        
-        <div class="menu">
-            <a href="{% url 'vexora:home' %}" class="btn btn-volver">🏠 Home</a>
-            <a href="{% url 'vexora:list_users' %}" class="btn btn-volver">👥 Users</a>
-            <a href="{% url 'vexora:list_suppliers' %}" class="btn btn-volver">🏢 Suppliers</a>
-        </div>
-        
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert-success">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-        
-        <h2>Registered Products</h2>
-        <a href="{% url 'vexora:create_product' %}" class="btn btn-nuevo">+ New Product</a>
-        
-        <table>
-            <thead>
-                <tr><th>ID</th><th>Name</th><th>Purchase Date</th><th>Price</th><th>Supplier</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-                {% for product in products %}
-                <tr>
-                    <td>{{ product.id }}</td>
-                    <td><strong>{{ product.name }}</strong></td>
-                    <td>{{ product.purchase_date|date:"d/m/Y" }}</td>
-                    <td class="precio">${{ product.price }}</td>
-                    <td>{{ product.supplier.name }}</td>
-                    <td>
-                        <a href="{% url 'vexora:edit_product' product.id %}" class="btn btn-editar">✏️ Edit</a>
-                        <a href="{% url 'vexora:delete_product' product.id %}" class="btn btn-eliminar">🗑️ Delete</a>
-                    </td>
-                <tr>
-                {% empty %}
-                <tr><td colspan="6" style="text-align: center;">No products registered</td></tr>
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}
+    - Products
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="page-content">
+        <div class="container-fluid">
+            {% block pagetitle %}
+            {% endblock %}
+
+            {% if messages %}
+                {% for m in messages %}
+                    <script>
+                        Swal.fire({
+                            position: 'center',
+                            icon: '{{ m.level_tag }}' == 'error' ? 'error' : 'success',
+                            title: '{{ m }}',
+                            showConfirmButton: false,
+                            timer: 2500
+                        })
+                    </script>
                 {% endfor %}
-            </tbody>
-        </table>
+            {% endif %}
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="bg-light rounded-3 shadow-sm p-3">
+                        <div class="d-flex justify-content-end mb-3">
+                            {% if perms.vexora.add_product %}
+                                <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:product_create' %}')">
+                                    <i class="ri-add-line me-1 align-bottom"></i>
+                                    <span>Add Product</span>
+                                </button>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <div class="input-group input-group-sm" style="max-width: 380px;">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control input-busqueda-global" placeholder="Search in this table..." data-tabla="tabla-products" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="busquedaGlobal.limpiarBusqueda(this.closest('.input-group').querySelector('input'))"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table table-nowrap" id="tabla-products">
+                    <thead>
+                        <tr>
+                            <th data-sort="id">ID</th>
+                            <th data-sort="name">Nombre del producto</th>
+                            <th data-sort="purchase_date">Fecha de compra</th>
+                            <th data-sort="price">Precio</th>
+                            <th data-sort="supplier">Proveedor</th>
+                            <th data-sort="actions">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td>{{ product.id }}</td>
+                                <td><strong>{{ product.name }}</strong></td>
+                                <td>{{ product.purchase_date|date:"Y-m-d" }}</td>
+                                <td class="text-success fw-bold">${{ product.price|floatformat:2 }}</td>
+                                <td>{{ product.supplier.name }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:product_edit' product.id %}')" style="width: 75px;">
+                                        <i class="ri-pencil-fill me-1 align-bottom"></i> Edit
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light" onclick="deleteProduct('{{ product.id }}')" style="width: 85px;">
+                                        <i class="ri-delete-bin-6-fill me-1 align-bottom"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" style="text-align: center;">No products registered</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</body>
-</html>
+</div>
+
+<div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript">
+    function editModal(url) {
+        $('#ModalOptions').load(url, function () {
+            $(this).modal('show');
+        });
+    }
+
+    function deleteProduct(id) {
+        const swalWithBootstrapButtons = Swal.mixin({
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-danger m-3'
+            },
+            buttonsStyling: false
+        });
+
+        Swal.fire({
+            html: '<div class="mt-3"><lord-icon src="https://cdn.lordicon.com/wpyrrmcq.json" trigger="loop" delay="700" colors="primary:#c71f16" style="width:100px;height:100px"></lord-icon><div class="mt-4 pt-2 fs-15 mx-5"><h4>Are you sure?</h4><p class="text-muted mx-4 mb-0">This action cannot be undone!</p></div></div>',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{% url 'vexora:product_delete' 0 %}".replace('0', id);
+            }
+        });
+    }
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+        const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+
+        document.querySelectorAll('th[data-sort]').forEach((th) => {
+            if (!th.querySelector('i')) {
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-sort';
+                th.appendChild(icon);
+            }
+            th.addEventListener('click', function () {
+                const table = this.closest('table');
+                const tbody = table.querySelector('tbody');
+                const index = Array.from(this.parentNode.children).indexOf(this);
+                const asc = this.getAttribute('data-sort-direction') === 'asc';
+                table.querySelectorAll('th[data-sort]').forEach((header) => {
+                    header.removeAttribute('data-sort-direction');
+                    if (header.querySelector('i')) header.querySelector('i').className = 'fas fa-sort';
+                });
+                this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc');
+                this.querySelector('i').className = asc ? 'fas fa-sort-down' : 'fas fa-sort-up';
+                Array.from(tbody.querySelectorAll('tr')).sort(comparer(index, asc)).forEach((tr) => tbody.appendChild(tr));
+            });
+        });
+    });
+</script>
+{% endblock %}
