@@ -10,9 +10,6 @@ from django.contrib.auth import authenticate
 
 from .models import (
     CustomUser,
-    Cliente,
-    Proveedor,
-    Producto
 )
 
 
@@ -187,99 +184,41 @@ def api_login(request):
         'tokens': tokens
     })
 
-
-# =========================================
-# LISTAR CLIENTES
-# =========================================
-
-@csrf_exempt
-def api_clientes(request):
-
-    if request.method == 'GET':
-
-        clientes = Cliente.objects.all()
-
-        data = []
-
-        for cliente in clientes:
-
-            data.append({
-                'id': cliente.id,
-                'nombre': cliente.nombre,
-                'email': cliente.email,
-                'telefono': cliente.telefono,
-                'ciudad': cliente.ciudad,
-                'fecha_registro': cliente.fecha_registro
-            })
-
-        return JsonResponse(data, safe=False)
-
-    return JsonResponse({
-        'error': 'Método no permitido'
-    }, status=405)
-
-
-# =========================================
-# LISTAR PROVEEDORES
-# =========================================
-
-@csrf_exempt
-def api_proveedores(request):
-
-    if request.method == 'GET':
-
-        proveedores = Proveedor.objects.all()
-
-        data = []
-
-        for proveedor in proveedores:
-
-            data.append({
-                'id': proveedor.id,
-                'nombre': proveedor.nombre,
-                'direccion': proveedor.direccion,
-                'telefono': proveedor.telefono,
-                'email': proveedor.email,
-                'fecha_registro': proveedor.fecha_registro
-            })
-
-        return JsonResponse(data, safe=False)
-
-    return JsonResponse({
-        'error': 'Método no permitido'
-    }, status=405)
-
-
-# =========================================
-# LISTAR PRODUCTOS
-# =========================================
+# ========================================
+# Productos y Proveedores
+# ========================================
 
 @csrf_exempt
 def api_productos(request):
 
-    if request.method == 'GET':
+    if request.method != 'POST':
+        return JsonResponse({
+            'error': 'Método no permitido'
+        }, status=405)
 
-        productos = Producto.objects.select_related(
-            'proveedor'
-        ).all()
+    try:
+        data = json.loads(request.body.decode('utf-8'))
 
-        data = []
+    except Exception:
+        return JsonResponse({
+            'error': 'JSON inválido'
+        }, status=400)
 
-        for producto in productos:
+    name = data.get('name')
+    purchase_price = data.get('purchase_price')
+    price = data.get('price')
+    supplier = data.get('supplier')
 
-            data.append({
-                'id': producto.id,
-                'nombre_producto': producto.nombre_producto,
-                'descripcion': producto.descripcion,
-                'fecha_compra': producto.fecha_compra,
-                'precio': str(producto.precio),
-                'stock': producto.stock,
-                'proveedor': producto.proveedor.nombre,
-                'fecha_registro': producto.fecha_registro
-            })
+    if not all([
+        name,
+        purchase_price,
+        price,
+        supplier
+    ]):
+        return JsonResponse({
+            'error': 'Faltan campos requeridos'
+        }, status=400)
+    
+    
 
-        return JsonResponse(data, safe=False)
 
-    return JsonResponse({
-        'error': 'Método no permitido'
-    }, status=405)
