@@ -20,17 +20,44 @@ from django.core.mail import EmailMessage
 from django.core.mail.backends.smtp import (
     EmailBackend
 )
+from django.views import View
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import Group, Permission
+from django.contrib import messages
 
 from .models import Plan, Subscription, payment, PlanFeature
 #---------------------email de bienvenida-------------------
 from vexora.services.email_service import (
     send_welcome_email
 )
+from .services.ai_service import get_ai_response
 # Create your views here.
 
 class HomeView(TemplateView):
     template_name = 'Home/home.html'
 
+
+class AIChatView(LoginRequiredMixin, FormView):
+    template_name = 'vexora/assistant/chat.html'
+    form_class = AIChatForm
+    success_url = reverse_lazy('vexora:ai_assistant')
+
+    def form_valid(self, form):
+        prompt = form.cleaned_data['prompt']
+
+        try:
+            answer = get_ai_response(prompt)
+
+        except Exception as e:
+            answer = f'Error al generar la respuesta: {e}'
+
+        return self.render_to_response(
+            self.get_context_data(
+                form=form,
+                answer=answer,
+                prompt=prompt
+            )
+        )
 
 from .models import SiteConfiguration, SMTPConfiguration
 from .forms import SiteConfigurationForm, SMTPConfigurationForm
@@ -149,22 +176,13 @@ class GroupListView(LoginRequiredMixin,ListView):
 
 
 
-
-
-from django.views import View
-from django.shortcuts import render, redirect
-from django.contrib.auth.models import Group, Permission
-from django.contrib import messages
-
-
 class GroupCreateView(View):
 
     template_name = 'vexora/groups/create.html'
 
     def get(self, request):
 
-        return render(
-            request,
+        return render(request,
             self.template_name
         )
 
@@ -198,6 +216,13 @@ class GroupCreateView(View):
         return redirect(
             'vexora:group_list'
         )
+    
+def delete_group(request, pk):
+    group = get_object_or_404(Group, id=pk)
+    group.delete()
+    messages.success(request, "✅ Grupo eliminado correctamente!")
+    return redirect('vexora:group_list')  # ruta a la lista de grupos
+
 #---------------------Login----------------------
 class CustomLoginView(FormView):
     form_class = CustomAuthenticationForm
@@ -211,6 +236,11 @@ class CustomLoginView(FormView):
             return redirect(self.success_url)
         print("❌ Usuario no autenticado, mostrando formulario")
         return super().dispatch(request, *args, **kwargs)
+    def form_invalid(self, form):
+
+        print("ERRORES LOGIN:", form.errors)
+
+        return super().form_invalid(form)
 
     def form_valid(self, form):
         user = form.get_user()
@@ -377,7 +407,7 @@ class RegisterView(CreateView):
         form.instance.is_active = True
         response = super().form_valid(form)
         # Loguear automáticamente al usuario después del registro
-        send_welcome_email(self.object)  # Enviar email de bienvenida
+        #send_welcome_email(self.object)   Enviar email de bienvenida
         login(self.request, self.object)
         return response
     def form_invalid(self, form):
@@ -438,10 +468,10 @@ class UserUpdateView(LoginRequiredMixin,UpdateView):
         return kwargs
     
     def form_valid(self, form):
-        promesa = self.get_object()
-        promesa.save()
+        print("[UserUpdateView] cleaned_data:", form.cleaned_data)
+        response = super().form_valid(form)
         messages.success(self.request, "✅ Usuario actualizado correctamente!")
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse('vexora:user_list')
@@ -541,10 +571,9 @@ class CompanyUpdateView(LoginRequiredMixin,UpdateView):
         return kwargs
     
     def form_valid(self, form):
-        promesa = self.get_object()
-        promesa.save()
+        response = super().form_valid(form)
         messages.success(self.request, "✅ Empresa actualizada correctamente!")
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse('vexora:company_list')

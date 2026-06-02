@@ -1,0 +1,49 @@
+{% extends 'partials/base.html' %}
+
+{% block title %} - Asistente IA{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">Asistente IA</h2>
+                    <p class="text-muted">Escribe una pregunta y recibe una respuesta generada por IA.</p>
+                </div>
+                <div>
+                    <span class="badge bg-primary">Disponible para usuarios autenticados</span>
+                </div>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ form.prompt.label_tag }}
+                    {{ form.prompt }}
+                    {% if form.prompt.errors %}
+                        <div class="text-danger mt-2">
+                            {% for error in form.prompt.errors %}{{ error }}<br>{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary">Enviar consulta</button>
+            </form>
+
+            {% if answer %}
+                <div class="card bg-opacity-10 bg-secondary text-white mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Respuesta de IA</h5>
+                        <p class="card-text">{{ answer|linebreaksbr }}</p>
+                    </div>
+                </div>
+            {% elif prompt %}
+                <div class="alert alert-warning mt-4" role="alert">
+                    No se pudo obtener una respuesta. Revisa la configuración del asistente.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

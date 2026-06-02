@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import *
 from . import views
-from .api import api_register, api_login
+from .api import *
 from .views import SubscriptionPlanListView, SubscriptionChooseView, SubscriptionDetailView
 app_name = 'vexora'
 urlpatterns = [
@@ -20,11 +20,13 @@ urlpatterns = [
     #----------------------Grupos y permisos----------------------
     path('groups/',GroupListView.as_view(),name='group_list'),
     path('group_create/',GroupCreateView.as_view(),name='group_create'),
+    path('group_delete/<int:pk>/', views.delete_group, name='group_delete'),
     
     #----------------------Suscripciones----------------------
     path('subscription_list/', SubscriptionPlanListView.as_view(), name='subscription_list'),
     path('subscriptions/choose/<int:plan_id>/', SubscriptionChooseView.as_view(), name='subscription_choose'),
     path('subscriptions/detail/', SubscriptionDetailView.as_view(), name='subscription_detail'),
+    path('assistant/', AIChatView.as_view(), name='ai_assistant'),
     
     #----------------------Uuarios----------------------
     path("users/", UserListView.as_view(), name="user_list"),
@@ -37,11 +39,6 @@ urlpatterns = [
     path("company_create", CompanyCreateView.as_view(), name="company_create"),
     path("company_edit/<int:pk>", CompanyUpdateView.as_view(), name="company_edit"),
     path("company_delete/<int:pk>", views.delete_company, name="company_delete"),
-    
-    
-    # API endpoints
-    path('api/register/', api_register, name='api_register'),
-    path('api/login/', api_login, name='api_login'),
 
 
     # ============================================
@@ -58,5 +55,13 @@ urlpatterns = [
     path('products/', views.ProductListView.as_view(), name='list_products'),
     path('products/create/', views.ProductCreateView.as_view(), name='create_product'),
     path('products/edit/<int:id>/', views.ProductUpdateView.as_view(), name='edit_product'),
-    path('products/delete/<int:id>/', views.ProductDeleteView.as_view(), name='delete_product'),
+    path('products/delete/<int:id>/', views.ProductDeleteView.as_view(), name='delete_product'), 
+    
+    
+    # API endpoints
+    path('api/register/', api_register, name='api_register'),
+    path('api/login/', api_login, name='api_login'),
+    path('api/listar_productos/',api_productos, name='api_listar_productos'),
+
+
 ]

@@ -11,6 +11,7 @@ from django.contrib.auth import authenticate
 from .models import (
     CustomUser,
 )
+from .models import *
 
 
 # =========================================
@@ -188,6 +189,42 @@ def api_login(request):
 # Productos y Proveedores
 # ========================================
 
+
+# =========================================
+# LISTAR PROVEEDORES
+# =========================================
+
+@csrf_exempt
+def api_proveedores(request):
+
+    if request.method == 'GET':
+
+        proveedores = Supplier.objects.all()
+
+        data = []
+
+        for proveedor in proveedores:
+
+            data.append({
+                'id': proveedor.id,
+                'nombre': proveedor.nombre,
+                'direccion': proveedor.direccion,
+                'telefono': proveedor.telefono,
+                'email': proveedor.email,
+                'fecha_registro': proveedor.fecha_registro
+            })
+
+        return JsonResponse(data, safe=False)
+
+    return JsonResponse({
+        'error': 'Método no permitido'
+    }, status=405)
+
+
+# =========================================
+# LISTAR PRODUCTOS
+# =========================================
+
 @csrf_exempt
 def api_productos(request):
 
@@ -198,6 +235,9 @@ def api_productos(request):
 
     try:
         data = json.loads(request.body.decode('utf-8'))
+        productos = Product.objects.select_related(
+            'supplier'
+        ).all()
 
     except Exception:
         return JsonResponse({
@@ -220,5 +260,15 @@ def api_productos(request):
         }, status=400)
     
     
+        data.append({
+            'id': producto.id,
+                'nombre_producto': producto.nombre_producto,
+                'descripcion': producto.descripcion,
+                'fecha_compra': producto.fecha_compra,
+                'precio': str(producto.precio),
+                'stock': producto.stock,
+                'proveedor': producto.supplier.nombre,
+                'fecha_registro': producto.fecha_registro
+            })
 
 

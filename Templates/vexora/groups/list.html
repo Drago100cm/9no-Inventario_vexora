@@ -278,8 +278,8 @@
             if(result.isConfirmed){
 
                 window.location.href =
-                    "#"
-                    .replace('0', id)
+                    '{% url "vexora:group_delete" 0 %}'
+                .replace('0', id)
 
             }
 

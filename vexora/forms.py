@@ -112,6 +112,17 @@ class SMTPConfigurationForm(forms.ModelForm):
             }),
         }
 
+class AIChatForm(forms.Form):
+    prompt = forms.CharField(
+        label='Pregunta al asistente',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 5,
+            'placeholder': 'Escribe tu consulta aquí...'
+        }),
+        max_length=2000,
+    )
+
 #----------------Login-------------------
 class CustomAuthenticationForm(forms.Form):
     email = forms.EmailField(
@@ -252,6 +263,7 @@ class CompanyForm(forms.ModelForm):
         model = Company
         fields = ["name", "address", "phone", "email"]
         
+
 
 # ============================================
 # SUPPLIER AND PRODUCT FORMS

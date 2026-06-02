@@ -8,6 +8,10 @@ SIDEBAR.HTML
 
     <aside class="sidebar">
 
+        <!-- =========================
+        HEADER
+        ========================= -->
+
         <div class="sidebar-header">
 
             {% if site_config.logo %}
@@ -36,49 +40,67 @@ SIDEBAR.HTML
 
         </div>
 
+        <!-- =========================
+        MENU
+        ========================= -->
+
         {% with url_name=request.resolver_match.url_name %}
 
         <nav class="sidebar-menu">
 
+            <!-- Inicio -->
+
             <a href="{% url 'vexora:home' %}"
                class="menu-item {% if url_name == 'home' %}active{% endif %}">
 
-                <i class="fas fa-home"></i>
+                <i class="fas fa-house"></i>
+
                 <span>Inicio</span>
 
             </a>
+
+            <!-- SMTP -->
 
             {% if "vexora.view_customuser" in request.user.get_all_permissions %}
 
             <a href="{% url 'vexora:smtp_configuration' %}"
                class="menu-item {% if url_name == 'smtp_configuration' %}active{% endif %}">
 
-                <i class="fas fa-users"></i>
-                <span>Smpt</span>
+                <i class="fas fa-envelope"></i>
+
+                <span>SMTP</span>
 
             </a>
 
             {% endif %}
+
+            <!-- Usuarios -->
+
             {% if "vexora.view_customuser" in request.user.get_all_permissions %}
 
             <a href="{% url 'vexora:user_list' %}"
                class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
 
                 <i class="fas fa-users"></i>
+
                 <span>Usuarios</span>
 
             </a>
 
             {% endif %}
 
+            <!-- Grupos -->
+
             <a href="{% url 'vexora:group_list' %}"
                class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
 
-                <i class="fas fa-users"></i>
+                <i class="fas fa-user-group"></i>
+
                 <span>Grupos</span>
 
             </a>
 
+            <!-- Empresas -->
 
             {% if "vexora.view_company" in request.user.get_all_permissions %}
 
@@ -86,30 +108,37 @@ SIDEBAR.HTML
                class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
 
                 <i class="fas fa-building"></i>
+
                 <span>Empresas</span>
 
             </a>
 
             {% endif %}
 
+            <!-- Suscripción -->
+
             {% if request.user.is_authenticated and request.user.company %}
 
             <a href="{% url 'vexora:subscription_list' %}"
                class="menu-item {% if url_name == 'subscription_list' or url_name == 'subscription_detail' %}active{% endif %}">
 
-                <i class="fas fa-star"></i>
+                <i class="fas fa-crown"></i>
+
                 <span>Suscripción</span>
 
             </a>
 
             {% endif %}
 
+            <!-- Configuración -->
+
             {% if "vexora.view_siteconfiguration" in request.user.get_all_permissions %}
 
             <a href="{% url 'vexora:site_configuration' %}"
                class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}">
 
-                <i class="fas fa-cog"></i>
+                <i class="fas fa-gear"></i>
+
                 <span>Configuración</span>
 
             </a>
@@ -124,6 +153,10 @@ SIDEBAR.HTML
 
 </div>
 
+<!-- =========================
+STYLES
+========================= -->
+
 <style>
 
 .sidebar-container{
@@ -131,6 +164,7 @@ SIDEBAR.HTML
     position:fixed;
 
     top:0;
+
     left:0;
 
     width:var(--sidebar-width);
@@ -171,6 +205,7 @@ SIDEBAR.HTML
 .sidebar-logo{
 
     width:90px;
+
     height:90px;
 
     border-radius:20px;
@@ -187,11 +222,17 @@ SIDEBAR.HTML
     color:white;
 
     font-weight:800;
+
+    font-size:24px;
+
+    margin-bottom:5px;
 }
 
 .sidebar-subtitle{
 
     color:rgba(255,255,255,.5);
+
+    font-size:14px;
 }
 
 .sidebar-menu{
@@ -220,6 +261,8 @@ SIDEBAR.HTML
     border-radius:16px;
 
     transition:.3s ease;
+
+    font-weight:500;
 }
 
 .menu-item:hover{
@@ -247,6 +290,10 @@ SIDEBAR.HTML
 .menu-item i{
 
     font-size:18px;
+
+    width:22px;
+
+    text-align:center;
 }
 
 @media(max-width:991px){
