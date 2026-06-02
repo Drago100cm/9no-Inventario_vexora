@@ -8,11 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
 
-from .models import (
-    CustomUser,
-    Proveedor,
-    Producto
-)
+from .models import *
 
 
 # =========================================
@@ -197,7 +193,7 @@ def api_proveedores(request):
 
     if request.method == 'GET':
 
-        proveedores = Proveedor.objects.all()
+        proveedores = Supplier.objects.all()
 
         data = []
 
@@ -228,8 +224,8 @@ def api_productos(request):
 
     if request.method == 'GET':
 
-        productos = Producto.objects.select_related(
-            'proveedor'
+        productos = Product.objects.select_related(
+            'supplier'
         ).all()
 
         data = []
@@ -243,7 +239,7 @@ def api_productos(request):
                 'fecha_compra': producto.fecha_compra,
                 'precio': str(producto.precio),
                 'stock': producto.stock,
-                'proveedor': producto.proveedor.nombre,
+                'proveedor': producto.supplier.nombre,
                 'fecha_registro': producto.fecha_registro
             })
 
