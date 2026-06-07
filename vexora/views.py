@@ -27,6 +27,7 @@ from vexora.services.email_service import (send_welcome_email)
 from .services.ai_service import get_ai_response
 from .models import SiteConfiguration, SMTPConfiguration
 from .forms import SiteConfigurationForm, SMTPConfigurationForm
+
 # Create your views here.
 
 class HomeView(TemplateView):
@@ -673,7 +674,7 @@ class ProductListView(LoginRequiredMixin, ListView):
 class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
-    template_name = 'vexora/products/form.html'
+    template_name = 'vexora/products/create.html'
 
     def form_valid(self, form):
         messages.success(self.request, "✅ Product created successfully!")
@@ -691,7 +692,7 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
 class ProductUpdateView(LoginRequiredMixin, UpdateView):
     model = Product
     form_class = ProductForm
-    template_name = 'vexora/products/form.html'
+    template_name = 'vexora/products/update.html'
     pk_url_kwarg = 'id'
 
     def form_valid(self, form):
@@ -719,4 +720,53 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['type'] = 'product'
+        return context
+
+# =====================================
+# SALES VIEWS (Ventas)
+# =====================================
+
+class SalesListView(LoginRequiredMixin, ListView):
+    model = Sale
+    template_name = 'vexora/sales/list.html'
+    context_object_name = 'sales'
+
+    def get_queryset(self):
+        return Sale.objects.all().order_by('-date')
+
+
+class SalesCreateView(LoginRequiredMixin, CreateView):
+    model = Sale
+    form_class = SalesForm
+    template_name = 'vexora/sales/create.html'
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Sale created successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_sales')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'New Sale'
+        return context
+
+
+class SalesUpdateView(LoginRequiredMixin, UpdateView):
+    model = Sale
+    form_class = SalesForm
+    template_name = 'vexora/sales/update.html'
+    pk_url_kwarg = 'id'
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Sale updated successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_sales')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit Sale'
         return context

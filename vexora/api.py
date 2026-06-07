@@ -199,7 +199,7 @@ def api_proveedores(request):
 
     if request.method == 'GET':
 
-        proveedores = proveedores.objects.all()
+        proveedores = Supplier.objects.all()
 
         data = []
 
@@ -207,11 +207,11 @@ def api_proveedores(request):
 
             data.append({
                 'id': proveedor.id,
-                'nombre': proveedor.nombre,
-                'direccion': proveedor.direccion,
-                'telefono': proveedor.telefono,
-                'email': proveedor.email,
-                'fecha_registro': proveedor.fecha_registro
+                'name': proveedor.name,
+                'address': proveedor.address,
+                'company': proveedor.company.id if proveedor.company else None,
+                'company_name': proveedor.company.name if proveedor.company else None
+                
             })
 
         return JsonResponse(data, safe=False)
@@ -228,6 +228,37 @@ def api_proveedores(request):
 @csrf_exempt
 def api_productos(request):
 
+    if request.method != 'GET':
+        return JsonResponse({
+            'error': 'Método no permitido'
+        }, status=405)
+
+    # Obtener todos los productos con su proveedor relacionado
+    productos = Product.objects.select_related('supplier').all()
+
+    data = []
+
+    for producto in productos:
+        data.append({
+            'id': producto.id,
+            'name': producto.name,  
+            'purchase_date': producto.purchase_date,  
+            'price': str(producto.price),  
+            'supplier': producto.supplier.name,
+            'supplier_id': producto.supplier.id,
+            'company': producto.company.id if producto.company else None,
+            'company_name': producto.company.name if producto.company else None
+        })
+
+    return JsonResponse(data, safe=False)
+
+# =========================================
+# CREAR PRODUCTO
+# =========================================
+
+@csrf_exempt
+def api_crear_producto(request):
+
     if request.method != 'POST':
         return JsonResponse({
             'error': 'Método no permitido'
@@ -235,40 +266,298 @@ def api_productos(request):
 
     try:
         data = json.loads(request.body.decode('utf-8'))
-        productos = Product.objects.select_related(
-            'supplier'
-        ).all()
-
     except Exception:
         return JsonResponse({
             'error': 'JSON inválido'
         }, status=400)
 
     name = data.get('name')
-    purchase_price = data.get('purchase_price')
+    purchase_date = data.get('purchase_date')
     price = data.get('price')
-    supplier = data.get('supplier')
+    supplier_id = data.get('supplier')
+    company_id = data.get('company')
 
-    if not all([
-        name,
-        purchase_price,
-        price,
-        supplier
-    ]):
+    if not all([name, purchase_date, price, supplier_id]):
         return JsonResponse({
-            'error': 'Faltan campos requeridos'
+            'error': 'Faltan campos requeridos (name, purchase_date, price, supplier)'
         }, status=400)
-    
-    
-        data.append({
+
+    # Validar proveedor
+    try:
+        supplier = Supplier.objects.get(id=supplier_id)
+    except Supplier.DoesNotExist:
+        return JsonResponse({
+            'error': 'Proveedor no encontrado'
+        }, status=404)
+
+    # Validar company si se envía
+    company = None
+    if company_id:
+        try:
+            company = Company.objects.get(id=company_id)
+        except Company.DoesNotExist:
+            return JsonResponse({
+                'error': 'Empresa no encontrada'
+            }, status=404)
+
+    producto = Product.objects.create(
+        name=name,
+        purchase_date=purchase_date,
+        price=price,
+        supplier=supplier,
+        company=company
+    )
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Producto creado correctamente',
+        'producto': {
             'id': producto.id,
-                'nombre_producto': producto.nombre_producto,
-                'descripcion': producto.descripcion,
-                'fecha_compra': producto.fecha_compra,
-                'precio': str(producto.precio),
-                'stock': producto.stock,
-                'proveedor': producto.supplier.nombre,
-                'fecha_registro': producto.fecha_registro
-            })
+            'name': producto.name,
+            'purchase_date': producto.purchase_date,
+            'price': str(producto.price),
+            'supplier': producto.supplier.name,
+            'supplier_id': producto.supplier.id,
+            'company': producto.company.id if producto.company else None,
+            'company_name': producto.company.name if producto.company else None
+        }
+    }, status=201)
 
 
+# =========================================
+# EDITAR PRODUCTO
+# =========================================
+
+@csrf_exempt
+def api_product_update(request, producto_id):
+
+    if request.method != 'PUT':
+        return JsonResponse({
+            'error': 'Método no permitido. Use PUT'
+        }, status=405)
+
+    try:
+        producto = Product.objects.get(id=producto_id)
+    except Product.DoesNotExist:
+        return JsonResponse({
+            'error': 'Producto no encontrado'
+        }, status=404)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({
+            'error': 'JSON inválido'
+        }, status=400)
+
+    # Actualizar campos
+    if 'name' in data:
+        producto.name = data['name']
+    if 'purchase_date' in data:
+        producto.purchase_date = data['purchase_date']
+    if 'price' in data:
+        producto.price = data['price']
+    if 'supplier' in data:
+        try:
+            producto.supplier = Supplier.objects.get(id=data['supplier'])
+        except Supplier.DoesNotExist:
+            return JsonResponse({
+                'error': 'Proveedor no encontrado'
+            }, status=404)
+    if 'company' in data:
+        company_id = data['company']
+        if company_id:
+            try:
+                producto.company = Company.objects.get(id=company_id)
+            except Company.DoesNotExist:
+                return JsonResponse({
+                    'error': 'Empresa no encontrada'
+                }, status=404)
+        else:
+            producto.company = None
+
+    producto.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Producto actualizado correctamente',
+        'producto': {
+            'id': producto.id,
+            'name': producto.name,
+            'purchase_date': producto.purchase_date,
+            'price': str(producto.price),
+            'supplier': producto.supplier.name,
+            'supplier_id': producto.supplier.id,
+            'company': producto.company.id if producto.company else None,
+            'company_name': producto.company.name if producto.company else None
+        }
+    })
+
+
+# =========================================
+# ELIMINAR PRODUCTO
+# =========================================
+
+@csrf_exempt
+def api_product_delete(request, producto_id):
+
+    if request.method != 'DELETE':
+        return JsonResponse({
+            'error': 'Método no permitido. Use DELETE'
+        }, status=405)
+
+    try:
+        producto = Product.objects.get(id=producto_id)
+    except Product.DoesNotExist:
+        return JsonResponse({
+            'error': 'Producto no encontrado'
+        }, status=404)
+
+    producto.delete()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Producto eliminado correctamente'
+    })
+
+# =========================================
+# CREAR PROVEEDOR
+# =========================================
+
+@csrf_exempt
+def api_crear_proveedor(request):
+
+    if request.method != 'POST':
+        return JsonResponse({
+            'error': 'Método no permitido'
+        }, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({
+            'error': 'JSON inválido'
+        }, status=400)
+
+    name = data.get('name')
+    address = data.get('address')
+    company_id = data.get('company')
+
+    if not all([name, address]):
+        return JsonResponse({
+            'error': 'Faltan campos requeridos (name, address)'
+        }, status=400)
+
+    company = None
+
+    if company_id:
+        try:
+            company = Company.objects.get(id=company_id)
+        except Company.DoesNotExist:
+            return JsonResponse({
+                'error': 'Empresa no encontrada'
+            }, status=404)
+
+    proveedor = Supplier.objects.create(
+        name=name,
+        address=address,
+        company=company
+    )
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Proveedor creado correctamente',
+        'proveedor': {
+            'id': proveedor.id,
+            'name': proveedor.name,
+            'address': proveedor.address,
+            'company': proveedor.company.id if proveedor.company else None,
+            'company_name': proveedor.company.name if proveedor.company else None
+        }
+    }, status=201)
+
+# =========================================
+# EDITAR PROVEEDOR
+# =========================================
+
+@csrf_exempt
+def api_supplier_update(request, supplier_id):
+
+    if request.method != 'PUT':
+        return JsonResponse({
+            'error': 'Método no permitido. Use PUT'
+        }, status=405)
+
+    try:
+        proveedor = Supplier.objects.get(id=supplier_id)
+    except Supplier.DoesNotExist:
+        return JsonResponse({
+            'error': 'Proveedor no encontrado'
+        }, status=404)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({
+            'error': 'JSON inválido'
+        }, status=400)
+
+    if 'name' in data:
+        proveedor.name = data['name']
+
+    if 'address' in data:
+        proveedor.address = data['address']
+
+    if 'company' in data:
+
+        company_id = data['company']
+
+        if company_id:
+            try:
+                proveedor.company = Company.objects.get(id=company_id)
+            except Company.DoesNotExist:
+                return JsonResponse({
+                    'error': 'Empresa no encontrada'
+                }, status=404)
+        else:
+            proveedor.company = None
+
+    proveedor.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Proveedor actualizado correctamente',
+        'proveedor': {
+            'id': proveedor.id,
+            'name': proveedor.name,
+            'address': proveedor.address,
+            'company': proveedor.company.id if proveedor.company else None,
+            'company_name': proveedor.company.name if proveedor.company else None
+        }
+    })
+
+# =========================================
+# ELIMINAR PROVEEDOR
+# =========================================
+
+@csrf_exempt
+def api_supplier_delete(request, supplier_id):
+
+    if request.method != 'DELETE':
+        return JsonResponse({
+            'error': 'Método no permitido. Use DELETE'
+        }, status=405)
+
+    try:
+        proveedor = Supplier.objects.get(id=supplier_id)
+    except Supplier.DoesNotExist:
+        return JsonResponse({
+            'error': 'Proveedor no encontrado'
+        }, status=404)
+
+    proveedor.delete()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Proveedor eliminado correctamente'
+    })

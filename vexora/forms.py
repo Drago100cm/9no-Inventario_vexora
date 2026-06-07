@@ -277,43 +277,71 @@ class CompanyForm(forms.ModelForm):
 # SUPPLIER FORM
 # ============================================
 class SupplierForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['name'].widget.attrs.update({
+            'class': 'form-control',
+        })
+
+        self.fields['address'].widget.attrs.update({
+            'class': 'form-control',
+        })
+
     class Meta:
         model = Supplier
-        fields = ['name', 'address']
-        widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., XYZ Distributors'
-            }),
-            'address': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., 123 Main Street'
-            }),
-        }
+        fields = ["name", "address"]
 
 
 # ============================================
 # PRODUCT FORM
 # ============================================
 class ProductForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['name'].widget.attrs.update({
+            'class': 'form-control',
+        })
+
+        self.fields['purchase_date'].widget.attrs.update({
+            'class': 'form-control',
+            'type': 'date'
+        })
+
+        self.fields['price'].widget.attrs.update({
+            'class': 'form-control',
+            'step': '0.01',
+        })
+
+        self.fields['supplier'].widget.attrs.update({
+            'class': 'form-control'
+        })
+
     class Meta:
         model = Product
-        fields = ['name', 'purchase_date', 'price', 'supplier']
-        widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., HP Laptop'
-            }),
-            'purchase_date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'price': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'placeholder': 'e.g., 599.99'
-            }),
-            'supplier': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-        }
+        fields = ["name", "purchase_date", "price", "supplier"]
+                
+#---------------ventas
+class SalesForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['company'].widget.attrs.update({
+            'class': 'form-control selectpicker',
+            'data-live-search': 'true',
+        })
+        self.fields['customer_name'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        self.fields['customer_email'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        self.fields['customer_phone'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        
+    
+    class Meta:
+        model = Sale
+        fields = ["company", "customer_name", "customer_email", "customer_phone"]

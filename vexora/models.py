@@ -362,4 +362,65 @@ class Product(models.Model):
             models.Index(fields=['company', 'sku']),
             models.Index(fields=['company', 'barcode']),
         ]
+
+# ========== SALE MODEL (Ventas) ==========
+
+class Sale(models.Model):
+    STATUS_CHOICES = (
+        ('draft', 'Borrador'),
+        ('pending', 'Pendiente'),
+        ('completed', 'Completada'),
+        ('cancelled', 'Cancelada'),
+    )
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='sales')
+    customer_name = models.CharField(max_length=150, blank=True, null=True)
+    customer_email = models.EmailField(blank=True, null=True)
+    customer_phone = models.CharField(max_length=20, blank=True, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='sales')
+    invoice_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    date = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    discount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    campo_pureba_1 = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.invoice_number or f"Venta #{self.id}"
+
+    def calculate_totals(self):
+        items = self.items.all()
+        subtotal = sum((item.total_price or 0) for item in items)
+        self.subtotal = subtotal
+        self.total = subtotal + self.tax - self.discount
+        return self.total
+
+
+class SaleItem(models.Model):
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='sale_items')
+    description = models.CharField(max_length=255, blank=True, null=True)
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.unit_price and self.product is not None:
+            self.unit_price = self.product.sale_price or self.product.price
+        self.total_price = (self.unit_price * self.quantity) - self.discount
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        product_name = self.product.name if self.product else self.description or 'Detalle de venta'
+        return f"{product_name} x {self.quantity}"
+
+    class Meta:
+        ordering = ['-id']
         

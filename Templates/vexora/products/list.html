@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-    - Products
+    - Productos
 {% endblock %}
 
 {% block content %}
@@ -69,7 +69,7 @@
                                 <td class="text-success fw-bold">${{ product.price|floatformat:2 }}</td>
                                 <td>{{ product.supplier.name }}</td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:product_edit' product.id %}')" style="width: 75px;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:edit_supplier' product.id %}')" style="width: 75px;">
                                         <i class="ri-pencil-fill me-1 align-bottom"></i> Edit
                                     </button>
                                     <button type="button" class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light" onclick="deleteProduct('{{ product.id }}')" style="width: 85px;">
