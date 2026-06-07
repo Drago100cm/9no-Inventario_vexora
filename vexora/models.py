@@ -1,6 +1,7 @@
 # Create your models here.
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
+from django.urls import reverse
 from config import settings
 from django.utils import timezone
 from django.utils.text import slugify
@@ -29,8 +30,11 @@ class Company(models.Model):
     )
 
     def __str__(self):
-
         return self.name
+
+    def get_absolute_url(self):
+        return reverse('vexora:company_detail', kwargs={'slug': self.slug})
+
 #--- Models para la configuración del sitio y el usuario personalizado
 class SiteConfiguration(models.Model):
     company = models.OneToOneField(Company,on_delete=models.CASCADE,null=True,blank=True)
@@ -259,9 +263,49 @@ class SMTPConfiguration(models.Model):
         auto_now_add=True
     )
 
-# ============================================
-# SUPPLIER AND PRODUCT MODELS
-# ============================================
+#==============tags=====================
+class Tag(models.Model):
+
+    name = models.CharField(max_length=50)
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='tags'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['company', 'name'],
+                name='unique_tag_per_company'
+            )
+        ]
+
+    def __str__(self):
+        return self.name
+
+class Category(models.Model):
+
+    name = models.CharField(max_length=50)
+    description = models.TextField(blank=True,null=True)
+    company = models.ForeignKey(Company,on_delete=models.CASCADE,related_name='categories')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['company', 'name'],
+                name='unique_category_per_company'
+            )
+        ]
+
+    def __str__(self):
+        return self.name
 
 # ========== SUPPLIER MODEL (Proveedores) ==========
 class Supplier(models.Model):
@@ -280,8 +324,12 @@ class Supplier(models.Model):
         return self.name
     
     class Meta:
-        verbose_name = "Supplier"
-        verbose_name_plural = "Suppliers"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['company', 'name'],
+                name='unique_supplier_per_company'
+            )
+        ]
 
 
 # ========== PRODUCT MODEL (Productos) ==========
@@ -290,23 +338,28 @@ class Product(models.Model):
     name = models.CharField(max_length=150, verbose_name="Product name")
     purchase_date = models.DateField(verbose_name="Purchase date")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Price")
-    supplier = models.ForeignKey(
-        Supplier,
-        on_delete=models.CASCADE,
-        related_name='products',
-        verbose_name="Supplier"
-    )
-    company = models.ForeignKey(
-        Company,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='products'
-    )
-    
+    supplier = models.ForeignKey(Supplier,on_delete=models.CASCADE,related_name='products',verbose_name="Supplier")
+    company = models.ForeignKey(Company,on_delete=models.CASCADE,null=True,blank=True,related_name='products')
+    category = models.ForeignKey(Category,on_delete=models.SET_NULL,null=True,blank=True,related_name='products',verbose_name="Category")
+    tags = models.ManyToManyField(Tag, blank=True, related_name='products', verbose_name="Tags")
+    stock = models.IntegerField(default=0, verbose_name="Stock")
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Sale price")
+    sku = models.CharField(max_length=50, blank=True, null=True, verbose_name="SKU")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    min_stock = models.IntegerField(default=0, verbose_name="Minimum stock")
+    image = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Product image")
+    is_active = models.BooleanField(default=True, verbose_name="Active")
+    barcode = models.CharField(max_length=100, blank=True, null=True, verbose_name="Barcode", db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f"{self.name} - {self.supplier.name}"
     
     class Meta:
         verbose_name = "Product"
         verbose_name_plural = "Products"
+        indexes = [
+            models.Index(fields=['company', 'name']),
+            models.Index(fields=['company', 'sku']),
+            models.Index(fields=['company', 'barcode']),
+        ]
+        

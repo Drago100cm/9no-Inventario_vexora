@@ -46,106 +46,75 @@ SIDEBAR.HTML
 
         {% with url_name=request.resolver_match.url_name %}
 
-        <nav class="sidebar-menu">
+<nav class="sidebar-menu">
 
-            <!-- Inicio -->
+    <!-- Inicio -->
+    <a href="{% url 'vexora:home' %}"
+       class="menu-item {% if url_name == 'home' %}active{% endif %}">
+        <i class="fas fa-house"></i>
+        <span>Inicio</span>
+    </a>
 
-            <a href="{% url 'vexora:home' %}"
-               class="menu-item {% if url_name == 'home' %}active{% endif %}">
+    <!-- Usuarios -->
+    {% if "vexora.view_customuser" in request.user.get_all_permissions %}
+    <a href="{% url 'vexora:user_list' %}"
+       class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
+        <i class="fas fa-users"></i>
+        <span>Usuarios</span>
+    </a>
+    {% endif %}
 
-                <i class="fas fa-house"></i>
+    <!-- Grupos -->
+    <a href="{% url 'vexora:group_list' %}"
+       class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
+        <i class="fas fa-user-group"></i>
+        <span>Grupos</span>
+    </a>
 
-                <span>Inicio</span>
+    <!-- Empresas -->
+    {% if "vexora.view_company" in request.user.get_all_permissions %}
+    <a href="{% url 'vexora:company_list' %}"
+       class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
+        <i class="fas fa-building"></i>
+        <span>Empresas</span>
+    </a>
+    {% endif %}
 
-            </a>
+    {% if request.user.is_authenticated and request.user.company %}
 
-            <!-- SMTP -->
+        <!-- Productos -->
+        <a href="{% url 'vexora:list_products' %}"
+           class="menu-item {% if url_name == 'list_products' %}active{% endif %}">
+            <i class="fas fa-box-open"></i>
+            <span>Productos</span>
+        </a>
 
-            {% if "vexora.view_customuser" in request.user.get_all_permissions %}
+        <!-- Proveedores -->
+        <a href="{% url 'vexora:list_suppliers' %}"
+           class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
+            <i class="fas fa-truck-field"></i>
+            <span>Proveedores</span>
+        </a>
 
-            <a href="{% url 'vexora:smtp_configuration' %}"
-               class="menu-item {% if url_name == 'smtp_configuration' %}active{% endif %}">
+        <!-- Suscripción -->
+        <a href="{% url 'vexora:subscription_list' %}"
+           class="menu-item {% if url_name == 'subscription_list' or url_name == 'subscription_detail' %}active{% endif %}">
+            <i class="fas fa-crown"></i>
+            <span>Suscripción</span>
+        </a>
 
-                <i class="fas fa-envelope"></i>
+    {% endif %}
 
-                <span>SMTP</span>
+    <!-- Configuración -->
+    {% if "vexora.view_siteconfiguration" in request.user.get_all_permissions %}
+    <a href="{% url 'vexora:site_configuration' %}"
+       class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}">
+        <i class="fas fa-gear"></i>
+        <span>Configuración</span>
+    </a>
+    {% endif %}
 
-            </a>
-
-            {% endif %}
-
-            <!-- Usuarios -->
-
-            {% if "vexora.view_customuser" in request.user.get_all_permissions %}
-
-            <a href="{% url 'vexora:user_list' %}"
-               class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
-
-                <i class="fas fa-users"></i>
-
-                <span>Usuarios</span>
-
-            </a>
-
-            {% endif %}
-
-            <!-- Grupos -->
-
-            <a href="{% url 'vexora:group_list' %}"
-               class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
-
-                <i class="fas fa-user-group"></i>
-
-                <span>Grupos</span>
-
-            </a>
-
-            <!-- Empresas -->
-
-            {% if "vexora.view_company" in request.user.get_all_permissions %}
-
-            <a href="{% url 'vexora:company_list' %}"
-               class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
-
-                <i class="fas fa-building"></i>
-
-                <span>Empresas</span>
-
-            </a>
-
-            {% endif %}
-
-            <!-- Suscripción -->
-
-            {% if request.user.is_authenticated and request.user.company %}
-
-            <a href="{% url 'vexora:subscription_list' %}"
-               class="menu-item {% if url_name == 'subscription_list' or url_name == 'subscription_detail' %}active{% endif %}">
-
-                <i class="fas fa-crown"></i>
-
-                <span>Suscripción</span>
-
-            </a>
-
-            {% endif %}
-
-            <!-- Configuración -->
-
-            {% if "vexora.view_siteconfiguration" in request.user.get_all_permissions %}
-
-            <a href="{% url 'vexora:site_configuration' %}"
-               class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}">
-
-                <i class="fas fa-gear"></i>
-
-                <span>Configuración</span>
-
-            </a>
-
-            {% endif %}
-
-        </nav>
+</nav>
 
         {% endwith %}
 

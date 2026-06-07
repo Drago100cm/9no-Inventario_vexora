@@ -258,11 +258,15 @@ class CompanyForm(forms.ModelForm):
         self.fields['email'].widget.attrs.update({
             'class': 'form-control'
         })
+        self.fields['slug'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        
     
     class Meta:
         model = Company
-        fields = ["name", "address", "phone", "email"]
-        
+        fields = ["name", "address", "phone", "email", "slug"]
+
 
 
 # ============================================

@@ -31,9 +31,9 @@
                     <div class="bg-light rounded-3 shadow-sm p-3">
                         <div class="d-flex justify-content-end mb-3">
                             {% if perms.vexora.add_supplier %}
-                                <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:supplier_create' %}')">
+                                <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:create_supplier' %}')">
                                     <i class="ri-add-line me-1 align-bottom"></i>
-                                    <span>Add Supplier</span>
+                                    <span>Crear proveedor</span>
                                 </button>
                             {% endif %}
                         </div>
@@ -67,7 +67,7 @@
                                 <td>{{ supplier.address|default:"No address" }}</td>
                                 <td>{{ supplier.products.count }}</td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:supplier_edit' supplier.id %}')" style="width: 75px;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:edit_supplier' supplier.id %}')" style="width: 75px;">
                                         <i class="ri-pencil-fill me-1 align-bottom"></i> Edit
                                     </button>
                                     <button type="button" class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light" onclick="deleteSupplier('{{ supplier.id }}')" style="width: 85px;">
@@ -115,7 +115,7 @@
             reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = "{% url 'vexora:supplier_delete' 0 %}".replace('0', id);
+                window.location.href = "{% url 'vexora:delete_supplier' 0 %}".replace('0', id);
             }
         });
     }

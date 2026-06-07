@@ -31,7 +31,7 @@
                     <div class="bg-light rounded-3 shadow-sm p-3">
                         <div class="d-flex justify-content-end mb-3">
                             {% if perms.vexora.add_product %}
-                                <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:product_create' %}')">
+                                <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:create_product' %}')">
                                     <i class="ri-add-line me-1 align-bottom"></i>
                                     <span>Add Product</span>
                                 </button>
@@ -117,7 +117,7 @@
             reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = "{% url 'vexora:product_delete' 0 %}".replace('0', id);
+                window.location.href = "{% url 'vexora:delete_product' 0 %}".replace('0', id);
             }
         });
     }

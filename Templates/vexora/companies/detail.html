@@ -1,0 +1,53 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}
+- Empresa: {{ company.name }}
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="page-content">
+        <div class="container-fluid">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="bg-light rounded-3 shadow-sm p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h4 class="mb-1">{{ company.name }}</h4>
+                                <p class="text-muted mb-0">Slug: {{ company.slug }}</p>
+                            </div>
+                            <div>
+                                <a href="{% url 'vexora:company_list' %}" class="btn btn-secondary btn-sm">Volver a Empresas</a>
+                                <a href="{% url 'vexora:company_edit' company.id %}" class="btn btn-primary btn-sm">Editar</a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h6>Correo electrónico</h6>
+                                <p>{{ company.email|default:'No definido' }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h6>Teléfono</h6>
+                                <p>{{ company.phone|default:'No definido' }}</p>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <h6>Dirección</h6>
+                                <p>{{ company.address|default:'No definida' }}</p>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <h6>Propietario</h6>
+                                <p>{{ company.owner.first_name }} {{ company.owner.last_name }}{% if not company.owner.first_name and not company.owner.last_name %}{{ company.owner.email }}{% endif %}</p>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <h6>Creada</h6>
+                                <p>{{ company.created_at|date:'d M Y H:i' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

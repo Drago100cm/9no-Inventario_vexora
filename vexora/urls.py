@@ -36,6 +36,7 @@ urlpatterns = [
     path('profil/<int:pk>/', ProfileView.as_view(), name='profil'),
     #----------------------Empresas----------------------
     path("companies/", CompanyListView.as_view(), name="company_list"),
+    path("company/<slug:slug>/", CompanyDetailView.as_view(), name="company_detail"),
     path("company_create", CompanyCreateView.as_view(), name="company_create"),
     path("company_edit/<int:pk>", CompanyUpdateView.as_view(), name="company_edit"),
     path("company_delete/<int:pk>", views.delete_company, name="company_delete"),
@@ -47,12 +48,12 @@ urlpatterns = [
     path('suppliers/', views.SupplierListView.as_view(), name='list_suppliers'),
     path('suppliers/create/', views.SupplierCreateView.as_view(), name='create_supplier'),
     path('suppliers/edit/<int:id>/', views.SupplierUpdateView.as_view(), name='edit_supplier'),
-    path('suppliers/delete/<int:id>/', views.SupplierDeleteView.as_view(), name='delete_supplier'),
+    path('suppliers/delete/<int:id>/', views.SupplierDeleteView, name='delete_supplier'),
 
     # ============================================
     # PRODUCT URLs (Productos)
     # ============================================
-    path('products/', views.ProductListView.as_view(), name='list_products'),
+    path('list_products/', views.ProductListView.as_view(), name='list_products'),
     path('products/create/', views.ProductCreateView.as_view(), name='create_product'),
     path('products/edit/<int:id>/', views.ProductUpdateView.as_view(), name='edit_product'),
     path('products/delete/<int:id>/', views.ProductDeleteView.as_view(), name='delete_product'), 
@@ -62,6 +63,16 @@ urlpatterns = [
     path('api/register/', api_register, name='api_register'),
     path('api/login/', api_login, name='api_login'),
     path('api/listar_productos/',api_productos, name='api_listar_productos'),
+    
+    
+    
+    
+    
+    
+    # ============================================home empresas=============
+    
+    path('<slug:slug>/',views.company_home,name='company_home'),
+    path('<slug:slug>/register/',views.RegisterView.as_view(),name='company_register'),
 
-
+    path('<slug:slug>/login/',views.CustomLoginView.as_view(),name='company_login'),
 ]

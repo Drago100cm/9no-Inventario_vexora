@@ -17,24 +17,29 @@ from django.utils import timezone
 from datetime import timedelta
 from django.views import View
 from django.core.mail import EmailMessage
-from django.core.mail.backends.smtp import (
-    EmailBackend
-)
+from django.core.mail.backends.smtp import (EmailBackend)
 from django.views import View
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import Group, Permission
 from django.contrib import messages
-
 from .models import Plan, Subscription, payment, PlanFeature
-#---------------------email de bienvenida-------------------
-from vexora.services.email_service import (
-    send_welcome_email
-)
+from vexora.services.email_service import (send_welcome_email)
 from .services.ai_service import get_ai_response
+from .models import SiteConfiguration, SMTPConfiguration
+from .forms import SiteConfigurationForm, SMTPConfigurationForm
 # Create your views here.
 
 class HomeView(TemplateView):
     template_name = 'Home/home.html'
+#======Home de la empresa (con slug)======
+def company_home(request, slug):
+    company = get_object_or_404(Company, slug=slug)
+    context = {
+        'company': company,
+        'slug': slug
+    }
+    return render(request, 'vexora/companies/home.html', context)
+
 
 
 class AIChatView(LoginRequiredMixin, FormView):
@@ -59,8 +64,7 @@ class AIChatView(LoginRequiredMixin, FormView):
             )
         )
 
-from .models import SiteConfiguration, SMTPConfiguration
-from .forms import SiteConfigurationForm, SMTPConfigurationForm
+
 # views.py
 
 
@@ -223,6 +227,25 @@ def delete_group(request, pk):
     messages.success(request, "✅ Grupo eliminado correctamente!")
     return redirect('vexora:group_list')  # ruta a la lista de grupos
 
+#---------------------Registro----------------------
+class RegisterView(CreateView):
+    model = CustomUser
+    form_class = CustomUserCreationForm
+    template_name = "Accounts/register.html"
+    success_url = reverse_lazy("vexora:home")
+
+    def form_valid(self, form):
+        form.instance.is_active = True
+        response = super().form_valid(form)
+        # Loguear automáticamente al usuario después del registro
+        #send_welcome_email(self.object)   Enviar email de bienvenida
+        login(self.request, self.object)
+        return response
+    def form_invalid(self, form):
+        form.instance.is_active = True
+        print("❌ Registro inválido")
+        print("Errores:", form.errors)
+        return super().form_invalid(form)
 #---------------------Login----------------------
 class CustomLoginView(FormView):
     form_class = CustomAuthenticationForm
@@ -396,25 +419,6 @@ class SubscriptionDetailView(LoginRequiredMixin, TemplateView):
         return context
 
 
-#---------------------Registro----------------------
-class RegisterView(CreateView):
-    model = CustomUser
-    form_class = CustomUserCreationForm
-    template_name = "Accounts/register.html"
-    success_url = reverse_lazy("vexora:home")
-
-    def form_valid(self, form):
-        form.instance.is_active = True
-        response = super().form_valid(form)
-        # Loguear automáticamente al usuario después del registro
-        #send_welcome_email(self.object)   Enviar email de bienvenida
-        login(self.request, self.object)
-        return response
-    def form_invalid(self, form):
-        form.instance.is_active = True
-        print("❌ Registro inválido")
-        print("Errores:", form.errors)
-        return super().form_invalid(form)
     
 #---------------------User List----------------------
 class UserListView(LoginRequiredMixin,ListView):
@@ -530,7 +534,20 @@ class CompanyListView(LoginRequiredMixin,ListView):
         else:
             return redirect("vexora:home")
 
-       
+#--------------------Detalle Empresa -------------------
+class CompanyDetailView(LoginRequiredMixin,DetailView):
+    model = Company
+    template_name = "vexora/companies/detail.html"
+    slug_field = "slug"
+    slug_url_kwarg = "slug"
+    context_object_name = "company"
+
+    def get(self, request, *args, **kwargs):
+        permisos = request.user.get_all_permissions()
+        if "vexora.view_company" not in permisos:
+            return redirect("vexora:home")
+        return super().get(request, *args, **kwargs)
+
 #--------------------Crear empresa -------------------
 class CompanyCreateView(LoginRequiredMixin,CreateView):
     model = Company
@@ -590,7 +607,7 @@ def delete_company(request, pk):
 
 class SupplierListView(LoginRequiredMixin, ListView):
     model = Supplier
-    template_name = 'vexora/suppliers/list.html'
+    template_name = 'vexora/supplier/list.html'
     context_object_name = 'suppliers'
 
     def get_queryset(self):
@@ -600,7 +617,7 @@ class SupplierListView(LoginRequiredMixin, ListView):
 class SupplierCreateView(LoginRequiredMixin, CreateView):
     model = Supplier
     form_class = SupplierForm
-    template_name = 'vexora/suppliers/form.html'
+    template_name = 'vexora/supplier/create.html'
 
     def form_valid(self, form):
         messages.success(self.request, "✅ Supplier created successfully!")
@@ -618,7 +635,7 @@ class SupplierCreateView(LoginRequiredMixin, CreateView):
 class SupplierUpdateView(LoginRequiredMixin, UpdateView):
     model = Supplier
     form_class = SupplierForm
-    template_name = 'vexora/suppliers/form.html'
+    template_name = 'vexora/supplier/update.html'
     pk_url_kwarg = 'id'
 
     def form_valid(self, form):
@@ -633,30 +650,11 @@ class SupplierUpdateView(LoginRequiredMixin, UpdateView):
         context['title'] = 'Edit Supplier'
         return context
 
-
-class SupplierDeleteView(LoginRequiredMixin, DeleteView):
-    model = Supplier
-    template_name = 'vexora/suppliers/confirm_delete.html'
-    pk_url_kwarg = 'id'
-
-    def get_success_url(self):
-        messages.success(self.request, "✅ Supplier deleted successfully!")
-        return reverse('vexora:list_suppliers')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['type'] = 'supplier'
-        supplier = self.get_object()
-        context['has_products'] = supplier.products.exists()
-        context['products_count'] = supplier.products.count()
-        return context
-
-    def delete(self, request, *args, **kwargs):
-        supplier = self.get_object()
-        if supplier.products.exists():
-            messages.error(request, f'❌ Cannot delete "{supplier.name}" because it has associated products')
-            return redirect('vexora:list_suppliers')
-        return super().delete(request, *args, **kwargs)
+def SupplierDeleteView(request, pk):
+    supplier = get_object_or_404(Supplier, id=pk)
+    supplier.delete()
+    messages.success(request, "✅ Proveedor eliminado correctamente!")
+    return redirect('vexora:list_suppliers')  # ruta a la lista de proveedores
 
 
 # ============================================

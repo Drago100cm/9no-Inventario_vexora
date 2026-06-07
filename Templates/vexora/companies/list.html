@@ -69,8 +69,8 @@
                 <tbody>
                 {% for company in list_company %}
                     <tr>
-                    <td>{{ company.slug }}</td>
-                    <td>{{ company.name }}</td>
+                    <td><a href="{% url 'vexora:company_detail' company.slug %}">{{ company.slug }}</a></td>
+                    <td><a href="{% url 'vexora:company_detail' company.slug %}">{{ company.name }}</a></td>
                     <td>{{ company.email }}</td>
                     <td>{{ company.address }}</td>
                     <td>{{ company.phone|default:"sin telefono" }}</td>

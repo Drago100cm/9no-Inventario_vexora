@@ -193,7 +193,7 @@ def api_proveedores(request):
 
     if request.method == 'GET':
 
-        proveedores = Supplier.objects.all()
+        proveedores = proveedores.objects.all()
 
         data = []
 
