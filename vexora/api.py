@@ -8,6 +8,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
 
+from .models import (
+    CustomUser,
+)
 from .models import *
 
 
@@ -182,6 +185,9 @@ def api_login(request):
         'tokens': tokens
     })
 
+# ========================================
+# Productos y Proveedores
+# ========================================
 
 
 # =========================================
@@ -222,18 +228,40 @@ def api_proveedores(request):
 @csrf_exempt
 def api_productos(request):
 
-    if request.method == 'GET':
+    if request.method != 'POST':
+        return JsonResponse({
+            'error': 'Método no permitido'
+        }, status=405)
 
+    try:
+        data = json.loads(request.body.decode('utf-8'))
         productos = Product.objects.select_related(
             'supplier'
         ).all()
 
-        data = []
+    except Exception:
+        return JsonResponse({
+            'error': 'JSON inválido'
+        }, status=400)
 
-        for producto in productos:
+    name = data.get('name')
+    purchase_price = data.get('purchase_price')
+    price = data.get('price')
+    supplier = data.get('supplier')
 
-            data.append({
-                'id': producto.id,
+    if not all([
+        name,
+        purchase_price,
+        price,
+        supplier
+    ]):
+        return JsonResponse({
+            'error': 'Faltan campos requeridos'
+        }, status=400)
+    
+    
+        data.append({
+            'id': producto.id,
                 'nombre_producto': producto.nombre_producto,
                 'descripcion': producto.descripcion,
                 'fecha_compra': producto.fecha_compra,
@@ -243,8 +271,4 @@ def api_productos(request):
                 'fecha_registro': producto.fecha_registro
             })
 
-        return JsonResponse(data, safe=False)
 
-    return JsonResponse({
-        'error': 'Método no permitido'
-    }, status=405)
