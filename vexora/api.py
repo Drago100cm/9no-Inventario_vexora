@@ -394,31 +394,6 @@ def api_product_update(request, producto_id):
     })
 
 
-# =========================================
-# ELIMINAR PRODUCTO
-# =========================================
-
-@csrf_exempt
-def api_product_delete(request, producto_id):
-
-    if request.method != 'DELETE':
-        return JsonResponse({
-            'error': 'Método no permitido. Use DELETE'
-        }, status=405)
-
-    try:
-        producto = Product.objects.get(id=producto_id)
-    except Product.DoesNotExist:
-        return JsonResponse({
-            'error': 'Producto no encontrado'
-        }, status=404)
-
-    producto.delete()
-
-    return JsonResponse({
-        'success': True,
-        'message': 'Producto eliminado correctamente'
-    })
 
 # =========================================
 # CREAR PROVEEDOR
@@ -536,28 +511,3 @@ def api_supplier_update(request, supplier_id):
         }
     })
 
-# =========================================
-# ELIMINAR PROVEEDOR
-# =========================================
-
-@csrf_exempt
-def api_supplier_delete(request, supplier_id):
-
-    if request.method != 'DELETE':
-        return JsonResponse({
-            'error': 'Método no permitido. Use DELETE'
-        }, status=405)
-
-    try:
-        proveedor = Supplier.objects.get(id=supplier_id)
-    except Supplier.DoesNotExist:
-        return JsonResponse({
-            'error': 'Proveedor no encontrado'
-        }, status=404)
-
-    proveedor.delete()
-
-    return JsonResponse({
-        'success': True,
-        'message': 'Proveedor eliminado correctamente'
-    })

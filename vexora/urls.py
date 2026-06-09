@@ -48,7 +48,7 @@ urlpatterns = [
     path('suppliers/', views.SupplierListView.as_view(), name='list_suppliers'),
     path('suppliers/create/', views.SupplierCreateView.as_view(), name='create_supplier'),
     path('suppliers/update/<int:id>/', views.SupplierUpdateView.as_view(), name='edit_supplier'),
-    path('suppliers/delete/<int:id>/', views.SupplierDeleteView, name='delete_supplier'),
+    path('suppliers/delete/<int:id>/', views.delete_supplier, name='delete_supplier'),
 
     # ============================================
     # PRODUCT URLs (Productos)
@@ -56,7 +56,7 @@ urlpatterns = [
     path('list_products/', views.ProductListView.as_view(), name='list_products'),
     path('products/create/', views.ProductCreateView.as_view(), name='create_product'),
     path('products/update/<int:id>/', views.ProductUpdateView.as_view(), name='edit_product'),
-    path('products/delete/<int:id>/', views.ProductDeleteView.as_view(), name='delete_product'), 
+    path('products/delete/<int:id>/', views.delete_product, name='delete_product'), 
     
     
     # API endpoints
