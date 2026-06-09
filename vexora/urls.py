@@ -66,10 +66,9 @@ urlpatterns = [
     path('api/list_proveedores/', api_proveedores, name='api_proveedores'),
     path('api/crear_producto/', api_crear_producto, name='api_crear_producto'),
     path('api/editar_producto/<int:id>/', api_product_update, name='api_product_update'),
-    path('api/eliminar_producto/<int:id>/', api_product_delete, name='api_product_delete'),
     path('api/crear_proveedor/', api_crear_proveedor, name='api_crear_proveedor'),
     path('api/editar_proveedor/<int:id>/', api_supplier_update, name='api_supplier_update'),
-    path('api/eliminar_proveedor/<int:id>/', api_supplier_delete, name='api_supplier_delete'),
+    
     
     
     
