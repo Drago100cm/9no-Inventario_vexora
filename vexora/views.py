@@ -651,7 +651,7 @@ class SupplierUpdateView(LoginRequiredMixin, UpdateView):
         context['title'] = 'Edit Supplier'
         return context
 
-def SupplierDeleteView(request, pk):
+def delete_supplier(request, pk):
     supplier = get_object_or_404(Supplier, id=pk)
     supplier.delete()
     messages.success(request, "✅ Proveedor eliminado correctamente!")
@@ -708,19 +708,11 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
 
-class ProductDeleteView(LoginRequiredMixin, DeleteView):
-    model = Product
-    template_name = 'vexora/products/confirm_delete.html'
-    pk_url_kwarg = 'id'
-
-    def get_success_url(self):
-        messages.success(self.request, "✅ Product deleted successfully!")
-        return reverse('vexora:list_products')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['type'] = 'product'
-        return context
+def delete_product(request, pk):
+    product = get_object_or_404(Product, id=pk)
+    product.delete()
+    messages.success(request, "✅ Producto eliminado correctamente!")
+    return redirect('vexora:list_products')  # ruta a la lista de productos
 
 # =====================================
 # SALES VIEWS (Ventas)

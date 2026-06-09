@@ -313,7 +313,7 @@ class ProductForm(forms.ModelForm):
             'class': 'form-control',
             'step': '0.01',
         })
-
+ 
         self.fields['supplier'].widget.attrs.update({
             'class': 'form-control'
         })
