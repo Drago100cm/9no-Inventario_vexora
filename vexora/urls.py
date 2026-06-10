@@ -57,24 +57,7 @@ urlpatterns = [
     path('products/create/', views.ProductCreateView.as_view(), name='create_product'),
     path('products/update/<int:id>/', views.ProductUpdateView.as_view(), name='edit_product'),
     path('products/delete/<int:id>/', views.delete_product, name='delete_product'), 
-    
-    
-    # API endpoints
-    path('api/register/', api_register, name='api_register'),
-    path('api/login/', api_login, name='api_login'),
-    path('api/list_productos/',api_productos, name='api_productos'),
-    path('api/list_proveedores/', api_proveedores, name='api_proveedores'),
-    path('api/crear_producto/', api_crear_producto, name='api_crear_producto'),
-    path('api/editar_producto/<int:id>/', api_product_update, name='api_product_update'),
-    path('api/eliminar_producto/<int:id>/', api_product_delete, name='api_product_delete'),
-    path('api/crear_proveedor/', api_crear_proveedor, name='api_crear_proveedor'),
-    path('api/editar_proveedor/<int:id>/', api_supplier_update, name='api_supplier_update'),
-    path('api/eliminar_proveedor/<int:id>/', api_supplier_delete, name='api_supplier_delete'),
-    
-    
-    
-    
-    
+
     
     # ============================================home empresas=============
     
