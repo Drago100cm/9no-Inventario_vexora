@@ -9,7 +9,7 @@
       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
 
-    <form method="POST" action="{% url 'vexora:supplier_edit' supplier.id %}">
+    <form method="POST" action="{% url 'vexora:edit_supplier' supplier.id %}">
       {% csrf_token %}
       <div class="modal-body">
         
