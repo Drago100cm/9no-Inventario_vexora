@@ -79,15 +79,15 @@ class SiteConfigurationUpdateView(LoginRequiredMixin,UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
 
-        if not request.user.company:
+        if not getattr(request.user, 'company', None):
             return redirect('vexora:company_create')
 
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self):
-
+        company = getattr(self.request.user, 'company', None)
         obj, created = SiteConfiguration.objects.get_or_create(
-            company=self.request.user.company
+            company=company
         )
 
         return obj
@@ -101,22 +101,22 @@ class SMTPConfigurationUpdateView(LoginRequiredMixin,UpdateView):
     success_url = reverse_lazy('vexora:smtp_configuration')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.company:
+        if not getattr(request.user, 'company', None):
             return redirect('vexora:company_create')
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self):
+        company = getattr(self.request.user, 'company', None)
         obj, created = SMTPConfiguration.objects.get_or_create(
-            company=self.request.user.company
+            company=company
         )
         return obj
 class SMTPTestView(LoginRequiredMixin, View):
 
     def post(self, request):
-
         smtp = get_object_or_404(
             SMTPConfiguration,
-            company=request.user.company
+            company=getattr(request.user, 'company', None)
         )
 
         try:
@@ -349,30 +349,43 @@ class SubscriptionPlanListView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['plans'] = ensure_default_plans()
-        context['company'] = self.request.user.company
-        context['subscription'] = None
-        if context['company']:
-            context['subscription'] = getattr(context['company'], 'subscription', None)
+        context['subscription'] = getattr(self.request.user, 'subscription', None)
+        context['company'] = getattr(self.request.user, 'company', None)
         return context
 
-
 class SubscriptionChooseView(LoginRequiredMixin, View):
+
     def post(self, request, plan_id, *args, **kwargs):
-        company = request.user.company
-        if not company:
-            messages.error(request, 'Necesitas crear una empresa antes de elegir un plan.')
-            return redirect('vexora:company_create')
 
-        plan = get_object_or_404(Plan, id=plan_id, active=True)
-        current_subscription = getattr(company, 'subscription', None)
+        plan = get_object_or_404(
+            Plan,
+            id=plan_id,
+            active=True
+        )
+
+        current_subscription = Subscription.objects.filter(
+            user=request.user
+        ).first()
+
         start_date = timezone.now().date()
-        end_date = subscription_end_date(start_date, plan.billing_type)
+        end_date = subscription_end_date(
+            start_date,
+            plan.billing_type
+        )
 
-        if current_subscription and current_subscription.plan_id == plan.id and current_subscription.active:
-            messages.info(request, 'Ya tienes ese plan seleccionado.')
+        if (
+            current_subscription and
+            current_subscription.plan_id == plan.id and
+            current_subscription.active
+        ):
+            messages.info(
+                request,
+                'Ya tienes ese plan seleccionado.'
+            )
             return redirect('vexora:subscription_detail')
 
         if current_subscription:
+
             current_subscription.plan = plan
             current_subscription.status = 'active'
             current_subscription.start_date = start_date
@@ -380,10 +393,13 @@ class SubscriptionChooseView(LoginRequiredMixin, View):
             current_subscription.trial = False
             current_subscription.active = True
             current_subscription.save()
+
             subscription = current_subscription
+
         else:
+
             subscription = Subscription.objects.create(
-                company=company,
+                user=request.user,
                 plan=plan,
                 status='active',
                 start_date=start_date,
@@ -393,7 +409,8 @@ class SubscriptionChooseView(LoginRequiredMixin, View):
             )
 
         payment.objects.create(
-            company=company,
+            user=request.user,
+            company=getattr(request.user, 'company', None),
             subscription=subscription,
             amount=plan.price,
             payment_method='cash',
@@ -402,21 +419,20 @@ class SubscriptionChooseView(LoginRequiredMixin, View):
             paid_at=timezone.now(),
         )
 
-        messages.success(request, f'Suscripción a {plan.name} activada correctamente.')
+        messages.success(
+            request,
+            f'Suscripción a {plan.name} activada correctamente.'
+        )
+
         return redirect('vexora:subscription_detail')
-
-
 class SubscriptionDetailView(LoginRequiredMixin, TemplateView):
     template_name = 'vexora/subscriptions/detail.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['company'] = self.request.user.company
-        context['subscription'] = None
-        context['payments'] = None
-        if context['company']:
-            context['subscription'] = getattr(context['company'], 'subscription', None)
-            context['payments'] = payment.objects.filter(company=context['company']).order_by('-paid_at')
+        context['company'] = getattr(self.request.user, 'company', None)
+        context['subscription'] = getattr(self.request.user, 'subscription', None)
+        context['payments'] = payment.objects.filter(user=self.request.user).order_by('-paid_at')
         return context
 
 
@@ -570,9 +586,8 @@ class CompanyCreateView(LoginRequiredMixin,CreateView):
             company.save()
 
             # Vincular usuario
-            user = self.request.user
-            user.company = company
-            user.save()
+            company.owner = self.request.user
+            company.save()
             messages.success(request, "✅ ¡Empresa creada correctamente!")
             return redirect("vexora:subscription_list")
         else:

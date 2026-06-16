@@ -12,17 +12,11 @@
     <a href="{% url 'vexora:subscription_list' %}" class="btn btn-outline-light">Cambiar plan</a>
 </div>
 
-{% if not company %}
-    <div class="alert alert-warning">
-        No tienes empresa asociada todavía. <a href="{% url 'vexora:company_create' %}">Crear empresa</a>
+{% if not subscription %}
+    <div class="alert alert-info">
+        No hay suscripción activa. Elige un plan para comenzar.
     </div>
 {% else %}
-
-    {% if not subscription %}
-        <div class="alert alert-info">
-            No hay suscripción activa. Elige un plan para comenzar.
-        </div>
-    {% else %}
         <div class="row gy-4">
             <div class="col-lg-6">
                 <div class="card p-4">
@@ -81,6 +75,5 @@
             </div>
         </div>
     {% endif %}
-{% endif %}
 
 {% endblock %}

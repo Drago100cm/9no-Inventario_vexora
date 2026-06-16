@@ -12,6 +12,7 @@ import uuid
 class Company(models.Model):
 
     name = models.CharField(max_length=150,unique=True)
+    
     address = models.CharField(max_length=255, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
@@ -108,12 +109,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     # Evitar conflictos con auth.User
     groups = models.ManyToManyField(Group,related_name="customuser_set",blank=True,help_text="The groups this user belongs to.",verbose_name="groups",)
     user_permissions = models.ManyToManyField(Permission,related_name="customuser_set",blank=True,help_text="Specific permissions for this user.",verbose_name="user permissions",)
-    company = models.ForeignKey(
+    companies = models.ManyToManyField(
         Company,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
+        related_name="members",null=True,blank=True
     )
+
+    @property
+    def company(self):
+        """Return a primary company for the user if one exists."""
+        return self.owned_companies.first() or self.companies.first()
+
     objects = CustomUserManager()
 
     USERNAME_FIELD = "email"  # login con email
@@ -154,7 +159,7 @@ class Subscription(models.Model):
         ('cancelled', 'Cancelada'),
         ('pending', 'Pendiente'),
     )
-    company = models.OneToOneField(Company,on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='subscription') 
     plan = models.ForeignKey(Plan,on_delete=models.CASCADE)
     status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
     start_date = models.DateField()
@@ -166,7 +171,7 @@ class Subscription(models.Model):
 
     def __str__(self):
 
-        return f"{self.company.name} - {self.plan.name}"
+        return f"{self.user.email} - {self.plan.name}"
 #--------------------Pagos-------------------
 class payment(models.Model):
 
@@ -183,7 +188,8 @@ class payment(models.Model):
         ('failed', 'Fallido'),
         ('refunded', 'Reembolsado'),
     )
-    company = models.ForeignKey(Company,on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name='payments')
+    company = models.ForeignKey(Company,on_delete=models.CASCADE,null=True,blank=True)
     subscription = models.ForeignKey(Subscription,on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10,decimal_places=2)
     payment_method = models.CharField(max_length=20,choices=PAYMENT_METHODS)
