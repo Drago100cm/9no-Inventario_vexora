@@ -27,6 +27,8 @@ from vexora.services.email_service import (send_welcome_email)
 from .services.ai_service import get_ai_response
 from .models import SiteConfiguration, SMTPConfiguration
 from .forms import SiteConfigurationForm, SMTPConfigurationForm
+from django.db.models import Q
+from datetime import datetime
 
 # Create your views here.
 
@@ -621,7 +623,7 @@ class SupplierCreateView(LoginRequiredMixin, CreateView):
     template_name = 'vexora/supplier/create.html'
 
     def form_valid(self, form):
-        messages.success(self.request, "✅ Supplier created successfully!")
+        messages.success(self.request, "✅ Proveedor creado correctamente!")
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -640,7 +642,7 @@ class SupplierUpdateView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = 'id'
 
     def form_valid(self, form):
-        messages.success(self.request, "✅ Supplier updated successfully!")
+        messages.success(self.request, "✅ Proveedor actualizado correctamente!")
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -658,35 +660,104 @@ def delete_supplier(request, pk):
     return redirect('vexora:list_suppliers')  # ruta a la lista de proveedores
 
 
-# ============================================
-# PRODUCT VIEWS (Productos)
-# ============================================
-
 class ProductListView(LoginRequiredMixin, ListView):
     model = Product
     template_name = 'vexora/products/list.html'
     context_object_name = 'products'
 
     def get_queryset(self):
-        return Product.objects.all().order_by('-purchase_date')
+        # Mostrar productos de la empresa del usuario
+        if self.request.user.company:
+            queryset = Product.objects.filter(company=self.request.user.company)
+        else:
+            queryset = Product.objects.all()
 
+        # Filtro por proveedor
+        supplier = self.request.GET.get('supplier')
+        if supplier:
+            queryset = queryset.filter(supplier_id=supplier)
 
+        # Filtro por categoría
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category_id=category)
+
+        # Filtro por disponibilidad
+        disponibilidad = self.request.GET.get('disponibilidad')
+        if disponibilidad == 'disponibles':
+            queryset = queryset.filter(is_active=True, stock__gt=0)
+        elif disponibilidad == 'no_disponibles':
+            queryset = queryset.filter(Q(is_active=False) | Q(stock=0))
+
+        # Filtro por rango de fechas
+        fecha_inicio = self.request.GET.get('fecha_inicio')
+        fecha_fin = self.request.GET.get('fecha_fin')
+        if fecha_inicio and fecha_fin:
+            try:
+                from datetime import datetime
+                fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d')
+                fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d')
+                queryset = queryset.filter(purchase_date__range=[fecha_inicio_dt, fecha_fin_dt])
+            except ValueError:
+                pass
+
+        # Búsqueda global
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(sku__icontains=search) |
+                Q(barcode__icontains=search)
+            )
+
+        return queryset.order_by('-purchase_date')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Base para estadísticas
+        if self.request.user.company:
+            base_queryset = Product.objects.filter(company=self.request.user.company)
+        else:
+            base_queryset = Product.objects.all()
+
+        # Estadísticas
+        context['stats'] = {
+            'total': base_queryset.count(),
+            'disponibles': base_queryset.filter(is_active=True, stock__gt=0).count(),
+            'no_disponibles': base_queryset.filter(Q(is_active=False) | Q(stock=0)).count(),
+        }
+
+        # Proveedores para el filtro
+        if self.request.user.company:
+            context['suppliers'] = Supplier.objects.filter(
+                Q(company=self.request.user.company) | Q(company__isnull=True)
+            )
+            context['categories'] = Category.objects.filter(company=self.request.user.company)
+        else:
+            context['suppliers'] = Supplier.objects.all()
+            context['categories'] = Category.objects.all()
+
+        return context
+    
 class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
     template_name = 'vexora/products/create.html'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
-        messages.success(self.request, "✅ Product created successfully!")
+        if self.request.user.company:
+            form.instance.company = self.request.user.company
+        messages.success(self.request, "✅ Producto creado correctamente!")
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('vexora:list_products')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'New Product'
-        return context
 
 
 class ProductUpdateView(LoginRequiredMixin, UpdateView):
@@ -695,24 +766,33 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'vexora/products/update.html'
     pk_url_kwarg = 'id'
 
+    def get_queryset(self):
+        return Product.objects.all()
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
-        messages.success(self.request, "✅ Product updated successfully!")
+        # Mantener la empresa original si no viene en el form
+        if not form.instance.company and self.object:
+            form.instance.company = self.object.company
+        # O asignar la empresa del usuario
+        elif self.request.user.company:
+            form.instance.company = self.request.user.company
+            
+        messages.success(self.request, "✅ Producto actualizado correctamente!")
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('vexora:list_products')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Edit Product'
-        return context
-
-
 def delete_product(request, pk):
     product = get_object_or_404(Product, id=pk)
     product.delete()
     messages.success(request, "✅ Producto eliminado correctamente!")
-    return redirect('vexora:list_products')  # ruta a la lista de productos
+    return redirect('vexora:list_products')  
 
 # =====================================
 # SALES VIEWS (Ventas)

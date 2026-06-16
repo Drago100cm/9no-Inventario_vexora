@@ -298,30 +298,126 @@ class SupplierForm(forms.ModelForm):
 # ============================================
 class ProductForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
+        # Nombre
         self.fields['name'].widget.attrs.update({
             'class': 'form-control',
+            'placeholder': 'Nombre del producto'
         })
 
+        # SKU
+        self.fields['sku'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'SKU (código único)'
+        })
+
+        # Código de barras
+        self.fields['barcode'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Código de barras'
+        })
+
+        # Descripción
+        self.fields['description'].widget.attrs.update({
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Descripción del producto'
+        })
+
+        # Fecha de compra
         self.fields['purchase_date'].widget.attrs.update({
             'class': 'form-control',
             'type': 'date'
         })
 
+        # Precio
         self.fields['price'].widget.attrs.update({
             'class': 'form-control',
             'step': '0.01',
+            'placeholder': '0.00'
         })
- 
+
+        # Precio de venta
+        self.fields['sale_price'].widget.attrs.update({
+            'class': 'form-control',
+            'step': '0.01',
+            'placeholder': '0.00'
+        })
+
+        # Stock
+        self.fields['stock'].widget.attrs.update({
+            'class': 'form-control',
+            'min': 0,
+            'placeholder': '0'
+        })
+
+        # Stock mínimo
+        self.fields['min_stock'].widget.attrs.update({
+            'class': 'form-control',
+            'min': 0,
+            'placeholder': '0'
+        })
+
+        # Activo
+        self.fields['is_active'].widget.attrs.update({
+            'class': 'form-check-input'
+        })
+
+        # Imagen
+        self.fields['image'].widget.attrs.update({
+            'class': 'form-control',
+            'accept': 'image/*'
+        })
+
+        # Proveedor - CORREGIDO
         self.fields['supplier'].widget.attrs.update({
             'class': 'form-control'
         })
+        if self.user and hasattr(self.user, 'company') and self.user.company:
+            self.fields['supplier'].queryset = Supplier.objects.filter(
+                models.Q(company=self.user.company) | models.Q(company__isnull=True)
+            )
+        else:
+            self.fields['supplier'].queryset = Supplier.objects.all()
+
+        # Categoría
+        self.fields['category'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        if self.user and hasattr(self.user, 'company') and self.user.company:
+            self.fields['category'].queryset = Category.objects.filter(company=self.user.company)
+        else:
+            self.fields['category'].queryset = Category.objects.all()
+
+        # Tags
+        self.fields['tags'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        if self.user and hasattr(self.user, 'company') and self.user.company:
+            self.fields['tags'].queryset = Tag.objects.filter(company=self.user.company)
+        else:
+            self.fields['tags'].queryset = Tag.objects.all()
+
+        # Company
+        if self.user and hasattr(self.user, 'company') and self.user.company:
+            self.fields['company'].widget = forms.HiddenInput()
+            self.fields['company'].initial = self.user.company
+        else:
+            self.fields['company'].widget.attrs.update({
+                'class': 'form-control'
+            })
+            self.fields['company'].queryset = Company.objects.all()
 
     class Meta:
         model = Product
-        fields = ["name", "purchase_date", "price", "supplier"]
-                
+        fields = [
+            "name", "sku", "barcode", "description", "purchase_date",
+            "price", "sale_price", "stock", "min_stock", "is_active",
+            "supplier", "category", "tags", "company", "image"
+        ]   
+                 
 #---------------ventas
 class SalesForm(forms.ModelForm):
 

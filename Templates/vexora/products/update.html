@@ -1,75 +1,189 @@
 {% load static %}
 
-<div class="modal-dialog modal-dialog-centered modal-md">
+<div class="modal-dialog modal-dialog-centered modal-xl">
   <div class="modal-content">
     <div class="modal-header bg-light p-3">
       <h5 class="modal-title">
-        Editar producto
+        <i class="ri-edit-box-line me-2"></i>
+        Editar Producto: {{ product.name }}
       </h5>
-      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
 
-    <form method="POST" action="{% url 'vexora:edit_product' product.id %}">
+    <form method="POST" enctype="multipart/form-data" action="{% url 'vexora:edit_product' product.id %}">
       {% csrf_token %}
+
       <div class="modal-body">
-        
-        <div class="mb-3">
-          <label for="{{ form.name.id_for_label }}" class="form-label">
-            Nombre del producto <span class="text-danger">*</span>
-          </label>
-          {{ form.name }}
-          {% if form.name.errors %}
-            <div class="text-danger small mt-1">{{ form.name.errors }}</div>
-          {% endif %}
-        </div>
+        <ul class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#general_info" role="tab">
+              <i class="ri-information-line me-1"></i> Información General
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#pricing_stock" role="tab">
+              <i class="ri-price-tag-3-line me-1"></i> Precios y Stock
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#classification" role="tab">
+              <i class="ri-price-tag-line me-1"></i> Clasificación
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#images" role="tab">
+              <i class="ri-image-line me-1"></i> Imagen
+            </a>
+          </li>
+        </ul>
 
-        <div class="mb-3">
-          <label for="{{ form.supplier.id_for_label }}" class="form-label">
-            Proveedor <span class="text-danger">*</span>
-          </label>
-          {{ form.supplier }}
-          {% if form.supplier.errors %}
-            <div class="text-danger small mt-1">{{ form.supplier.errors }}</div>
-          {% endif %}
-        </div>
-
-        <div class="row">
-          <div class="col-md-6">
-            <div class="mb-3">
-              <label for="{{ form.price.id_for_label }}" class="form-label">
-                Precio <span class="text-danger">*</span>
-              </label>
-              <div class="input-group">
-                <span class="input-group-text">$</span>
-                {{ form.price }}
+        <div class="tab-content">
+          <!-- TAB 1: Información General -->
+          <div class="tab-pane active" id="general_info">
+            <div class="row gy-3">
+              <div class="col-md-12">
+                <label class="form-label">Nombre del producto <span class="text-danger">*</span></label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                  <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+                {% endif %}
               </div>
-              {% if form.price.errors %}
-                <div class="text-danger small mt-1">{{ form.price.errors }}</div>
-              {% endif %}
+              <div class="col-md-6">
+                <label class="form-label">SKU (Código único)</label>
+                {{ form.sku }}
+                {% if form.sku.errors %}
+                  <div class="text-danger small mt-1">{{ form.sku.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Código de barras</label>
+                {{ form.barcode }}
+                {% if form.barcode.errors %}
+                  <div class="text-danger small mt-1">{{ form.barcode.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Descripción</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                  <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Fecha de compra <span class="text-danger">*</span></label>
+                {{ form.purchase_date }}
+                {% if form.purchase_date.errors %}
+                  <div class="text-danger small mt-1">{{ form.purchase_date.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Proveedor <span class="text-danger">*</span></label>
+                {{ form.supplier }}
+                {% if form.supplier.errors %}
+                  <div class="text-danger small mt-1">{{ form.supplier.errors }}</div>
+                {% endif %}
+              </div>
             </div>
           </div>
 
-          <div class="col-md-6">
-            <div class="mb-3">
-              <label for="{{ form.purchase_date.id_for_label }}" class="form-label">
-                Fecha de compra <span class="text-danger">*</span>
-              </label>
-              {{ form.purchase_date }}
-              {% if form.purchase_date.errors %}
-                <div class="text-danger small mt-1">{{ form.purchase_date.errors }}</div>
-              {% endif %}
+          <!-- TAB 2: Precios y Stock -->
+          <div class="tab-pane" id="pricing_stock">
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <label class="form-label">Precio de compra <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  {{ form.price }}
+                </div>
+                {% if form.price.errors %}
+                  <div class="text-danger small mt-1">{{ form.price.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Precio de venta</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  {{ form.sale_price }}
+                </div>
+                {% if form.sale_price.errors %}
+                  <div class="text-danger small mt-1">{{ form.sale_price.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Stock actual</label>
+                {{ form.stock }}
+                {% if form.stock.errors %}
+                  <div class="text-danger small mt-1">{{ form.stock.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Stock mínimo</label>
+                {{ form.min_stock }}
+                {% if form.min_stock.errors %}
+                  <div class="text-danger small mt-1">{{ form.min_stock.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-12">
+                <div class="form-check form-switch">
+                  {{ form.is_active }}
+                  <label class="form-check-label ms-2">Producto activo / disponible para la venta</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: Clasificación -->
+          <div class="tab-pane" id="classification">
+            <div class="row gy-3">
+              <div class="col-md-12">
+                <label class="form-label">Categoría</label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                  <div class="text-danger small mt-1">{{ form.category.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Tags / Etiquetas</label>
+                {{ form.tags }}
+                {% if form.tags.errors %}
+                  <div class="text-danger small mt-1">{{ form.tags.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: Imagen -->
+          <div class="tab-pane" id="images">
+            <div class="row gy-3">
+              <div class="col-md-12">
+                <label class="form-label">Imagen del producto</label>
+                {{ form.image }}
+                {% if product.image %}
+                  <div class="mt-2">
+                    <img src="{{ product.image.url }}" alt="Imagen actual" class="img-thumbnail" style="max-height: 100px;">
+                    <br><small class="text-muted">Imagen actual. Sube una nueva para reemplazarla.</small>
+                  </div>
+                {% endif %}
+                <div class="mt-3 text-center" id="imagePreviewContainer" style="display: none;">
+                  <img id="imagePreview" src="#" alt="Vista previa" class="img-thumbnail" style="max-height: 150px;">
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
+        <!-- ========== CAMPO COMPANY OCULTO - IMPORTANTE ========== -->
         <input type="hidden" name="company" value="{{ request.user.company.id }}">
+        <!-- ====================================================== -->
 
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">
+          <i class="ri-close-line me-1"></i> Cancelar
+        </button>
         <button type="submit" class="btn btn-sm btn-success">
-          <i class="ri-save-line me-1 align-bottom"></i> Actualizar
+          <i class="ri-save-line me-1"></i> Actualizar Producto
         </button>
       </div>
     </form>
@@ -78,14 +192,24 @@
 
 <script>
   $(document).ready(function() {
-    if ($('#{{ form.supplier.id_for_label }}').length && typeof $.fn.select2 !== 'undefined') {
-      $('#{{ form.supplier.id_for_label }}').select2({
+    if (typeof $.fn.select2 !== 'undefined') {
+      $('#id_supplier, #id_category, #id_tags').select2({
         theme: 'bootstrap-5',
         dropdownParent: $('#ModalOptions'),
-        placeholder: 'Select a supplier',
-        allowClear: true,
         width: '100%'
       });
     }
+
+    $('#id_image').on('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          $('#imagePreview').attr('src', e.target.result);
+          $('#imagePreviewContainer').show();
+        }
+        reader.readAsDataURL(file);
+      }
+    });
   });
 </script>
