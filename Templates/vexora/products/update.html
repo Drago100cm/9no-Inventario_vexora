@@ -109,13 +109,45 @@
                   <div class="text-danger small mt-1">{{ form.sale_price.errors }}</div>
                 {% endif %}
               </div>
+              
+              <!-- STOCK ACTUAL - SOLO LECTURA -->
               <div class="col-md-6">
                 <label class="form-label">Stock actual</label>
                 {{ form.stock }}
+                <small class="text-muted d-block">
+                  <i class="ri-information-line me-1"></i>
+                  Este campo es de solo lectura. Usa el campo de abajo para agregar stock.
+                </small>
                 {% if form.stock.errors %}
                   <div class="text-danger small mt-1">{{ form.stock.errors }}</div>
                 {% endif %}
               </div>
+              
+              <!-- CANTIDAD A AGREGAR -->
+              <div class="col-md-6">
+                <label class="form-label">{{ form.stock_addition.label }}</label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="ri-add-line"></i>
+                  </span>
+                  {{ form.stock_addition }}
+                </div>
+                <div class="form-text">
+                  <i class="ri-information-line me-1"></i>
+                  {{ form.stock_addition.help_text }}
+                </div>
+                <!-- Preview del nuevo stock -->
+                <div id="stockPreviewContainer" class="mt-2" style="display: none;">
+                  <span class="badge bg-info" id="stockPreviewText">
+                    <i class="ri-information-line me-1"></i>
+                    Nuevo stock total: <strong id="newStockValue">0</strong> unidades
+                  </span>
+                </div>
+                {% if form.stock_addition.errors %}
+                  <div class="text-danger small mt-1">{{ form.stock_addition.errors }}</div>
+                {% endif %}
+              </div>
+              
               <div class="col-md-6">
                 <label class="form-label">Stock mínimo</label>
                 {{ form.min_stock }}
@@ -123,6 +155,7 @@
                   <div class="text-danger small mt-1">{{ form.min_stock.errors }}</div>
                 {% endif %}
               </div>
+              
               <div class="col-md-12">
                 <div class="form-check form-switch">
                   {{ form.is_active }}
@@ -172,9 +205,8 @@
           </div>
         </div>
 
-        <!-- ========== CAMPO COMPANY OCULTO - IMPORTANTE ========== -->
+        <!-- CAMPO COMPANY OCULTO -->
         <input type="hidden" name="company" value="{{ request.user.company.id }}">
-        <!-- ====================================================== -->
 
       </div>
 
@@ -192,6 +224,7 @@
 
 <script>
   $(document).ready(function() {
+    // Inicializar Select2
     if (typeof $.fn.select2 !== 'undefined') {
       $('#id_supplier, #id_category, #id_tags').select2({
         theme: 'bootstrap-5',
@@ -200,6 +233,7 @@
       });
     }
 
+    // Previsualización de imagen
     $('#id_image').on('change', function() {
       const file = this.files[0];
       if (file) {
@@ -211,5 +245,39 @@
         reader.readAsDataURL(file);
       }
     });
+
+    // =============================================
+    // PREVIEW DEL NUEVO STOCK EN TIEMPO REAL
+    // =============================================
+    $('#id_stock_addition').on('input', function() {
+      var currentStock = parseInt($('#id_stock').val()) || 0;
+      var addition = parseInt($(this).val()) || 0;
+      var newStock = currentStock + addition;
+      
+      var previewContainer = $('#stockPreviewContainer');
+      var newStockValue = $('#newStockValue');
+      
+      if (addition > 0) {
+        newStockValue.text(newStock);
+        previewContainer.show();
+        
+        // Cambiar color según cantidad de stock
+        var badge = previewContainer.find('.badge');
+        badge.removeClass('bg-info bg-success bg-warning bg-danger');
+        
+        if (newStock <= 5) {
+          badge.addClass('bg-warning');
+        } else if (newStock <= 10) {
+          badge.addClass('bg-info');
+        } else {
+          badge.addClass('bg-success');
+        }
+      } else {
+        previewContainer.hide();
+      }
+    });
+    
+    // Disparar el evento al cargar para mostrar si hay valor inicial
+    $('#id_stock_addition').trigger('input');
   });
 </script>

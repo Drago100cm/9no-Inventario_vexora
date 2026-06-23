@@ -54,7 +54,7 @@
                         <tr>
                             <th data-sort="id">ID</th>
                             <th data-sort="name">Nombre</th>
-                            <th data-sort="address">Correo electrónico</th>
+                            <th data-sort="address">Dirección</th>
                             <th data-sort="products">Productos</th>
                             <th data-sort="actions">Acciones</th>
                         </tr>
@@ -65,7 +65,7 @@
                                 <td>{{ supplier.id }}</td>
                                 <td><strong>{{ supplier.name }}</strong></td>
                                 <td>{{ supplier.address|default:"No address" }}</td>
-                                <td>{{ supplier.products.count }}</td>
+                                <td>{{ supplier.products.count|default:0 }}</td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:edit_supplier' supplier.id %}')" style="width: 75px;">
                                         <i class="ri-pencil-fill me-1 align-bottom"></i> Editar
