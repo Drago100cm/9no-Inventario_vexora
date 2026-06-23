@@ -506,3 +506,4 @@ class SalesForm(forms.ModelForm):
     class Meta:
         model = Sale
         fields = ["company", "customer_name", "customer_email", "customer_phone"]
+

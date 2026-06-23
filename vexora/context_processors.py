@@ -5,11 +5,11 @@ def site_config(request):
     config = None
 
     if request.user.is_authenticated:
+        company = getattr(request.user, 'company', None)
 
-        if request.user.company:
-
+        if company:
             config, created = SiteConfiguration.objects.get_or_create(
-                company=request.user.company
+                company=company
             )
 
     return {

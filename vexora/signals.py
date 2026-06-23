@@ -33,13 +33,13 @@ def create_company_setup(sender, instance, created, **kwargs):
         ).first()
 
         # =========================
-        # Crear suscripción
+        # Crear suscripción para el propietario
         # =========================
 
-        if trial_plan:
+        if trial_plan and instance.owner:
 
             Subscription.objects.create(
-                company=instance,
+                user=instance.owner,
                 plan=trial_plan,
                 status='active',
                 start_date=timezone.now().date(),

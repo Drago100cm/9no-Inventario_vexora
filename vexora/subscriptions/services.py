@@ -1,10 +1,8 @@
 from django.utils import timezone
 
-def subscription_is_active(company):
-
+def subscription_is_active(user):
     try:
-
-        subscription = company.subscription
+        subscription = user.subscription
 
         if not subscription.active:
             return False
@@ -14,21 +12,13 @@ def subscription_is_active(company):
 
         return True
 
-    except:
+    except AttributeError:
         return False
-    
-def can_add_users(company):
 
-    subscription = company.subscription
+def can_add_users(user):
+    subscription = user.subscription
+    return subscription is not None and subscription.active and subscription.plan is not None
 
-    current_users = company.customuser_set.count()
-
-    return current_users < subscription.plan.max_users
-
-def can_add_products(company):
-
-    subscription = company.subscription
-
-    current_products = company.product_set.count()
-
-    return current_products < subscription.plan.max_products
+def can_add_products(user):
+    subscription = user.subscription
+    return subscription is not None and subscription.active and subscription.plan is not None

@@ -80,8 +80,7 @@ SIDEBAR.HTML
     </a>
     {% endif %}
 
-    {% if request.user.is_authenticated and request.user.company %}
-
+{% if request.user.is_authenticated %}
         <!-- Productos -->
         <a href="{% url 'vexora:list_products' %}"
            class="menu-item {% if url_name == 'list_products' %}active{% endif %}">
