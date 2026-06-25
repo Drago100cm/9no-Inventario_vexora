@@ -43,6 +43,14 @@ urlpatterns = [
 
 
     # ============================================
+    # CATEGORY URLs (Categorías)
+    # ============================================
+    path('categories/', views.CategoryListView.as_view(), name='list_categories'),
+    path('categories/create/', views.CategoryCreateView.as_view(), name='create_category'),
+    path('categories/update/<int:id>/', views.CategoryUpdateView.as_view(), name='edit_category'),
+    path('categories/delete/<int:pk>/', views.delete_category, name='delete_category'),
+    
+    # ============================================
     # SUPPLIER URLs (Proveedores)
     # ============================================
     path('suppliers/', views.SupplierListView.as_view(), name='list_suppliers'),

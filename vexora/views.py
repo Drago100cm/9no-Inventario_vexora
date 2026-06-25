@@ -81,15 +81,15 @@ class SiteConfigurationUpdateView(LoginRequiredMixin,UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
 
-        if not getattr(request.user, 'company', None):
+        if not request.user.company:
             return redirect('vexora:company_create')
 
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self):
-        company = getattr(self.request.user, 'company', None)
+
         obj, created = SiteConfiguration.objects.get_or_create(
-            company=company
+            company=self.request.user.company
         )
 
         return obj
@@ -103,22 +103,22 @@ class SMTPConfigurationUpdateView(LoginRequiredMixin,UpdateView):
     success_url = reverse_lazy('vexora:smtp_configuration')
 
     def dispatch(self, request, *args, **kwargs):
-        if not getattr(request.user, 'company', None):
+        if not request.user.company:
             return redirect('vexora:company_create')
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self):
-        company = getattr(self.request.user, 'company', None)
         obj, created = SMTPConfiguration.objects.get_or_create(
-            company=company
+            company=self.request.user.company
         )
         return obj
 class SMTPTestView(LoginRequiredMixin, View):
 
     def post(self, request):
+
         smtp = get_object_or_404(
             SMTPConfiguration,
-            company=getattr(request.user, 'company', None)
+            company=request.user.company
         )
 
         try:
@@ -351,43 +351,30 @@ class SubscriptionPlanListView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['plans'] = ensure_default_plans()
-        context['subscription'] = getattr(self.request.user, 'subscription', None)
-        context['company'] = getattr(self.request.user, 'company', None)
+        context['company'] = self.request.user.company
+        context['subscription'] = None
+        if context['company']:
+            context['subscription'] = getattr(context['company'], 'subscription', None)
         return context
 
+
 class SubscriptionChooseView(LoginRequiredMixin, View):
-
     def post(self, request, plan_id, *args, **kwargs):
+        company = request.user.company
+        if not company:
+            messages.error(request, 'Necesitas crear una empresa antes de elegir un plan.')
+            return redirect('vexora:company_create')
 
-        plan = get_object_or_404(
-            Plan,
-            id=plan_id,
-            active=True
-        )
-
-        current_subscription = Subscription.objects.filter(
-            user=request.user
-        ).first()
-
+        plan = get_object_or_404(Plan, id=plan_id, active=True)
+        current_subscription = getattr(company, 'subscription', None)
         start_date = timezone.now().date()
-        end_date = subscription_end_date(
-            start_date,
-            plan.billing_type
-        )
+        end_date = subscription_end_date(start_date, plan.billing_type)
 
-        if (
-            current_subscription and
-            current_subscription.plan_id == plan.id and
-            current_subscription.active
-        ):
-            messages.info(
-                request,
-                'Ya tienes ese plan seleccionado.'
-            )
+        if current_subscription and current_subscription.plan_id == plan.id and current_subscription.active:
+            messages.info(request, 'Ya tienes ese plan seleccionado.')
             return redirect('vexora:subscription_detail')
 
         if current_subscription:
-
             current_subscription.plan = plan
             current_subscription.status = 'active'
             current_subscription.start_date = start_date
@@ -395,13 +382,10 @@ class SubscriptionChooseView(LoginRequiredMixin, View):
             current_subscription.trial = False
             current_subscription.active = True
             current_subscription.save()
-
             subscription = current_subscription
-
         else:
-
             subscription = Subscription.objects.create(
-                user=request.user,
+                company=company,
                 plan=plan,
                 status='active',
                 start_date=start_date,
@@ -411,8 +395,7 @@ class SubscriptionChooseView(LoginRequiredMixin, View):
             )
 
         payment.objects.create(
-            user=request.user,
-            company=getattr(request.user, 'company', None),
+            company=company,
             subscription=subscription,
             amount=plan.price,
             payment_method='cash',
@@ -421,20 +404,21 @@ class SubscriptionChooseView(LoginRequiredMixin, View):
             paid_at=timezone.now(),
         )
 
-        messages.success(
-            request,
-            f'Suscripción a {plan.name} activada correctamente.'
-        )
-
+        messages.success(request, f'Suscripción a {plan.name} activada correctamente.')
         return redirect('vexora:subscription_detail')
+
+
 class SubscriptionDetailView(LoginRequiredMixin, TemplateView):
     template_name = 'vexora/subscriptions/detail.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['company'] = getattr(self.request.user, 'company', None)
-        context['subscription'] = getattr(self.request.user, 'subscription', None)
-        context['payments'] = payment.objects.filter(user=self.request.user).order_by('-paid_at')
+        context['company'] = self.request.user.company
+        context['subscription'] = None
+        context['payments'] = None
+        if context['company']:
+            context['subscription'] = getattr(context['company'], 'subscription', None)
+            context['payments'] = payment.objects.filter(company=context['company']).order_by('-paid_at')
         return context
 
 
@@ -595,6 +579,9 @@ class CompanyCreateView(LoginRequiredMixin,CreateView):
             company.owner = self.request.user
             company.save()
             self.request.user.companies.add(company)
+            user = self.request.user
+            user.company = company
+            user.save()
             messages.success(request, "✅ ¡Empresa creada correctamente!")
             return redirect("vexora:subscription_list")
         else:
@@ -625,6 +612,64 @@ def delete_company(request, pk):
     return redirect('vexora:company_list')  # ruta a la lista de empresas
 
 # ============================================
+# CATEGORY VIEWS (Categorías)
+# ============================================
+
+class CategoryListView(LoginRequiredMixin, ListView):
+    model = Category
+    template_name = 'vexora/category/list.html'
+    context_object_name = 'categories'
+
+    def get_queryset(self):
+        if self.request.user.company:
+            return Category.objects.filter(company=self.request.user.company).order_by('name')
+        return Category.objects.all().order_by('name')
+
+class CategoryCreateView(LoginRequiredMixin, CreateView):
+    model = Category
+    form_class = CategoryForm
+    template_name = 'vexora/category/create.html'
+
+    def form_valid(self, form):
+        if self.request.user.company:
+            form.instance.company = self.request.user.company
+        messages.success(self.request, "✅ Categoria creada correctamente!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_categories')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'New Category'
+        return context
+    
+class CategoryUpdateView(LoginRequiredMixin, UpdateView):
+    model = Category
+    form_class = CategoryForm
+    template_name = 'vexora/category/update.html'
+    pk_url_kwarg = 'id'
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Categoria actualizada correctamente!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_categories')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit Category'
+        return context
+
+def delete_category(request, pk):
+    category = get_object_or_404(Category, id=pk)
+    category.delete()
+    messages.success(request, "✅ Categoria eliminada correctamente!")
+    return redirect('vexora:list_categories') 
+
+
+# ============================================
 # SUPPLIER VIEWS (Proveedores)
 # ============================================
 
@@ -634,7 +679,25 @@ class SupplierListView(LoginRequiredMixin, ListView):
     context_object_name = 'suppliers'
 
     def get_queryset(self):
-        return Supplier.objects.all().order_by('name')
+        if self.request.user.company:
+            return Supplier.objects.filter(company=self.request.user.company).order_by('name')
+        return Supplier.objects.none()  # Si no tiene empresa, no muestra nada
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Estadísticas
+        if self.request.user.company:
+            suppliers = Supplier.objects.filter(company=self.request.user.company)
+            context['stats'] = {
+                'total': suppliers.count(),
+            }
+        else:
+            context['stats'] = {
+                'total': 0,
+            }
+        
+        return context
 
 
 class SupplierCreateView(LoginRequiredMixin, CreateView):
@@ -642,17 +705,22 @@ class SupplierCreateView(LoginRequiredMixin, CreateView):
     form_class = SupplierForm
     template_name = 'vexora/supplier/create.html'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
-        messages.success(self.request, "✅ Proveedor creado correctamente!")
-        return super().form_valid(form)
+        if self.request.user.company:
+            form.instance.company = self.request.user.company
+            messages.success(self.request, f"✅ Proveedor '{form.instance.name}' creado correctamente!")
+            return super().form_valid(form)
+        else:
+            messages.error(self.request, "❌ No tienes una empresa asignada.")
+            return redirect('vexora:list_suppliers')
 
     def get_success_url(self):
         return reverse('vexora:list_suppliers')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'New Supplier'
-        return context
 
 
 class SupplierUpdateView(LoginRequiredMixin, UpdateView):
@@ -661,24 +729,35 @@ class SupplierUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'vexora/supplier/update.html'
     pk_url_kwarg = 'id'
 
+    def get_queryset(self):
+        if self.request.user.company:
+            return Supplier.objects.filter(company=self.request.user.company)
+        return Supplier.objects.none()
+
+    def get_form_kwargs(self):
+        # 👇 PASAR EL USUARIO AL FORMULARIO
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
-        messages.success(self.request, "✅ Proveedor actualizado correctamente!")
+        messages.success(self.request, f"✅ Proveedor '{form.instance.name}' actualizado correctamente!")
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('vexora:list_suppliers')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Edit Supplier'
-        return context
 
 def delete_supplier(request, pk):
-    supplier = get_object_or_404(Supplier, id=pk)
+    supplier = get_object_or_404(Supplier, id=pk, company=request.user.company)
+    supplier_name = supplier.name
     supplier.delete()
-    messages.success(request, "✅ Proveedor eliminado correctamente!")
-    return redirect('vexora:list_suppliers')  # ruta a la lista de proveedores
+    messages.success(request, f"✅ Proveedor '{supplier_name}' eliminado correctamente!")
+    return redirect('vexora:list_suppliers')
 
+# ===========================================
+# PRODUCT VIEWS (Productos)
+# ===========================================
 
 class ProductListView(LoginRequiredMixin, ListView):
     model = Product
@@ -801,18 +880,44 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
         # O asignar la empresa del usuario
         elif self.request.user.company:
             form.instance.company = self.request.user.company
-            
+        
+        # 👇 NUEVA LÓGICA PARA EL STOCK
+        product = form.save(commit=False)
+        
+        # Obtener la cantidad a agregar
+        stock_addition = form.cleaned_data.get('stock_addition', 0)
+        
+        # Si se agregó stock, sumarlo al stock actual
+        if stock_addition and stock_addition > 0:
+            # Mantener el stock actual y sumarle la adición
+            product.stock = self.object.stock + stock_addition
+            messages.success(
+                self.request, 
+                f'✅ Se agregaron {stock_addition} unidades al stock. Nuevo stock total: {product.stock}'
+            )
+        else:
+            # Si no se agregó stock, mantener el stock actual
+            product.stock = self.object.stock
+        
+        # Guardar el producto
+        product.save()
+        
+        # Guardar los campos ManyToMany (tags)
+        form.save_m2m()
+        
         messages.success(self.request, "✅ Producto actualizado correctamente!")
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('vexora:list_products')
 
+
 def delete_product(request, pk):
     product = get_object_or_404(Product, id=pk)
     product.delete()
     messages.success(request, "✅ Producto eliminado correctamente!")
-    return redirect('vexora:list_products')  
+    return redirect('vexora:list_products')
+
 
 # =====================================
 # SALES VIEWS (Ventas)

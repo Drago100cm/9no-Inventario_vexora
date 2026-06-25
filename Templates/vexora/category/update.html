@@ -1,0 +1,128 @@
+{% load static %}
+
+<div class="modal-dialog modal-dialog-centered modal-md">
+  <div class="modal-content">
+    <div class="modal-header bg-light p-3">
+      <h5 class="modal-title">
+        <i class="ri-edit-line me-2 align-bottom"></i>Editar categoría
+      </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <form method="POST" action="{% url 'vexora:edit_category' category.id %}" id="editCategoryForm">
+      {% csrf_token %}
+      <div class="modal-body">
+        
+        <div class="mb-3">
+          <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
+            Nombre de la categoría <span class="text-danger">*</span>
+          </label>
+          {{ form.name }}
+          {% if form.name.errors %}
+            <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+          {% endif %}
+          {% if form.name.help_text %}
+            <div class="form-text">{{ form.name.help_text }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+            Descripción
+          </label>
+          {{ form.description }}
+          {% if form.description.errors %}
+            <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+          {% endif %}
+          {% if form.description.help_text %}
+            <div class="form-text">{{ form.description.help_text }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Información adicional de solo lectura -->
+        <div class="row mt-3 pt-2 border-top">
+          <div class="col-md-6">
+            <small class="text-muted d-block">
+              <strong>Compañía:</strong> {{ category.company.name|default:"Sin asignar" }}
+            </small>
+          </div>
+          <div class="col-md-6">
+            <small class="text-muted d-block">
+              <strong>Creado:</strong> {{ category.created_at|date:"d/m/Y H:i" }}
+            </small>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">
+          <i class="ri-close-line me-1 align-bottom"></i> Cancelar
+        </button>
+        <button type="submit" class="btn btn-sm btn-success" id="submitEditBtn">
+          <i class="ri-save-line me-1 align-bottom"></i> Actualizar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('editCategoryForm');
+    const submitBtn = document.getElementById('submitEditBtn');
+
+    // Asegurar clases de Bootstrap en los campos del formulario
+    document.querySelectorAll('.modal-body input, .modal-body select, .modal-body textarea').forEach(field => {
+      if (!field.classList.contains('form-control') && !field.classList.contains('form-select')) {
+        if (field.tagName === 'SELECT') {
+          field.classList.add('form-select');
+        } else {
+          field.classList.add('form-control');
+        }
+      }
+    });
+
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        // Validar que el campo nombre no esté vacío
+        const nameField = document.getElementById('{{ form.name.id_for_label }}');
+        if (nameField && nameField.value.trim() === '') {
+          e.preventDefault();
+          
+          // Mostrar error visual
+          nameField.classList.add('is-invalid');
+          
+          // Verificar si ya existe un mensaje de error
+          const parentDiv = nameField.closest('.mb-3');
+          let errorDiv = parentDiv.querySelector('.text-danger');
+          
+          if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'text-danger small mt-1';
+            errorDiv.textContent = 'El nombre de la categoría es obligatorio.';
+            parentDiv.appendChild(errorDiv);
+          }
+          
+          // Enfocar el campo
+          nameField.focus();
+          
+          // Remover error al escribir
+          nameField.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+            const parent = this.closest('.mb-3');
+            const error = parent.querySelector('.text-danger');
+            if (error && error.textContent === 'El nombre de la categoría es obligatorio.') {
+              error.remove();
+            }
+          }, { once: true });
+          
+          return false;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin me-1 align-bottom"></i> Actualizando...';
+      });
+    }
+  });
+</script>
