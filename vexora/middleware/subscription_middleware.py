@@ -1,6 +1,5 @@
 from django.http import JsonResponse
 
-from vexora.models import Company
 from vexora.subscriptions.services import (
     subscription_is_active
 )

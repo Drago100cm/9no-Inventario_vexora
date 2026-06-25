@@ -1,168 +1,187 @@
-    {% extends 'partials/base.html' %}
-    {% load static %}
+{% extends 'partials/base.html' %}
+{% load static %}
 
-    {% block title %}
-        - Usuarios
-    {% endblock %}
+{% block title %}
+  - Usuarios
+{% endblock %}
 
-    {% block content %}
-    <div class="main-content">
-        <div class="page-content">
-        <div class="container-fluid">
-            {% block pagetitle %}
+{% block content %}
+  <div class="main-content">
+    <div class="page-content">
+      <div class="container-fluid">
+        {% block pagetitle %}
 
-            {% endblock %}
+        {% endblock %}
 
-            <!-- Mensajes -->
-            {% if messages %}
-            {% for m in messages %}
-                <script>
-                Swal.fire({
-                    position: 'center',
-                    icon: '{{ m.level_tag }}' == 'error' ? 'error' : 'success',
-                    title: '{{ m }}',
-                    showConfirmButton: false,
-                    timer: 2500
-                })
-                </script>
-            {% endfor %}
-            {% endif %}
-            <div class="row mb-4">
-            <div class="col-12">
-                <div class="bg-light rounded-3 shadow-sm p-3">
-                <!-- Botón Agregar arriba -->
-                <div class="d-flex justify-content-end mb-3">
-                    <!-- Botón agregar (arriba, alineado a la derecha) -->
-                    {% if perms.vexora.add_paquete %}
-                    <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:user_create' %}')">
-                        <i class="ri-add-line me-1 align-bottom"></i>
-                        <span>Agregar usuario</span>
-                    </button>
-                    {% endif %}
-                </div>
-                <!-- Barra de búsqueda abajo -->
-                <div class="d-flex justify-content-end">
-                    <div class="input-group input-group-sm" style="max-width: 380px;">
-                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control input-busqueda-global" placeholder="Buscar en esta tabla (cualquier campo)..." data-tabla="tabla-destinos" />
-                    <button class="btn btn-outline-secondary" type="button" onclick="busquedaGlobal.limpiarBusqueda(this.closest('.input-group').querySelector('input'))"><i class="fas fa-times"></i></button>
+        <!-- Mensajes -->
+        {% if messages %}
+          {% for m in messages %}
+            <script>
+              Swal.fire({
+                position: 'center',
+                icon: '{{ m.level_tag }}' == 'error' ? 'error' : 'success',
+                title: '{{ m }}',
+                showConfirmButton: false,
+                timer: 2500
+              })
+            </script>
+          {% endfor %}
+        {% endif %}
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="bg-light rounded-3 shadow-sm p-3">
+                                <div class="row mb-3">
+                  <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-grow-1">
+                            <p class="text-muted mb-1">Usuarios registrados</p>
+                            <h3 class="mb-0">{{ total_users }}</h3>
+                          </div>
+                          <div class="flex-shrink-0">
+                            <i class="ri-user-3-line fs-1 text-primary"></i>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  </div>
                 </div>
+              <!-- Botón Agregar arriba -->
+              <div class="d-flex justify-content-end mb-3">
+                <!-- Botón agregar (arriba, alineado a la derecha) -->
+                {% if perms.vexora.add_paquete %}
+                  <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:user_create' %}')">
+                    <i class="ri-add-line me-1 align-bottom"></i>
+                    <span>Agregar usuario</span>
+                  </button>
+                {% endif %}
+              </div>
+              <!-- Barra de búsqueda abajo -->
+              <div class="d-flex justify-content-end">
+
+                <div class="input-group input-group-sm" style="max-width: 380px;">
+                  <span class="input-group-text"><i class="fas fa-search"></i></span>
+
+                  <input type="text" class="form-control input-busqueda-global" placeholder="Buscar en esta tabla (cualquier campo)..." data-tabla="tabla-destinos" />
+                  <button class="btn btn-outline-secondary" type="button" onclick="busquedaGlobal.limpiarBusqueda(this.closest('.input-group').querySelector('input'))"><i class="fas fa-times"></i></button>
                 </div>
+              </div>
             </div>
-            </div>
-            <!-- Tabla de exámenes -->
-            <div class="table-container">
-            <table class="table table-nowrap" id="tabla-destinos">
-                <thead>
+          </div>
+        </div>
+        <!-- Tabla de exámenes -->
+        <div class="table-container">
+          <table class="table table-nowrap" id="tabla-destinos">
+            <thead>
+              <tr>
+                <th data-sort="name">Nombre del usuario</th>
+                <th data-sort="duration">email</th>
+                <th data-sort="questions">Primer apellido</th>
+                <th data-sort="status">Segundo apellido</th>
+                <th data-sort="status">Telefono</th>
+                <th data-sort="status">Es admin?</th>
+                <th data-sort="status">Grupos</th>
+
+                <th data-sort="status">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in list_user %}
                 <tr>
-                    <th data-sort="name">Nombre del usuario</th>
-                    <th data-sort="duration">email</th>
-                    <th data-sort="questions">Primer apellido</th>
-                    <th data-sort="status">Segundo apellido</th>
-                    <th data-sort="status">Telefono</th>
-                    <th data-sort="status">Es admin?</th>
-                    <th data-sort="status">Grupos</th>
-
-                    <th data-sort="status">Acciones</th>
+                  <td>{{ user.username }}</td>
+                  <td>{{ user.email }}</td>
+                  <td>{{ user.last_name }}</td>
+                  <td>{{ user.first_name }}</td>
+                  <td>{{ user.phone|default:'sin telefono' }}</td>
+                  <td>{{ user.is_superuser|yesno:'Sí,No' }}</td>
+                  <td>
+                    {% for group in user.groups.all %}
+                      <span class="badge bg-primary">{{ group.name }}</span>
+                    {% endfor %}
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:user_edit' user.id|stringformat:'d' %}')" style="width: 75px;"><i class="ri-pencil-fill me-1 align-bottom"></i> Editar</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light" onclick="deleteE('{{ user.id }}')" style="width: 85px;"><i class="ri-delete-bin-6-fill me-1 align-bottom"></i> Eliminar</button>
+                  </td>
                 </tr>
-                </thead>
-                <tbody>
-                {% for user in list_user %}
-                    <tr>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>{{ user.last_name }}</td>
-                    <td>{{ user.first_name }}</td>
-                    <td>{{ user.phone|default:"sin telefono" }}</td>
-                    <td>{{ user.is_superuser|yesno:"Sí,No" }}</td>
-                    <td>
-                        {% for group in user.groups.all %}
-                            <span class="badge bg-primary">{{ group.name }}</span>
-                        {% endfor %}
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:user_edit' user.id|stringformat:'d' %}')" style="width: 75px;"><i class="ri-pencil-fill me-1 align-bottom"></i> Editar</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light" onclick="deleteE('{{ user.id }}')" style="width: 85px;"><i class="ri-delete-bin-6-fill me-1 align-bottom"></i> Eliminar</button>
-                    </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            </div>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        </div>
+      </div>
     </div>
-    <!-- Modal dinámico -->
-    <div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
-    {% endblock %}
-    {% block extra_js %}
-    <script type="text/javascript">
-        function creationModal(url) {
-        $('#ModalOptions').load(url, function () {
-            $(this).modal('show')
-        })
+  </div>
+  <!-- Modal dinámico -->
+  <div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
+{% endblock %}
+{% block extra_js %}
+  <script type="text/javascript">
+    function creationModal(url) {
+      $('#ModalOptions').load(url, function () {
+        $(this).modal('show')
+      })
+    }
+    function editModal(url) {
+      $('#ModalOptions').load(url, function () {
+        $(this).modal('show')
+      })
+    }
+    
+    function deleteE(id) {
+      console.log('id recibidooooo es:', id)
+      const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+          confirmButton: 'btn btn-success',
+          cancelButton: 'btn btn-danger m-3'
+        },
+        buttonsStyling: false
+      })
+    
+      Swal.fire({
+        html: '<div class="mt-3"><lord-icon src="https://cdn.lordicon.com/wpyrrmcq.json" trigger="loop" delay="700" colors="primary:#c71f16" style="width:100px;height:100px"></lord-icon><div class="mt-4 pt-2 fs-15 mx-5"><h4>¿Está seguro?</h4><p class="text-muted mx-4 mb-0">¡Este cambio no se puede deshacer!</p></div></div>',
+        showCancelButton: true,
+        confirmButtonText: 'Confirmar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = "{% url 'vexora:user_delete' 0 %}".replace('0', id)
         }
-        function editModal(url) {
-        $('#ModalOptions').load(url, function () {
-            $(this).modal('show')
-        })
-        }
-        
-        function deleteE(id) {
-        console.log('id recibidooooo es:', id)
-        const swalWithBootstrapButtons = Swal.mixin({
-            customClass: {
-            confirmButton: 'btn btn-success',
-            cancelButton: 'btn btn-danger m-3'
-            },
-            buttonsStyling: false
-        })
-        
-        Swal.fire({
-            html: '<div class="mt-3"><lord-icon src="https://cdn.lordicon.com/wpyrrmcq.json" trigger="loop" delay="700" colors="primary:#c71f16" style="width:100px;height:100px"></lord-icon><div class="mt-4 pt-2 fs-15 mx-5"><h4>¿Está seguro?</h4><p class="text-muted mx-4 mb-0">¡Este cambio no se puede deshacer!</p></div></div>',
-            showCancelButton: true,
-            confirmButtonText: 'Confirmar',
-            cancelButtonText: 'Cancelar',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-            window.location.href = "{% url 'vexora:user_delete' 0 %}".replace('0', id)
-            }
-        })
-        }
-    </script>
+      })
+    }
+  </script>
 
-    <script>
-        // Funcionalidad de ordenamiento para la tabla
-        document.addEventListener('DOMContentLoaded', function () {
-        const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent
-        
-        const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx))
-        
-        document.querySelectorAll('th[data-sort]').forEach((th) => {
-            th.addEventListener('click', function () {
-            const table = this.closest('table')
-            const tbody = table.querySelector('tbody')
-            const index = Array.from(this.parentNode.children).indexOf(this)
-            const asc = this.getAttribute('data-sort-direction') === 'asc'
-        
-            // Reset all sort directions
-            table.querySelectorAll('th[data-sort]').forEach((header) => {
-                header.removeAttribute('data-sort-direction')
-                header.querySelector('i').className = 'fas fa-sort'
-            })
-        
-            // Set current sort direction
-            this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc')
-            this.querySelector('i').className = asc ? 'fas fa-sort-down' : 'fas fa-sort-up'
-        
-            // Sort the table
-            Array.from(tbody.querySelectorAll('tr'))
-                .sort(comparer(index, asc))
-                .forEach((tr) => tbody.appendChild(tr))
-            })
+  <script>
+    // Funcionalidad de ordenamiento para la tabla
+    document.addEventListener('DOMContentLoaded', function () {
+      const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent
+    
+      const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx))
+    
+      document.querySelectorAll('th[data-sort]').forEach((th) => {
+        th.addEventListener('click', function () {
+          const table = this.closest('table')
+          const tbody = table.querySelector('tbody')
+          const index = Array.from(this.parentNode.children).indexOf(this)
+          const asc = this.getAttribute('data-sort-direction') === 'asc'
+    
+          // Reset all sort directions
+          table.querySelectorAll('th[data-sort]').forEach((header) => {
+            header.removeAttribute('data-sort-direction')
+            header.querySelector('i').className = 'fas fa-sort'
+          })
+    
+          // Set current sort direction
+          this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc')
+          this.querySelector('i').className = asc ? 'fas fa-sort-down' : 'fas fa-sort-up'
+    
+          // Sort the table
+          Array.from(tbody.querySelectorAll('tr'))
+            .sort(comparer(index, asc))
+            .forEach((tr) => tbody.appendChild(tr))
         })
-        })
-    </script>
-    {% endblock %}
+      })
+    })
+  </script>
+{% endblock %}

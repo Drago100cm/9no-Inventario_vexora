@@ -440,24 +440,28 @@ class SubscriptionDetailView(LoginRequiredMixin, TemplateView):
 
     
 #---------------------User List----------------------
-class UserListView(LoginRequiredMixin,ListView):
-    #template_name = "logamex/departments/departaments.html"
+class UserListView(LoginRequiredMixin, ListView):
     template_name = "vexora/users/list.html"
 
     def get(self, request):
-        
-        list_user = CustomUser.objects.all()
+
+        companies = Company.objects.filter(
+            Q(owner=request.user) |
+            Q(members=request.user)
+        ).distinct()
+
+        list_user = CustomUser.objects.filter(
+            companies__in=companies
+        ).distinct()
 
         data = {
             'list_user': list_user
         }
 
-        permisos = request.user.get_all_permissions()
-
-        if "vexora.view_customuser" in permisos:
+        if request.user.has_perm("vexora.view_customuser"):
             return render(request, self.template_name, data)
-        else:
-            return redirect("vexora:home")
+
+        return redirect("vexora:home")
 
        
 #--------------------Crear usuario -------------------
@@ -590,6 +594,7 @@ class CompanyCreateView(LoginRequiredMixin,CreateView):
             # Vincular usuario
             company.owner = self.request.user
             company.save()
+            self.request.user.companies.add(company)
             messages.success(request, "✅ ¡Empresa creada correctamente!")
             return redirect("vexora:subscription_list")
         else:
