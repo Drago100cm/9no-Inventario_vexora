@@ -69,6 +69,21 @@ urlpatterns = [
     path('products/delete/<int:pk>/', views.delete_product, name='delete_product'), 
     
     
+    # ============================================
+    # SALES URLs (Ventas )
+    # ============================================
+    path('sales/', views.SalesListView.as_view(), name='list_sales'),
+    path('sales/create/', views.SalesCreateView.as_view(), name='create_sale'),
+    path('sales/update/<int:id>/', views.SalesUpdateView.as_view(), name='edit_sale'),
+
+    # ============================================
+  # SALES MAIN URLs (Ventas Frontend)
+    # ============================================
+    path('sales-main/', views.SalesMainListView.as_view(), name='sales_main_list'),
+    path('sales-main/create/', views.SalesMainCreateView.as_view(), name='sales_main_create'),
+    path('sales-main/update/', views.SalesMainUpdateView.as_view(), name='sales_main_update'),
+    
+    
     # API endpoints
     path('api/register/', api_register, name='api_register'),
     path('api/login/', api_login, name='api_login'),
@@ -78,9 +93,7 @@ urlpatterns = [
     path('api/editar_producto/<int:id>/', api_product_update, name='api_product_update'),
     path('api/crear_proveedor/', api_crear_proveedor, name='api_crear_proveedor'),
     path('api/editar_proveedor/<int:id>/', api_supplier_update, name='api_supplier_update'),
-    
-    
-    
+
     
     
     

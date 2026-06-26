@@ -95,6 +95,13 @@ SIDEBAR.HTML
             <span>Proveedores</span>
         </a>
 
+        <!-- Ventas -->
+         <a href="{% url 'vexora:sales_main_list' %}"
+         class="menu-item {% if url_name == 'sales_main_list' or url_name == 'sales_main_create' or url_name == 'sales_main_update' %}active{% endif %}">
+         <i class="fas fa-cash-register"></i>
+         <span>Ventas</span>
+        </a>
+
         <!-- Suscripción -->
         <a href="{% url 'vexora:subscription_list' %}"
            class="menu-item {% if url_name == 'subscription_list' or url_name == 'subscription_detail' %}active{% endif %}">

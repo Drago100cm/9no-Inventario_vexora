@@ -1,0 +1,545 @@
+<div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <div>
+                <h5 class="modal-title mb-0">
+                    <i class="ri-shopping-cart-2-line me-2"></i>
+                    Registrar venta
+                </h5>
+                <small class="text-muted">
+                    Captura los datos de la venta y agrega los productos correspondientes.
+                </small>
+            </div>
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+            </button>
+        </div>
+
+        <form id="saleForm">
+
+            <div class="modal-body">
+
+                <div class="card mb-4">
+                    <div class="card-body">
+
+                        <h6 class="mb-3">
+                            <i class="ri-file-list-3-line me-1"></i>
+                            Datos de la venta
+                        </h6>
+
+                        <div class="row">
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Folio / Factura</label>
+                                <input type="text"
+                                       class="form-control"
+                                       name="invoice_number"
+                                       placeholder="Se generará automáticamente"
+                                       readonly>
+                                <small class="text-muted">
+                                    Identificador único generado por el sistema.
+                                </small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fecha de venta</label>
+                                <input type="date"
+                                       class="form-control"
+                                       name="date"
+                                       id="saleDate">
+                                <small class="text-muted">
+                                    Día en que se registra la venta.
+                                </small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select"
+                                        name="status">
+                                    <option value="draft">Borrador</option>
+                                    <option value="pending" selected>Pendiente</option>
+                                    <option value="completed">Completada</option>
+                                    <option value="cancelled">Cancelada</option>
+                                </select>
+                                <small class="text-muted">
+                                    Situación actual de la venta.
+                                </small>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+
+                        <h6 class="mb-3">
+                            <i class="ri-user-3-line me-1"></i>
+                            Cliente
+                        </h6>
+
+                        <div class="row">
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Nombre del cliente</label>
+                                <input type="text"
+                                       class="form-control"
+                                       name="customer_name"
+                                       placeholder="Nombre completo o razón social">
+                                <small class="text-muted">
+                                    Persona o negocio que realiza la compra.
+                                </small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Correo del cliente</label>
+                                <input type="email"
+                                       class="form-control"
+                                       name="customer_email"
+                                       placeholder="correo@ejemplo.com">
+                                <small class="text-muted">
+                                    Para enviar comprobantes o dar seguimiento.
+                                </small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Teléfono del cliente</label>
+                                <input type="text"
+                                       class="form-control"
+                                       name="customer_phone"
+                                       placeholder="Número de contacto">
+                                <small class="text-muted">
+                                    Dato opcional para aclaraciones.
+                                </small>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                            <div>
+                                <h6 class="mb-0">
+                                    <i class="ri-archive-2-line me-1"></i>
+                                    Productos
+                                </h6>
+                                <small class="text-muted">
+                                    Selecciona productos del inventario y agrégalos a la venta.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row align-items-end">
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Buscar producto</label>
+
+                                <select class="selectpicker form-control"
+                                        id="productSelect"
+                                        data-live-search="true"
+                                        data-width="100%"
+                                        title="Seleccione un producto">
+                                </select>
+
+                                <small class="text-muted">
+                                    Se llenará con productos activos del inventario.
+                                </small>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">SKU</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="productSku"
+                                       readonly>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Stock</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="productStock"
+                                       value="0"
+                                       readonly>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Precio venta</label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="productPrice"
+                                       step="0.01"
+                                       value="0.00"
+                                       readonly>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Cantidad</label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="productQuantity"
+                                       min="1"
+                                       value="1">
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Descuento</label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="productDiscount"
+                                       step="0.01"
+                                       min="0"
+                                       value="0.00">
+                            </div>
+
+                            <div class="col-md-10 mb-3 d-flex justify-content-end">
+                                <button type="button"
+                                        class="btn btn-outline-primary"
+                                        id="addProductBtn">
+                                    <i class="ri-add-line me-1"></i>
+                                    Agregar producto
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <div class="table-responsive mt-3">
+
+                            <table class="table table-bordered align-middle"
+                                   id="saleItemsTable">
+
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th width="110">Cantidad</th>
+                                        <th width="140">Precio</th>
+                                        <th width="140">Descuento</th>
+                                        <th width="150">Subtotal</th>
+                                        <th width="90">Acción</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr id="emptyItemsRow">
+                                        <td colspan="6"
+                                            class="text-center py-4 text-muted">
+                                            No hay productos agregados.
+                                        </td>
+                                    </tr>
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-7 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+
+                                <h6 class="mb-3">
+                                    <i class="ri-sticky-note-line me-1"></i>
+                                    Observaciones
+                                </h6>
+
+                                <textarea class="form-control"
+                                          rows="7"
+                                          name="notes"
+                                          placeholder="Escribe observaciones, condiciones de pago o detalles importantes de la venta."></textarea>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+
+                                <h6 class="mb-3">
+                                    <i class="ri-bill-line me-1"></i>
+                                    Resumen de venta
+                                </h6>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Subtotal</span>
+                                    <strong id="subtotalText">$0.00</strong>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">IVA / Impuesto</span>
+                                    <strong id="taxText">$0.00</strong>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Descuento</span>
+                                    <strong id="discountText">$0.00</strong>
+                                </div>
+
+                                <hr>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">Total a pagar</span>
+                                    <h4 class="text-success mb-0"
+                                        id="totalText">
+                                        $0.00
+                                    </h4>
+                                </div>
+
+                                <input type="hidden"
+                                       name="subtotal"
+                                       id="subtotalInput"
+                                       value="0">
+
+                                <input type="hidden"
+                                       name="tax"
+                                       id="taxInput"
+                                       value="0">
+
+                                <input type="hidden"
+                                       name="discount"
+                                       id="discountInput"
+                                       value="0">
+
+                                <input type="hidden"
+                                       name="total"
+                                       id="totalInput"
+                                       value="0">
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    <i class="ri-save-3-line me-1"></i>
+                    Guardar venta
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+    let saleItems = [];
+
+    const taxRate = 0;
+
+    function formatCurrency(value) {
+        return '$' + Number(value || 0).toFixed(2);
+    }
+
+    function setTodayDate() {
+        const dateInput = document.getElementById('saleDate');
+
+        if (!dateInput) return;
+
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+
+        dateInput.value = `${year}-${month}-${day}`;
+    }
+
+    function updateTotals() {
+        let subtotal = 0;
+        let discount = 0;
+
+        saleItems.forEach(item => {
+            subtotal += item.quantity * item.unitPrice;
+            discount += item.discount;
+        });
+
+        const tax = subtotal * taxRate;
+        const total = subtotal + tax - discount;
+
+        document.getElementById('subtotalText').textContent = formatCurrency(subtotal);
+        document.getElementById('taxText').textContent = formatCurrency(tax);
+        document.getElementById('discountText').textContent = formatCurrency(discount);
+        document.getElementById('totalText').textContent = formatCurrency(total);
+
+        document.getElementById('subtotalInput').value = subtotal.toFixed(2);
+        document.getElementById('taxInput').value = tax.toFixed(2);
+        document.getElementById('discountInput').value = discount.toFixed(2);
+        document.getElementById('totalInput').value = total.toFixed(2);
+    }
+
+    function renderItemsTable() {
+        const tbody = document.querySelector('#saleItemsTable tbody');
+
+        tbody.innerHTML = '';
+
+        if (saleItems.length === 0) {
+            tbody.innerHTML = `
+                <tr id="emptyItemsRow">
+                    <td colspan="6"
+                        class="text-center py-4 text-muted">
+                        No hay productos agregados.
+                    </td>
+                </tr>
+            `;
+            updateTotals();
+            return;
+        }
+
+        saleItems.forEach((item, index) => {
+            const rowSubtotal = (item.quantity * item.unitPrice) - item.discount;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <strong>${item.productName}</strong>
+                        <br>
+                        <small class="text-muted">
+                            SKU: ${item.sku || 'Sin SKU'}
+                        </small>
+                    </td>
+                    <td>${item.quantity}</td>
+                    <td>${formatCurrency(item.unitPrice)}</td>
+                    <td>${formatCurrency(item.discount)}</td>
+                    <td class="fw-bold">${formatCurrency(rowSubtotal)}</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger"
+                                onclick="removeItem(${index})">
+                            <i class="ri-delete-bin-6-line"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        updateTotals();
+    }
+
+    function removeItem(index) {
+        saleItems.splice(index, 1);
+        renderItemsTable();
+    }
+
+    function clearProductFields() {
+        document.getElementById('productSku').value = '';
+        document.getElementById('productStock').value = '0';
+        document.getElementById('productPrice').value = '0.00';
+        document.getElementById('productQuantity').value = 1;
+        document.getElementById('productDiscount').value = '0.00';
+
+        $('#productSelect').selectpicker('val', '');
+    }
+
+    document.getElementById('addProductBtn').addEventListener('click', function () {
+        const productSelect = document.getElementById('productSelect');
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+
+        const productId = productSelect.value;
+        const productName = selectedOption ? selectedOption.text : '';
+        const sku = selectedOption ? selectedOption.getAttribute('data-sku') : '';
+        const stock = Number(selectedOption ? selectedOption.getAttribute('data-stock') || 0 : 0);
+        const quantity = Number(document.getElementById('productQuantity').value || 0);
+        const unitPrice = Number(document.getElementById('productPrice').value || 0);
+        const discount = Number(document.getElementById('productDiscount').value || 0);
+
+        if (!productId) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selecciona un producto',
+                text: 'Debes seleccionar un producto del inventario.'
+            });
+            return;
+        }
+
+        if (quantity <= 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Cantidad inválida',
+                text: 'La cantidad debe ser mayor a cero.'
+            });
+            return;
+        }
+
+        if (stock > 0 && quantity > stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Stock insuficiente',
+                text: 'La cantidad no puede ser mayor al stock disponible.'
+            });
+            return;
+        }
+
+        saleItems.push({
+            productId,
+            productName,
+            sku,
+            stock,
+            quantity,
+            unitPrice,
+            discount
+        });
+
+        clearProductFields();
+        renderItemsTable();
+    });
+
+    $('#productSelect').on('changed.bs.select', function () {
+        const selectedOption = this.options[this.selectedIndex];
+
+        if (!selectedOption) return;
+
+        const sku = selectedOption.getAttribute('data-sku') || '';
+        const stock = selectedOption.getAttribute('data-stock') || '0';
+        const price = selectedOption.getAttribute('data-price') || '0.00';
+
+        document.getElementById('productSku').value = sku;
+        document.getElementById('productStock').value = stock;
+        document.getElementById('productPrice').value = Number(price).toFixed(2);
+    });
+
+    document.getElementById('saleForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        if (saleItems.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Venta sin productos',
+                text: 'Agrega al menos un producto para registrar la venta.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            icon: 'info',
+            title: 'Frontend listo',
+            text: 'El formulario ya está preparado para conectarse al backend de ventas.'
+        });
+    });
+
+    setTodayDate();
+    $('.selectpicker').selectpicker();
+</script>

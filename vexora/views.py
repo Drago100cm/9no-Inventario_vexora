@@ -960,3 +960,18 @@ class SalesUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Edit Sale'
         return context
+    
+# =====================================
+# SALES MAIN (CRUD Frontend)
+# =====================================
+
+class SalesMainListView(LoginRequiredMixin, TemplateView):
+    template_name = "vexora/sales_main/list.html"
+
+
+class SalesMainCreateView(LoginRequiredMixin, TemplateView):
+    template_name = "vexora/sales_main/create.html"
+
+
+class SalesMainUpdateView(LoginRequiredMixin, TemplateView):
+    template_name = "vexora/sales_main/update.html"
