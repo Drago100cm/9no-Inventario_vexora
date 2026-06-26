@@ -169,14 +169,22 @@
                                     type="button"
                                     class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light"
                                     onclick="deleteE('{{ group.id }}')"
-                                    style="width: 85px;">
+                                    style="width: 95px;">
 
                                     <i class="ri-delete-bin-6-fill me-1 align-bottom"></i>
 
                                     Eliminar
 
                                 </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary btn-icon waves-effect waves-light"
+                                    onclick="editModal('{% url 'vexora:group_edit' group.id %}')"
+                                    style="width: 85px;">
 
+                                    <i class="ri-edit-2-fill me-1 align-bottom"></i>
+
+                                    Editar
                                 {% endif %}
 
                             </td>

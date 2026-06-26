@@ -1,6 +1,5 @@
 from django.http import JsonResponse
 
-from vexora.models import Company
 from vexora.subscriptions.services import (
     subscription_is_active
 )
@@ -42,7 +41,7 @@ class SubscriptionMiddleware:
         if not active:
             return JsonResponse(
                 {
-                    "error": "Tu suscripción expiró o no está activa"
+                    "error": "Tu suscripción expiró o no está activa. Por favor, renueva tu suscripción para continuar usando la aplicación."
                 },
                 status=403
             )

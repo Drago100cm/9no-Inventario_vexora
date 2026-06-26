@@ -1,0 +1,273 @@
+<div class="modal-dialog modal-dialog-centered modal-xl">
+  <div class="modal-content">
+    <div class="modal-header bg-light p-3">
+      <h5 class="modal-title">Editar grupo</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <form method="POST" action="{% url 'vexora:group_edit' group.id %}">
+      {% csrf_token %}
+
+      {% if form.errors %}
+        <div class="alert alert-danger">
+          {% for field in form %}
+            {% for error in field.errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="modal-body">
+
+        <div class="mb-4">
+          <label for="name" class="form-label fw-bold">Nombre del grupo</label>
+          <input
+            type="text"
+            name="name"
+            id="name"
+            class="form-control"
+            value="{{ form.data.name|default:group.name }}"
+            required
+          >
+        </div>
+
+        <!-- Pestañas -->
+        <ul class="nav nav-tabs mb-3" id="permissionsTab" role="tablist">
+
+          <li class="nav-item">
+            <button type="button" class="nav-link active" data-bs-toggle="tab" data-bs-target="#users">👥 Usuarios</button>
+          </li>
+
+          <li class="nav-item">
+            <button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#company">🏢 Compañías</button>
+          </li>
+
+          <li class="nav-item">
+            <button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#plans">📊 Planes</button>
+          </li>
+
+          <li class="nav-item">
+            <button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#subscriptions">💰 Suscripciones</button>
+          </li>
+
+          <li class="nav-item">
+            <button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#payments">💳 Pagos</button>
+          </li>
+
+          <li class="nav-item">
+            <button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#features">⚙️ Features</button>
+          </li>
+
+          <li class="nav-item">
+            <button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#config">⚙️ Configuración</button>
+          </li>
+
+        </ul>
+
+        <div class="tab-content">
+
+          <!-- USERS -->
+          <div class="tab-pane fade show active" id="users">
+            <div class="card">
+              <div class="card-body row">
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="add_customuser"
+                         {% if "add_customuser" in group_permissions %}checked{% endif %}>
+                  Crear
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="change_customuser"
+                         {% if "change_customuser" in group_permissions %}checked{% endif %}>
+                  Editar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="delete_customuser"
+                         {% if "delete_customuser" in group_permissions %}checked{% endif %}>
+                  Eliminar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="view_customuser"
+                         {% if "view_customuser" in group_permissions %}checked{% endif %}>
+                  Ver
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- COMPANY -->
+          <div class="tab-pane fade" id="company">
+            <div class="card">
+              <div class="card-body row">
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="add_company"
+                         {% if "add_company" in group_permissions %}checked{% endif %}>
+                  Crear
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="change_company"
+                         {% if "change_company" in group_permissions %}checked{% endif %}>
+                  Editar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="delete_company"
+                         {% if "delete_company" in group_permissions %}checked{% endif %}>
+                  Eliminar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="view_company"
+                         {% if "view_company" in group_permissions %}checked{% endif %}>
+                  Ver
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- PLANS -->
+          <div class="tab-pane fade" id="plans">
+            <div class="card">
+              <div class="card-body row">
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="add_plan"
+                         {% if "add_plan" in group_permissions %}checked{% endif %}>
+                  Crear
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="change_plan"
+                         {% if "change_plan" in group_permissions %}checked{% endif %}>
+                  Editar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="delete_plan"
+                         {% if "delete_plan" in group_permissions %}checked{% endif %}>
+                  Eliminar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="view_plan"
+                         {% if "view_plan" in group_permissions %}checked{% endif %}>
+                  Ver
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBSCRIPTIONS -->
+          <div class="tab-pane fade" id="subscriptions">
+            <div class="card">
+              <div class="card-body row">
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="view_subscription"
+                         {% if "view_subscription" in group_permissions %}checked{% endif %}>
+                  Ver
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="add_subscription"
+                         {% if "add_subscription" in group_permissions %}checked{% endif %}>
+                  Crear
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="change_subscription"
+                         {% if "change_subscription" in group_permissions %}checked{% endif %}>
+                  Editar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="delete_subscription"
+                         {% if "delete_subscription" in group_permissions %}checked{% endif %}>
+                  Eliminar
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- PAYMENTS -->
+          <div class="tab-pane fade" id="payments">
+            <div class="card">
+              <div class="card-body row">
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="view_payment"
+                         {% if "view_payment" in group_permissions %}checked{% endif %}>
+                  Ver
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="add_payment"
+                         {% if "add_payment" in group_permissions %}checked{% endif %}>
+                  Crear
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="change_payment"
+                         {% if "change_payment" in group_permissions %}checked{% endif %}>
+                  Editar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="delete_payment"
+                         {% if "delete_payment" in group_permissions %}checked{% endif %}>
+                  Eliminar
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- FEATURES -->
+          <div class="tab-pane fade" id="features">
+            <div class="card">
+              <div class="card-body row">
+                <!-- Agrega aquí los permisos para Features -->
+                <div class="col-12">
+                  <p class="text-muted">Configura permisos para Features</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONFIG -->
+          <div class="tab-pane fade" id="config">
+            <div class="card">
+              <div class="card-body row">
+                <!-- Agrega aquí los permisos para Configuración -->
+                <div class="col-12">
+                  <p class="text-muted">Configura permisos para Configuración</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="submit" class="btn btn-primary">Actualizar grupo</button>
+      </div>
+
+    </form>
+  </div>
+</div>

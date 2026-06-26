@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-  - Usuarios
+  - Mi Suscripción
 {% endblock %}
 
 {% block content %}
@@ -10,7 +10,7 @@
     <div class="page-content">
       <div class="container-fluid">
         {% block pagetitle %}
-
+          <h1 class="page-title">Mi Suscripción</h1>
         {% endblock %}
 
         <!-- Mensajes -->
@@ -30,39 +30,20 @@
         <div class="row mb-4">
           <div class="col-12">
             <div class="bg-light rounded-3 shadow-sm p-3">
-                                <div class="row mb-3">
-                  <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
-                      <div class="card-body">
-                        <div class="d-flex align-items-center">
-                          <div class="flex-grow-1">
-                            <p class="text-muted mb-1">Usuarios registrados</p>
-                            <h3 class="mb-0">{{ total_users }}</h3>
-                          </div>
-                          <div class="flex-shrink-0">
-                            <i class="ri-user-3-line fs-1 text-primary"></i>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               <!-- Botón Agregar arriba -->
               <div class="d-flex justify-content-end mb-3">
                 <!-- Botón agregar (arriba, alineado a la derecha) -->
                 {% if perms.vexora.add_paquete %}
-                  <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:user_create' %}')">
+                  <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:company_create' %}')">
                     <i class="ri-add-line me-1 align-bottom"></i>
-                    <span>Agregar usuario</span>
+                    <span>Agregar Empresa</span>
                   </button>
                 {% endif %}
               </div>
               <!-- Barra de búsqueda abajo -->
               <div class="d-flex justify-content-end">
-
                 <div class="input-group input-group-sm" style="max-width: 380px;">
                   <span class="input-group-text"><i class="fas fa-search"></i></span>
-
                   <input type="text" class="form-control input-busqueda-global" placeholder="Buscar en esta tabla (cualquier campo)..." data-tabla="tabla-destinos" />
                   <button class="btn btn-outline-secondary" type="button" onclick="busquedaGlobal.limpiarBusqueda(this.closest('.input-group').querySelector('input'))"><i class="fas fa-times"></i></button>
                 </div>
@@ -71,44 +52,77 @@
           </div>
         </div>
         <!-- Tabla de exámenes -->
-        <div class="table-container">
-          <table class="table table-nowrap" id="tabla-destinos">
-            <thead>
-              <tr>
-                <th data-sort="name">Nombre del usuario</th>
-                <th data-sort="duration">email</th>
-                <th data-sort="questions">Primer apellido</th>
-                <th data-sort="status">Segundo apellido</th>
-                <th data-sort="status">Telefono</th>
-                <th data-sort="status">Es admin?</th>
-                <th data-sort="status">Grupos</th>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Detalles de tu suscripción</h2>
+        <p class="text-muted">Consulta el estado de tu plan y los pagos realizados.</p>
+    </div>
+    <a href="{% url 'vexora:subscription_list' %}" class="btn btn-outline-light">Cambiar plan</a>
+</div>
 
-                <th data-sort="status">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for user in list_user %}
-                <tr>
-                  <td>{{ user.username }}</td>
-                  <td>{{ user.email }}</td>
-                  <td>{{ user.last_name }}</td>
-                  <td>{{ user.first_name }}</td>
-                  <td>{{ user.phone|default:'sin telefono' }}</td>
-                  <td>{{ user.is_superuser|yesno:'Sí,No' }}</td>
-                  <td>
-                    {% for group in user.groups.all %}
-                      <span class="badge bg-primary">{{ group.name }}</span>
-                    {% endfor %}
-                  </td>
-                  <td>
-                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:user_edit' user.id|stringformat:'d' %}')" style="width: 75px;"><i class="ri-pencil-fill me-1 align-bottom"></i> Editar</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light" onclick="deleteE('{{ user.id }}')" style="width: 85px;"><i class="ri-delete-bin-6-fill me-1 align-bottom"></i> Eliminar</button>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+{% if not subscription %}
+    <div class="alert alert-info">
+        No hay suscripción activa. Elige un plan para comenzar.
+    </div>
+{% else %}
+        <div class="row gy-4">
+            <div class="col-lg-6">
+                <div class="card p-4">
+                    <h4>{{ subscription.plan.name }}</h4>
+                    <p class="text-muted">{{ subscription.plan.description|default:'Este plan no tiene descripción.' }}</p>
+                    <div class="mb-3">
+                        <strong>Estado:</strong>
+                        <span class="badge bg-{{ subscription.status|lower|default:'secondary' }}">{{ subscription.get_status_display }}</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-2"><strong>Inicio:</strong> {{ subscription.start_date }}</div>
+                        <div class="col-6 mb-2"><strong>Vence:</strong> {{ subscription.end_date }}</div>
+                        <div class="col-6 mb-2"><strong>Prueba:</strong> {{ subscription.trial|yesno:'Sí,No' }}</div>
+                        <div class="col-6 mb-2"><strong>Activa:</strong> {{ subscription.active|yesno:'Sí,No' }}</div>
+                    </div>
+                    <hr>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-user me-2 text-primary"></i>{{ subscription.plan.max_users }} usuarios</li>
+                        <li><i class="fas fa-box me-2 text-primary"></i>{{ subscription.plan.max_products }} productos</li>
+                        <li><i class="fas fa-store me-2 text-primary"></i>{{ subscription.plan.max_branches }} sucursales</li>
+                        <li><i class="fas fa-globe me-2 text-primary"></i>{% if subscription.plan.custom_domain %}Dominio personalizado incluido{% else %}Sin dominio personalizado{% endif %}</li>
+                        <li><i class="fas fa-headset me-2 text-primary"></i>{% if subscription.plan.priority_support %}Soporte prioritario{% else %}Soporte estándar{% endif %}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card p-4">
+                    <h5>Historial de pagos</h5>
+                    {% if payments and payments.exists %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Monto</th>
+                                        <th>Método</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pay in payments %}
+                                        <tr>
+                                            <td>{{ pay.paid_at|date:'Y-m-d H:i' }}</td>
+                                            <td>{{ pay.amount|floatformat:2 }} MXN</td>
+                                            <td>{{ pay.get_payment_method_display }}</td>
+                                            <td>{{ pay.get_status_display }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="mb-0">Aún no se ha registrado ningún pago.</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
+    {% endif %}
       </div>
     </div>
   </div>
@@ -146,7 +160,7 @@
         reverseButtons: true
       }).then((result) => {
         if (result.isConfirmed) {
-          window.location.href = "{% url 'vexora:user_delete' 0 %}".replace('0', id)
+          window.location.href = "{% url 'vexora:company_delete' 0 %}".replace('0', id)
         }
       })
     }

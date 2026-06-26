@@ -20,6 +20,7 @@ urlpatterns = [
     #----------------------Grupos y permisos----------------------
     path('groups/',GroupListView.as_view(),name='group_list'),
     path('group_create/',GroupCreateView.as_view(),name='group_create'),
+    path('group_edit/<int:pk>/',GroupUpdateView.as_view(),name='group_edit'),
     path('group_delete/<int:pk>/', views.delete_group, name='group_delete'),
     
     #----------------------Suscripciones----------------------

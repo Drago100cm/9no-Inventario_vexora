@@ -11,17 +11,13 @@ from django.contrib.auth.models import Group, Permission
 #--------------------Formulario de grupos y permisos-------------------
 class GroupForm(forms.ModelForm):
 
-    permissions = forms.ModelMultipleChoiceField(
-        queryset=Permission.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=False
-    )
+
 
     class Meta:
 
         model = Group
 
-        fields = ['name', 'permissions']
+        fields = ['name']
 #--------------------Configuración del sitio-------------------
 class SiteConfigurationForm(forms.ModelForm):
 
