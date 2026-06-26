@@ -1,0 +1,201 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}
+  - Mi Suscripción
+{% endblock %}
+
+{% block content %}
+  <div class="main-content">
+    <div class="page-content">
+      <div class="container-fluid">
+        {% block pagetitle %}
+          <h1 class="page-title">Mi Suscripción</h1>
+        {% endblock %}
+
+        <!-- Mensajes -->
+        {% if messages %}
+          {% for m in messages %}
+            <script>
+              Swal.fire({
+                position: 'center',
+                icon: '{{ m.level_tag }}' == 'error' ? 'error' : 'success',
+                title: '{{ m }}',
+                showConfirmButton: false,
+                timer: 2500
+              })
+            </script>
+          {% endfor %}
+        {% endif %}
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="bg-light rounded-3 shadow-sm p-3">
+              <!-- Botón Agregar arriba -->
+              <div class="d-flex justify-content-end mb-3">
+                <!-- Botón agregar (arriba, alineado a la derecha) -->
+                {% if perms.vexora.add_paquete %}
+                  <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:company_create' %}')">
+                    <i class="ri-add-line me-1 align-bottom"></i>
+                    <span>Agregar Empresa</span>
+                  </button>
+                {% endif %}
+              </div>
+              <!-- Barra de búsqueda abajo -->
+              <div class="d-flex justify-content-end">
+                <div class="input-group input-group-sm" style="max-width: 380px;">
+                  <span class="input-group-text"><i class="fas fa-search"></i></span>
+                  <input type="text" class="form-control input-busqueda-global" placeholder="Buscar en esta tabla (cualquier campo)..." data-tabla="tabla-destinos" />
+                  <button class="btn btn-outline-secondary" type="button" onclick="busquedaGlobal.limpiarBusqueda(this.closest('.input-group').querySelector('input'))"><i class="fas fa-times"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Tabla de exámenes -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Detalles de tu suscripción</h2>
+        <p class="text-muted">Consulta el estado de tu plan y los pagos realizados.</p>
+    </div>
+    <a href="{% url 'vexora:subscription_list' %}" class="btn btn-outline-light">Cambiar plan</a>
+</div>
+
+{% if not subscription %}
+    <div class="alert alert-info">
+        No hay suscripción activa. Elige un plan para comenzar.
+    </div>
+{% else %}
+        <div class="row gy-4">
+            <div class="col-lg-6">
+                <div class="card p-4">
+                    <h4>{{ subscription.plan.name }}</h4>
+                    <p class="text-muted">{{ subscription.plan.description|default:'Este plan no tiene descripción.' }}</p>
+                    <div class="mb-3">
+                        <strong>Estado:</strong>
+                        <span class="badge bg-{{ subscription.status|lower|default:'secondary' }}">{{ subscription.get_status_display }}</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-2"><strong>Inicio:</strong> {{ subscription.start_date }}</div>
+                        <div class="col-6 mb-2"><strong>Vence:</strong> {{ subscription.end_date }}</div>
+                        <div class="col-6 mb-2"><strong>Prueba:</strong> {{ subscription.trial|yesno:'Sí,No' }}</div>
+                        <div class="col-6 mb-2"><strong>Activa:</strong> {{ subscription.active|yesno:'Sí,No' }}</div>
+                    </div>
+                    <hr>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-user me-2 text-primary"></i>{{ subscription.plan.max_users }} usuarios</li>
+                        <li><i class="fas fa-box me-2 text-primary"></i>{{ subscription.plan.max_products }} productos</li>
+                        <li><i class="fas fa-store me-2 text-primary"></i>{{ subscription.plan.max_branches }} sucursales</li>
+                        <li><i class="fas fa-globe me-2 text-primary"></i>{% if subscription.plan.custom_domain %}Dominio personalizado incluido{% else %}Sin dominio personalizado{% endif %}</li>
+                        <li><i class="fas fa-headset me-2 text-primary"></i>{% if subscription.plan.priority_support %}Soporte prioritario{% else %}Soporte estándar{% endif %}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card p-4">
+                    <h5>Historial de pagos</h5>
+                    {% if payments and payments.exists %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Monto</th>
+                                        <th>Método</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pay in payments %}
+                                        <tr>
+                                            <td>{{ pay.paid_at|date:'Y-m-d H:i' }}</td>
+                                            <td>{{ pay.amount|floatformat:2 }} MXN</td>
+                                            <td>{{ pay.get_payment_method_display }}</td>
+                                            <td>{{ pay.get_status_display }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="mb-0">Aún no se ha registrado ningún pago.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+      </div>
+    </div>
+  </div>
+  <!-- Modal dinámico -->
+  <div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
+{% endblock %}
+{% block extra_js %}
+  <script type="text/javascript">
+    function creationModal(url) {
+      $('#ModalOptions').load(url, function () {
+        $(this).modal('show')
+      })
+    }
+    function editModal(url) {
+      $('#ModalOptions').load(url, function () {
+        $(this).modal('show')
+      })
+    }
+    
+    function deleteE(id) {
+      console.log('id recibidooooo es:', id)
+      const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+          confirmButton: 'btn btn-success',
+          cancelButton: 'btn btn-danger m-3'
+        },
+        buttonsStyling: false
+      })
+    
+      Swal.fire({
+        html: '<div class="mt-3"><lord-icon src="https://cdn.lordicon.com/wpyrrmcq.json" trigger="loop" delay="700" colors="primary:#c71f16" style="width:100px;height:100px"></lord-icon><div class="mt-4 pt-2 fs-15 mx-5"><h4>¿Está seguro?</h4><p class="text-muted mx-4 mb-0">¡Este cambio no se puede deshacer!</p></div></div>',
+        showCancelButton: true,
+        confirmButtonText: 'Confirmar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = "{% url 'vexora:company_delete' 0 %}".replace('0', id)
+        }
+      })
+    }
+  </script>
+
+  <script>
+    // Funcionalidad de ordenamiento para la tabla
+    document.addEventListener('DOMContentLoaded', function () {
+      const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent
+    
+      const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx))
+    
+      document.querySelectorAll('th[data-sort]').forEach((th) => {
+        th.addEventListener('click', function () {
+          const table = this.closest('table')
+          const tbody = table.querySelector('tbody')
+          const index = Array.from(this.parentNode.children).indexOf(this)
+          const asc = this.getAttribute('data-sort-direction') === 'asc'
+    
+          // Reset all sort directions
+          table.querySelectorAll('th[data-sort]').forEach((header) => {
+            header.removeAttribute('data-sort-direction')
+            header.querySelector('i').className = 'fas fa-sort'
+          })
+    
+          // Set current sort direction
+          this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc')
+          this.querySelector('i').className = asc ? 'fas fa-sort-down' : 'fas fa-sort-up'
+    
+          // Sort the table
+          Array.from(tbody.querySelectorAll('tr'))
+            .sort(comparer(index, asc))
+            .forEach((tr) => tbody.appendChild(tr))
+        })
+      })
+    })
+  </script>
+{% endblock %}

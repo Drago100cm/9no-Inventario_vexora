@@ -8,16 +8,30 @@
     <form method="POST" action="{% url 'vexora:group_create' %}">
       {% csrf_token %}
 
+      {% if form.errors %}
+        <div class="alert alert-danger">
+          {% for field in form %}
+            {% for error in field.errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       <div class="modal-body">
         
         <div class="mb-4">
-          <label for="group_name" class="form-label fw-bold">Nombre del grupo</label>
+          <label for="name" class="form-label fw-bold">Nombre del grupo</label>
           <input
             type="text"
-            name="group_name"
-            id="group_name"
+            name="name"
+            id="name"
             class="form-control"
             placeholder="Ej: administradores"
+            value="{{ form.data.name|default:'' }}"
             required
           >
         </div>
@@ -73,26 +87,26 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_customuser" id="add_user" class="form-check-input">
-                      <label for="add_user" class="form-check-label">Crear</label>
+                      <input type="checkbox" name="permissions" value="add_custom_user" id="add_custom_user" class="form-check-input" {% if 'add_custom_user' in group_permissions %}checked{% endif %}>
+                      <label for="add_custom_user" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_customuser" id="change_user" class="form-check-input">
-                      <label for="change_user" class="form-check-label">Editar</label>
+                      <input type="checkbox" name="permissions" value="change_customuser" id="change_customuser" class="form-check-input" {% if 'change_customuser' in group_permissions %}checked{% endif %}>
+                      <label for="change_customuser" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_customuser" id="delete_user" class="form-check-input">
-                      <label for="delete_user" class="form-check-label">Eliminar</label>
+                      <input type="checkbox" name="permissions" value="delete_customuser" id="delete_customuser" class="form-check-input" {% if 'delete_customuser' in group_permissions %}checked{% endif %}>
+                      <label for="delete_customuser" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_customuser" id="view_user" class="form-check-input">
-                      <label for="view_user" class="form-check-label">Ver</label>
+                      <input type="checkbox" name="permissions" value="view_customuser" id="view_customuser" class="form-check-input" {% if 'view_customuser' in group_permissions %}checked{% endif %}>
+                      <label for="view_customuser" class="form-check-label">Ver</label>
                     </div>
                   </div>
                 </div>
@@ -110,25 +124,25 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_company" id="add_company" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="add_company" id="add_company" class="form-check-input" {% if 'add_company' in group_permissions %}checked{% endif %}>
                       <label for="add_company" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_company" id="change_company" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_company" id="change_company" class="form-check-input" {% if 'change_company' in group_permissions %}checked{% endif %}>
                       <label for="change_company" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_company" id="delete_company" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="delete_company" id="delete_company" class="form-check-input" {% if 'delete_company' in group_permissions %}checked{% endif %}>
                       <label for="delete_company" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_company" id="view_company" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_company" id="view_company" class="form-check-input" {% if 'view_company' in group_permissions %}checked{% endif %}>
                       <label for="view_company" class="form-check-label">Ver</label>
                     </div>
                   </div>
@@ -147,25 +161,25 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_plan" id="add_plan" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="add_plan" id="add_plan" class="form-check-input" {% if 'add_plan' in group_permissions %}checked{% endif %}>
                       <label for="add_plan" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_plan" id="change_plan" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_plan" id="change_plan" class="form-check-input" {% if 'change_plan' in group_permissions %}checked{% endif %}>
                       <label for="change_plan" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_plan" id="delete_plan" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="delete_plan" id="delete_plan" class="form-check-input" {% if 'delete_plan' in group_permissions %}checked{% endif %}>
                       <label for="delete_plan" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_plan" id="view_plan" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_plan" id="view_plan" class="form-check-input" {% if 'view_plan' in group_permissions %}checked{% endif %}>
                       <label for="view_plan" class="form-check-label">Ver</label>
                     </div>
                   </div>
@@ -176,25 +190,25 @@
                 <div class="row mt-2">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_planfeature" id="add_planfeature" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="add_planfeature" id="add_planfeature" class="form-check-input" {% if 'add_planfeature' in group_permissions %}checked{% endif %}>
                       <label for="add_planfeature" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_planfeature" id="change_planfeature" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_planfeature" id="change_planfeature" class="form-check-input" {% if 'change_planfeature' in group_permissions %}checked{% endif %}>
                       <label for="change_planfeature" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_planfeature" id="delete_planfeature" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="delete_planfeature" id="delete_planfeature" class="form-check-input" {% if 'delete_planfeature' in group_permissions %}checked{% endif %}>
                       <label for="delete_planfeature" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_planfeature" id="view_planfeature" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_planfeature" id="view_planfeature" class="form-check-input" {% if 'view_planfeature' in group_permissions %}checked{% endif %}>
                       <label for="view_planfeature" class="form-check-label">Ver</label>
                     </div>
                   </div>
@@ -213,25 +227,25 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_subscription" id="add_subscription" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="add_subscription" id="add_subscription" class="form-check-input" {% if 'add_subscription' in group_permissions %}checked{% endif %}>
                       <label for="add_subscription" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_subscription" id="change_subscription" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_subscription" id="change_subscription" class="form-check-input" {% if 'change_subscription' in group_permissions %}checked{% endif %}>
                       <label for="change_subscription" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_subscription" id="delete_subscription" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="delete_subscription" id="delete_subscription" class="form-check-input" {% if 'delete_subscription' in group_permissions %}checked{% endif %}>
                       <label for="delete_subscription" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_subscription" id="view_subscription" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_subscription" id="view_subscription" class="form-check-input" {% if 'view_subscription' in group_permissions %}checked{% endif %}>
                       <label for="view_subscription" class="form-check-label">Ver</label>
                     </div>
                   </div>
@@ -242,25 +256,25 @@
                 <div class="row mt-2">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_subscriptionlog" id="add_subscriptionlog" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="add_subscriptionlog" id="add_subscriptionlog" class="form-check-input" {% if 'add_subscriptionlog' in group_permissions %}checked{% endif %}>
                       <label for="add_subscriptionlog" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_subscriptionlog" id="change_subscriptionlog" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_subscriptionlog" id="change_subscriptionlog" class="form-check-input" {% if 'change_subscriptionlog' in group_permissions %}checked{% endif %}>
                       <label for="change_subscriptionlog" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_subscriptionlog" id="delete_subscriptionlog" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="delete_subscriptionlog" id="delete_subscriptionlog" class="form-check-input" {% if 'delete_subscriptionlog' in group_permissions %}checked{% endif %}>
                       <label for="delete_subscriptionlog" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_subscriptionlog" id="view_subscriptionlog" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_subscriptionlog" id="view_subscriptionlog" class="form-check-input" {% if 'view_subscriptionlog' in group_permissions %}checked{% endif %}>
                       <label for="view_subscriptionlog" class="form-check-label">Ver</label>
                     </div>
                   </div>
@@ -279,25 +293,25 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_payment" id="add_payment" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="add_payment" id="add_payment" class="form-check-input" {% if 'add_payment' in group_permissions %}checked{% endif %}>
                       <label for="add_payment" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_payment" id="change_payment" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_payment" id="change_payment" class="form-check-input" {% if 'change_payment' in group_permissions %}checked{% endif %}>
                       <label for="change_payment" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_payment" id="delete_payment" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="delete_payment" id="delete_payment" class="form-check-input" {% if 'delete_payment' in group_permissions %}checked{% endif %}>
                       <label for="delete_payment" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_payment" id="view_payment" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_payment" id="view_payment" class="form-check-input" {% if 'view_payment' in group_permissions %}checked{% endif %}>
                       <label for="view_payment" class="form-check-label">Ver</label>
                     </div>
                   </div>
@@ -316,25 +330,25 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_feature" id="add_feature" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="add_feature" id="add_feature" class="form-check-input" {% if 'add_feature' in group_permissions %}checked{% endif %}>
                       <label for="add_feature" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_feature" id="change_feature" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_feature" id="change_feature" class="form-check-input" {% if 'change_feature' in group_permissions %}checked{% endif %}>
                       <label for="change_feature" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_feature" id="delete_feature" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="delete_feature" id="delete_feature" class="form-check-input" {% if 'delete_feature' in group_permissions %}checked{% endif %}>
                       <label for="delete_feature" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_feature" id="view_feature" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_feature" id="view_feature" class="form-check-input" {% if 'view_feature' in group_permissions %}checked{% endif %}>
                       <label for="view_feature" class="form-check-label">Ver</label>
                     </div>
                   </div>
@@ -354,25 +368,25 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_companyinvitation" id="add_invitation" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="add_companyinvitation" id="add_invitation" class="form-check-input" {% if 'add_companyinvitation' in group_permissions %}checked{% endif %}>
                       <label for="add_invitation" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_companyinvitation" id="change_invitation" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_companyinvitation" id="change_invitation" class="form-check-input" {% if 'change_companyinvitation' in group_permissions %}checked{% endif %}>
                       <label for="change_invitation" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_companyinvitation" id="delete_invitation" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="delete_companyinvitation" id="delete_invitation" class="form-check-input" {% if 'delete_companyinvitation' in group_permissions %}checked{% endif %}>
                       <label for="delete_invitation" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_companyinvitation" id="view_invitation" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_companyinvitation" id="view_invitation" class="form-check-input" {% if 'view_companyinvitation' in group_permissions %}checked{% endif %}>
                       <label for="view_invitation" class="form-check-label">Ver</label>
                     </div>
                   </div>
@@ -389,25 +403,25 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_smtpconfiguration" id="add_smtp" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="add_smtpconfiguration" id="add_smtp" class="form-check-input" {% if 'add_smtpconfiguration' in group_permissions %}checked{% endif %}>
                       <label for="add_smtp" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_smtpconfiguration" id="change_smtp" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_smtpconfiguration" id="change_smtp" class="form-check-input" {% if 'change_smtpconfiguration' in group_permissions %}checked{% endif %}>
                       <label for="change_smtp" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_smtpconfiguration" id="delete_smtp" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="delete_smtpconfiguration" id="delete_smtp" class="form-check-input" {% if 'delete_smtpconfiguration' in group_permissions %}checked{% endif %}>
                       <label for="delete_smtp" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_smtpconfiguration" id="view_smtp" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_smtpconfiguration" id="view_smtp" class="form-check-input" {% if 'view_smtpconfiguration' in group_permissions %}checked{% endif %}>
                       <label for="view_smtp" class="form-check-label">Ver</label>
                     </div>
                   </div>
@@ -424,13 +438,13 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_siteconfiguration" id="view_siteconfig" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="view_siteconfiguration" id="view_siteconfig" class="form-check-input" {% if 'view_siteconfiguration' in group_permissions %}checked{% endif %}>
                       <label for="view_siteconfig" class="form-check-label">Ver</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_siteconfiguration" id="change_siteconfig" class="form-check-input">
+                      <input type="checkbox" name="permissions" value="change_siteconfiguration" id="change_siteconfig" class="form-check-input" {% if 'change_siteconfiguration' in group_permissions %}checked{% endif %}>
                       <label for="change_siteconfig" class="form-check-label">Editar</label>
                     </div>
                   </div>

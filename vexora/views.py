@@ -182,47 +182,75 @@ class GroupListView(LoginRequiredMixin,ListView):
     context_object_name = 'groups'
 
 
-
-class GroupCreateView(View):
-
+class GroupCreateView(LoginRequiredMixin, CreateView):
     template_name = 'vexora/groups/create.html'
+    form_class = GroupForm
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, {
+            "form": self.form_class(),
+            "group_permissions": []
+        })
 
-        return render(request,
-            self.template_name
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+
+        if not form.is_valid():
+            return render(request, self.template_name, {
+                "form": form,
+                "group_permissions": request.POST.getlist("permissions")
+            })
+
+        group = form.save()
+
+        permissions = request.POST.getlist("permissions")
+
+        perms = Permission.objects.filter(
+            codename__in=permissions
         )
 
-    def post(self, request):
+        group.permissions.set(perms)
 
-        group_name = request.POST.get(
-            'group_name'
-        )
+        messages.success(request, "Grupo creado correctamente")
+        return redirect("vexora:group_list")
 
-        group = Group.objects.create(
-            name=group_name
-        )
+class GroupUpdateView(UpdateView,LoginRequiredMixin):
+    template_name = "vexora/groups/edit.html"
 
-        permission_codenames = request.POST.getlist(
-            'permissions'
-        )
+    def get(self, request, pk):
+        group = get_object_or_404(Group, pk=pk)
+        form = GroupForm(instance=group)
+        group_permissions = group.permissions.values_list("codename", flat=True)
+        permissions = Permission.objects.all()
 
-        permissions = Permission.objects.filter(
-            codename__in=permission_codenames
-        )
+        context = {
+            "group": group,
+            "form": form,
+            "permissions": permissions,
+            "group_permissions": group_permissions,
+        }
 
-        group.permissions.set(
-            permissions
-        )
+        return render(request, self.template_name, context)
 
-        messages.success(
-            request,
-            'Grupo creado correctamente'
-        )
+    def post(self, request, pk):
+        group = get_object_or_404(Group, pk=pk)
+        form = GroupForm(request.POST, instance=group)
 
-        return redirect(
-            'vexora:group_list'
-        )
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Grupo actualizado correctamente')
+            return redirect('vexora:group_list')
+
+        group_permissions = form.data.getlist('permissions')
+        permissions = Permission.objects.all()
+        context = {
+            "group": group,
+            "form": form,
+            "permissions": permissions,
+            "group_permissions": group_permissions,
+        }
+        messages.error(request, '❌ Error al actualizar el grupo. Verifica los datos.')
+        return render(request, self.template_name, context)
     
 def delete_group(request, pk):
     group = get_object_or_404(Group, id=pk)
@@ -239,16 +267,33 @@ class RegisterView(CreateView):
 
     def form_valid(self, form):
         form.instance.is_active = True
+
         response = super().form_valid(form)
-        # Loguear automáticamente al usuario después del registro
-        #send_welcome_email(self.object)   Enviar email de bienvenida
-        login(self.request, self.object)
+
+        user = self.object
+
+        # Buscar un plan activo
+        plan = Plan.objects.filter(active=True).first()
+
+        if plan:
+            Subscription.objects.get_or_create(
+                user=user,
+                defaults={
+                    'plan': plan,
+                    'status': 'active',
+                    'start_date': timezone.now().date(),
+                    'end_date': subscription_end_date(
+                        timezone.now().date(),
+                        plan.billing_type
+                    ),
+                    'trial': True,
+                    'active': True,
+                }
+            )
+
+        login(self.request, user)
+
         return response
-    def form_invalid(self, form):
-        form.instance.is_active = True
-        print("❌ Registro inválido")
-        print("Errores:", form.errors)
-        return super().form_invalid(form)
 #---------------------Login----------------------
 class CustomLoginView(FormView):
     form_class = CustomAuthenticationForm
@@ -357,16 +402,19 @@ class SubscriptionPlanListView(LoginRequiredMixin, TemplateView):
             context['subscription'] = getattr(context['company'], 'subscription', None)
         return context
 
-
 class SubscriptionChooseView(LoginRequiredMixin, View):
     def post(self, request, plan_id, *args, **kwargs):
-        company = request.user.company
+        user = request.user
+        company = user.company  # Esto es para verificar si tiene empresa
+        
         if not company:
             messages.error(request, 'Necesitas crear una empresa antes de elegir un plan.')
             return redirect('vexora:company_create')
 
         plan = get_object_or_404(Plan, id=plan_id, active=True)
-        current_subscription = getattr(company, 'subscription', None)
+        
+        # Obtener suscripción actual del usuario (no de la empresa)
+        current_subscription = getattr(user, 'subscription', None)
         start_date = timezone.now().date()
         end_date = subscription_end_date(start_date, plan.billing_type)
 
@@ -384,8 +432,9 @@ class SubscriptionChooseView(LoginRequiredMixin, View):
             current_subscription.save()
             subscription = current_subscription
         else:
+            # Crear suscripción asociada al usuario, no a la empresa
             subscription = Subscription.objects.create(
-                company=company,
+                user=user,  # Cambio: user en lugar de company
                 plan=plan,
                 status='active',
                 start_date=start_date,
@@ -394,6 +443,7 @@ class SubscriptionChooseView(LoginRequiredMixin, View):
                 active=True,
             )
 
+        # Crear pago asociado a la empresa
         payment.objects.create(
             company=company,
             subscription=subscription,
@@ -413,15 +463,27 @@ class SubscriptionDetailView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['company'] = self.request.user.company
-        context['subscription'] = None
-        context['payments'] = None
-        if context['company']:
-            context['subscription'] = getattr(context['company'], 'subscription', None)
-            context['payments'] = payment.objects.filter(company=context['company']).order_by('-paid_at')
+        
+        # Obtener la empresa del usuario (si existe)
+        company = getattr(self.request.user, 'company', None)
+        context['company'] = company
+        
+        # Buscar la suscripción del usuario (NO de la empresa)
+        try:
+            subscription = Subscription.objects.get(user=self.request.user)
+            context['subscription'] = subscription
+            
+            # Buscar pagos asociados a esta suscripción
+            # Nota: Asumiendo que Payment tiene relación con Subscription
+            context['payments'] = payment.objects.filter(
+                subscription=subscription
+            ).order_by('-paid_at')
+            
+        except Subscription.DoesNotExist:
+            context['subscription'] = None
+            context['payments'] = None
+            
         return context
-
-
     
 #---------------------User List----------------------
 class UserListView(LoginRequiredMixin, ListView):
