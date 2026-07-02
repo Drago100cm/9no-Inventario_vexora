@@ -1,0 +1,531 @@
+<div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <div>
+                <h5 class="modal-title mb-0">
+                    <i class="ri-pencil-line me-2"></i>
+                    Editar venta
+                </h5>
+                <small class="text-muted">
+                    Modifica los datos de la venta y actualiza los productos correspondientes.
+                </small>
+            </div>
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+            </button>
+        </div>
+
+        <form id="saleUpdateForm">
+
+            <div class="modal-body">
+
+                <div class="card mb-4">
+                    <div class="card-body">
+
+                        <h6 class="mb-3">
+                            <i class="ri-file-list-3-line me-1"></i>
+                            Datos de la venta
+                        </h6>
+
+                        <div class="row">
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Folio / Factura</label>
+                                <input type="text"
+                                       class="form-control"
+                                       name="invoice_number"
+                                       placeholder="Folio de la venta"
+                                       readonly>
+                                <small class="text-muted">
+                                    Identificador único de la venta.
+                                </small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fecha de venta</label>
+                                <input type="date"
+                                       class="form-control"
+                                       name="date"
+                                       id="updateSaleDate">
+                                <small class="text-muted">
+                                    Día en que se registró la venta.
+                                </small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select"
+                                        name="status">
+                                    <option value="draft">Borrador</option>
+                                    <option value="pending">Pendiente</option>
+                                    <option value="completed">Completada</option>
+                                    <option value="cancelled">Cancelada</option>
+                                </select>
+                                <small class="text-muted">
+                                    Situación actual de la venta.
+                                </small>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+
+                        <h6 class="mb-3">
+                            <i class="ri-user-3-line me-1"></i>
+                            Cliente
+                        </h6>
+
+                        <div class="row">
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Nombre del cliente</label>
+                                <input type="text"
+                                       class="form-control"
+                                       name="customer_name"
+                                       placeholder="Nombre completo o razón social">
+                                <small class="text-muted">
+                                    Persona o negocio que realizó la compra.
+                                </small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Correo del cliente</label>
+                                <input type="email"
+                                       class="form-control"
+                                       name="customer_email"
+                                       placeholder="correo@ejemplo.com">
+                                <small class="text-muted">
+                                    Para comprobantes o seguimiento.
+                                </small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Teléfono del cliente</label>
+                                <input type="text"
+                                       class="form-control"
+                                       name="customer_phone"
+                                       placeholder="Número de contacto">
+                                <small class="text-muted">
+                                    Dato opcional para aclaraciones.
+                                </small>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                            <div>
+                                <h6 class="mb-0">
+                                    <i class="ri-archive-2-line me-1"></i>
+                                    Productos
+                                </h6>
+                                <small class="text-muted">
+                                    Modifica o agrega productos asociados a esta venta.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row align-items-end">
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Buscar producto</label>
+
+                                <select class="selectpicker form-control"
+                                        id="updateProductSelect"
+                                        data-live-search="true"
+                                        data-width="100%"
+                                        title="Seleccione un producto">
+                                </select>
+
+                                <small class="text-muted">
+                                    Se llenará con productos activos del inventario.
+                                </small>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">SKU</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="updateProductSku"
+                                       readonly>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Stock</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="updateProductStock"
+                                       value="0"
+                                       readonly>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Precio venta</label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="updateProductPrice"
+                                       step="0.01"
+                                       value="0.00"
+                                       readonly>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Cantidad</label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="updateProductQuantity"
+                                       min="1"
+                                       value="1">
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Descuento</label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="updateProductDiscount"
+                                       step="0.01"
+                                       min="0"
+                                       value="0.00">
+                            </div>
+
+                            <div class="col-md-10 mb-3 d-flex justify-content-end">
+                                <button type="button"
+                                        class="btn btn-outline-primary"
+                                        id="updateAddProductBtn">
+                                    <i class="ri-add-line me-1"></i>
+                                    Agregar producto
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <div class="table-responsive mt-3">
+
+                            <table class="table table-bordered align-middle"
+                                   id="updateSaleItemsTable">
+
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th width="110">Cantidad</th>
+                                        <th width="140">Precio</th>
+                                        <th width="140">Descuento</th>
+                                        <th width="150">Subtotal</th>
+                                        <th width="90">Acción</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr id="updateEmptyItemsRow">
+                                        <td colspan="6"
+                                            class="text-center py-4 text-muted">
+                                            No hay productos agregados.
+                                        </td>
+                                    </tr>
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-7 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+
+                                <h6 class="mb-3">
+                                    <i class="ri-sticky-note-line me-1"></i>
+                                    Observaciones
+                                </h6>
+
+                                <textarea class="form-control"
+                                          rows="7"
+                                          name="notes"
+                                          placeholder="Escribe observaciones, condiciones de pago o detalles importantes de la venta."></textarea>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+
+                                <h6 class="mb-3">
+                                    <i class="ri-bill-line me-1"></i>
+                                    Resumen de venta
+                                </h6>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Subtotal</span>
+                                    <strong id="updateSubtotalText">$0.00</strong>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">IVA / Impuesto</span>
+                                    <strong id="updateTaxText">$0.00</strong>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Descuento</span>
+                                    <strong id="updateDiscountText">$0.00</strong>
+                                </div>
+
+                                <hr>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">Total a pagar</span>
+                                    <h4 class="text-success mb-0"
+                                        id="updateTotalText">
+                                        $0.00
+                                    </h4>
+                                </div>
+
+                                <input type="hidden"
+                                       name="subtotal"
+                                       id="updateSubtotalInput"
+                                       value="0">
+
+                                <input type="hidden"
+                                       name="tax"
+                                       id="updateTaxInput"
+                                       value="0">
+
+                                <input type="hidden"
+                                       name="discount"
+                                       id="updateDiscountInput"
+                                       value="0">
+
+                                <input type="hidden"
+                                       name="total"
+                                       id="updateTotalInput"
+                                       value="0">
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    <i class="ri-save-3-line me-1"></i>
+                    Actualizar venta
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+    let updateSaleItems = [];
+
+    const updateTaxRate = 0;
+
+    function updateFormatCurrency(value) {
+        return '$' + Number(value || 0).toFixed(2);
+    }
+
+    function updateTotals() {
+        let subtotal = 0;
+        let discount = 0;
+
+        updateSaleItems.forEach(item => {
+            subtotal += item.quantity * item.unitPrice;
+            discount += item.discount;
+        });
+
+        const tax = subtotal * updateTaxRate;
+        const total = subtotal + tax - discount;
+
+        document.getElementById('updateSubtotalText').textContent = updateFormatCurrency(subtotal);
+        document.getElementById('updateTaxText').textContent = updateFormatCurrency(tax);
+        document.getElementById('updateDiscountText').textContent = updateFormatCurrency(discount);
+        document.getElementById('updateTotalText').textContent = updateFormatCurrency(total);
+
+        document.getElementById('updateSubtotalInput').value = subtotal.toFixed(2);
+        document.getElementById('updateTaxInput').value = tax.toFixed(2);
+        document.getElementById('updateDiscountInput').value = discount.toFixed(2);
+        document.getElementById('updateTotalInput').value = total.toFixed(2);
+    }
+
+    function renderUpdateItemsTable() {
+        const tbody = document.querySelector('#updateSaleItemsTable tbody');
+
+        tbody.innerHTML = '';
+
+        if (updateSaleItems.length === 0) {
+            tbody.innerHTML = `
+                <tr id="updateEmptyItemsRow">
+                    <td colspan="6"
+                        class="text-center py-4 text-muted">
+                        No hay productos agregados.
+                    </td>
+                </tr>
+            `;
+            updateTotals();
+            return;
+        }
+
+        updateSaleItems.forEach((item, index) => {
+            const rowSubtotal = (item.quantity * item.unitPrice) - item.discount;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <strong>${item.productName}</strong>
+                        <br>
+                        <small class="text-muted">
+                            SKU: ${item.sku || 'Sin SKU'}
+                        </small>
+                    </td>
+                    <td>${item.quantity}</td>
+                    <td>${updateFormatCurrency(item.unitPrice)}</td>
+                    <td>${updateFormatCurrency(item.discount)}</td>
+                    <td class="fw-bold">${updateFormatCurrency(rowSubtotal)}</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger"
+                                onclick="removeUpdateItem(${index})">
+                            <i class="ri-delete-bin-6-line"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        updateTotals();
+    }
+
+    function removeUpdateItem(index) {
+        updateSaleItems.splice(index, 1);
+        renderUpdateItemsTable();
+    }
+
+    function clearUpdateProductFields() {
+        document.getElementById('updateProductSku').value = '';
+        document.getElementById('updateProductStock').value = '0';
+        document.getElementById('updateProductPrice').value = '0.00';
+        document.getElementById('updateProductQuantity').value = 1;
+        document.getElementById('updateProductDiscount').value = '0.00';
+
+        $('#updateProductSelect').selectpicker('val', '');
+    }
+
+    document.getElementById('updateAddProductBtn').addEventListener('click', function () {
+        const productSelect = document.getElementById('updateProductSelect');
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+
+        const productId = productSelect.value;
+        const productName = selectedOption ? selectedOption.text : '';
+        const sku = selectedOption ? selectedOption.getAttribute('data-sku') : '';
+        const stock = Number(selectedOption ? selectedOption.getAttribute('data-stock') || 0 : 0);
+        const quantity = Number(document.getElementById('updateProductQuantity').value || 0);
+        const unitPrice = Number(document.getElementById('updateProductPrice').value || 0);
+        const discount = Number(document.getElementById('updateProductDiscount').value || 0);
+
+        if (!productId) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selecciona un producto',
+                text: 'Debes seleccionar un producto del inventario.'
+            });
+            return;
+        }
+
+        if (quantity <= 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Cantidad inválida',
+                text: 'La cantidad debe ser mayor a cero.'
+            });
+            return;
+        }
+
+        if (stock > 0 && quantity > stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Stock insuficiente',
+                text: 'La cantidad no puede ser mayor al stock disponible.'
+            });
+            return;
+        }
+
+        updateSaleItems.push({
+            productId,
+            productName,
+            sku,
+            stock,
+            quantity,
+            unitPrice,
+            discount
+        });
+
+        clearUpdateProductFields();
+        renderUpdateItemsTable();
+    });
+
+    $('#updateProductSelect').on('changed.bs.select', function () {
+        const selectedOption = this.options[this.selectedIndex];
+
+        if (!selectedOption) return;
+
+        const sku = selectedOption.getAttribute('data-sku') || '';
+        const stock = selectedOption.getAttribute('data-stock') || '0';
+        const price = selectedOption.getAttribute('data-price') || '0.00';
+
+        document.getElementById('updateProductSku').value = sku;
+        document.getElementById('updateProductStock').value = stock;
+        document.getElementById('updateProductPrice').value = Number(price).toFixed(2);
+    });
+
+    document.getElementById('saleUpdateForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        if (updateSaleItems.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Venta sin productos',
+                text: 'Agrega al menos un producto para actualizar la venta.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            icon: 'info',
+            title: 'Frontend listo',
+            text: 'El formulario de edición ya está preparado para conectarse al backend.'
+        });
+    });
+
+    $('.selectpicker').selectpicker();
+</script>

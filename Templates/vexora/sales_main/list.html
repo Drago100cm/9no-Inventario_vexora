@@ -1,0 +1,156 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}
+- Ventas
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="page-content">
+        <div class="container-fluid">
+
+            <!-- Encabezado -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="bg-light rounded-3 shadow-sm p-3">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+
+                            <div>
+                                <h4 class="mb-1">Ventas</h4>
+                                <p class="text-muted mb-0">
+                                    Administra las ventas registradas en el sistema.
+                                </p>
+                            </div>
+
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    onclick="editModal('{% url 'vexora:sales_main_create' %}')">
+
+                                <i class="ri-add-line me-1"></i>
+                                Nueva Venta
+
+                            </button>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="ri-search-line"></i>
+                                    </span>
+
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        placeholder="Buscar venta..."
+                                        id="searchInput">
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="card shadow-sm">
+
+                <div class="card-body">
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle" id="salesTable">
+
+                            <thead class="table-light">
+
+                                <tr>
+
+                                    <th>Factura</th>
+                                    <th>Cliente</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Total</th>
+                                    <th width="120">Acciones</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+
+                                    <td colspan="6" class="text-center py-5">
+
+                                        <i class="ri-inbox-line display-6 text-muted"></i>
+
+                                        <p class="mt-3 text-muted mb-0">
+                                            No hay ventas registradas.
+                                        </p>
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade"
+     id="ModalOptions"
+     tabindex="-1"
+     data-bs-backdrop="static">
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+
+function editModal(url){
+
+    $('#ModalOptions').load(url,function(){
+
+        $(this).modal('show');
+
+    });
+
+}
+
+document.getElementById("searchInput").addEventListener("keyup", function(){
+
+    let value = this.value.toLowerCase();
+
+    let rows = document.querySelectorAll("#salesTable tbody tr");
+
+    rows.forEach(function(row){
+
+        row.style.display =
+            row.innerText.toLowerCase().includes(value)
+            ? ""
+            : "none";
+
+    });
+
+});
+
+</script>
+
+{% endblock %}
