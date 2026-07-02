@@ -173,26 +173,83 @@ class SMTPTestView(LoginRequiredMixin, View):
         )
 
 #--------------------Grupos y permisos-------------------
-class GroupListView(LoginRequiredMixin,ListView):
+class GroupListView(LoginRequiredMixin, ListView):
 
-    model = Group
+    model = Role
+    template_name = "vexora/groups/list.html"
+    context_object_name = "groups"
 
-    template_name = 'vexora/groups/list.html'
+    def get_queryset(self):
 
-    context_object_name = 'groups'
+        company = self.request.user.company
 
+        if not company:
+            return Role.objects.none()
 
+        return Role.objects.filter(
+            company=company,
+            active=True
+        ).order_by("name")
 class GroupCreateView(LoginRequiredMixin, CreateView):
     template_name = 'vexora/groups/create.html'
     form_class = GroupForm
 
     def get(self, request, *args, **kwargs):
+
+        company = request.user.company
+
+        if not company:
+            messages.error(request, "No perteneces a ninguna empresa.")
+            return redirect("vexora:dashboard")
+
+        subscription = getattr(company, "subscription", None)
+
+        if not subscription or not subscription.active:
+            messages.error(request, "Necesitas una suscripción activa.")
+            return redirect("vexora:plans")
+
+        plan = subscription.plan
+
+        # Solo contar los roles de ESTA empresa
+        total_roles = company.roles.count()
+
+        if plan.max_groups != 0 and total_roles >= plan.max_groups:
+            messages.error(
+                request,
+                f"Tu plan permite crear únicamente {plan.max_groups} roles."
+            )
+            return redirect("vexora:group_list")
+
         return render(request, self.template_name, {
             "form": self.form_class(),
             "group_permissions": []
         })
 
     def post(self, request, *args, **kwargs):
+
+        company = request.user.company
+
+        if not company:
+            messages.error(request, "No perteneces a ninguna empresa.")
+            return redirect("vexora:dashboard")
+
+        subscription = getattr(company, "subscription", None)
+
+        if not subscription or not subscription.active:
+            messages.error(request, "Necesitas una suscripción activa.")
+            return redirect("vexora:plans")
+
+        plan = subscription.plan
+
+        total_roles = company.roles.count()
+
+        if plan.max_groups != 0 and total_roles >= plan.max_groups:
+            messages.error(
+                request,
+                f"Has alcanzado el límite de {plan.max_groups} roles para tu plan."
+            )
+            return redirect("vexora:group_list")
+
         form = self.form_class(request.POST)
 
         if not form.is_valid():
@@ -201,59 +258,101 @@ class GroupCreateView(LoginRequiredMixin, CreateView):
                 "group_permissions": request.POST.getlist("permissions")
             })
 
-        group = form.save()
+        role = form.save(commit=False)
 
-        permissions = request.POST.getlist("permissions")
+        # Asociar el rol a la empresa
+        role.company = company
+        role.save()
 
-        perms = Permission.objects.filter(
-            codename__in=permissions
+        permissions = Permission.objects.filter(
+            codename__in=request.POST.getlist("permissions")
         )
 
-        group.permissions.set(perms)
+        role.permissions.set(permissions)
 
-        messages.success(request, "Grupo creado correctamente")
+        messages.success(request, "Rol creado correctamente.")
+
         return redirect("vexora:group_list")
 
-class GroupUpdateView(UpdateView,LoginRequiredMixin):
+class GroupUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "vexora/groups/edit.html"
 
     def get(self, request, pk):
-        group = get_object_or_404(Group, pk=pk)
-        form = GroupForm(instance=group)
-        group_permissions = group.permissions.values_list("codename", flat=True)
+
+        company = request.user.company
+
+        role = get_object_or_404(
+            Role,
+            pk=pk,
+            company=company
+        )
+
+        form = GroupForm(instance=role)
+
         permissions = Permission.objects.all()
 
+        role_permissions = role.permissions.values_list(
+            "codename",
+            flat=True
+        )
+
         context = {
-            "group": group,
+            "group": role,
             "form": form,
             "permissions": permissions,
-            "group_permissions": group_permissions,
+            "group_permissions": role_permissions,
         }
 
         return render(request, self.template_name, context)
 
     def post(self, request, pk):
-        group = get_object_or_404(Group, pk=pk)
-        form = GroupForm(request.POST, instance=group)
+
+        company = request.user.company
+
+        role = get_object_or_404(Role,pk=pk,company=company)
+
+        form = GroupForm(
+            request.POST,
+            instance=role
+        )
 
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Grupo actualizado correctamente')
-            return redirect('vexora:group_list')
 
-        group_permissions = form.data.getlist('permissions')
+            role = form.save(commit=False)
+            role.company = company
+            role.save()
+
+            permissions = Permission.objects.filter(
+                codename__in=request.POST.getlist("permissions")
+            )
+
+            role.permissions.set(permissions)
+
+            messages.success(
+                request,
+                "Rol actualizado correctamente."
+            )
+
+            return redirect("vexora:group_list")
+
         permissions = Permission.objects.all()
+
         context = {
-            "group": group,
+            "group": role,
             "form": form,
             "permissions": permissions,
-            "group_permissions": group_permissions,
+            "group_permissions": request.POST.getlist("permissions"),
         }
-        messages.error(request, '❌ Error al actualizar el grupo. Verifica los datos.')
+
+        messages.error(
+            request,
+            "Error al actualizar el rol."
+        )
+
         return render(request, self.template_name, context)
     
 def delete_group(request, pk):
-    group = get_object_or_404(Group, id=pk)
+    group = get_object_or_404(Role, id=pk)
     group.delete()
     messages.success(request, "✅ Grupo eliminado correctamente!")
     return redirect('vexora:group_list')  # ruta a la lista de grupos
@@ -389,7 +488,70 @@ def subscription_end_date(start_date, billing_type):
         return start_date + timedelta(days=365)
     return start_date + timedelta(days=30)
 
+class PlanListView(LoginRequiredMixin, ListView):
+    model = Plan
+    template_name = 'vexora/subscriptions/plans.html'
+    context_object_name = 'plans'
+    ordering = ['id']  # o 'name', según prefieras
 
+    def get_queryset(self):
+        ensure_default_plans()  # Crea los planes por defecto si no existen
+        return Plan.objects.filter(active=True).order_by('id')
+    
+
+class PlanCreateView(LoginRequiredMixin, CreateView):
+    model = Plan
+    form_class = PlanesForm
+    template_name = 'vexora/subscriptions/plan_create.html'
+    success_url = reverse_lazy('vexora:plan_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Plan creado correctamente!")
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Crear nuevo plan'
+        return context
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        if self.request.user.company:
+            form.instance.company = self.request.user.company
+            messages.success(self.request, f"✅ Proveedor '{form.instance.name}' creado correctamente!")
+            return super().form_valid(form)
+        else:
+            messages.error(self.request, "❌ No tienes una empresa asignada.")
+            return redirect('vexora:list_suppliers')
+
+    def get_success_url(self):
+        return reverse('vexora:list_suppliers')
+    
+class PlanUpdateView(LoginRequiredMixin,UpdateView):
+    model = Plan
+    form_class = PlanesForm
+    template_name = "vexora/subscriptions/plan_edit.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        return kwargs
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "✅ Plan actualizado correctamente!")
+        return response
+
+    def get_success_url(self):
+        return reverse('vexora:plan_list')
+
+def delete_plan(request, pk):
+    plan = get_object_or_404(Plan, id=pk)
+    plan.delete()
+    messages.success(request, "✅ Plan eliminado correctamente!")
+    return redirect('vexora:plan_list')  # ruta a la lista de planes
+    
 class SubscriptionPlanListView(LoginRequiredMixin, TemplateView):
     template_name = 'vexora/subscriptions/list.html'
 
@@ -401,90 +563,117 @@ class SubscriptionPlanListView(LoginRequiredMixin, TemplateView):
         if context['company']:
             context['subscription'] = getattr(context['company'], 'subscription', None)
         return context
-
 class SubscriptionChooseView(LoginRequiredMixin, View):
     def post(self, request, plan_id, *args, **kwargs):
+
         user = request.user
-        company = user.company  # Esto es para verificar si tiene empresa
-        
+        company = user.company
+
         if not company:
-            messages.error(request, 'Necesitas crear una empresa antes de elegir un plan.')
+            messages.error(
+                request,
+                'Necesitas crear una empresa antes de elegir un plan.'
+            )
             return redirect('vexora:company_create')
 
-        plan = get_object_or_404(Plan, id=plan_id, active=True)
-        
-        # Obtener suscripción actual del usuario (no de la empresa)
-        current_subscription = getattr(user, 'subscription', None)
+        plan = get_object_or_404(
+            Plan,
+            id=plan_id,
+            active=True
+        )
+
+        # Ahora la suscripción pertenece a la empresa
+        current_subscription = getattr(company, "subscription", None)
+
         start_date = timezone.now().date()
-        end_date = subscription_end_date(start_date, plan.billing_type)
+        end_date = subscription_end_date(
+            start_date,
+            plan.billing_type
+        )
 
-        if current_subscription and current_subscription.plan_id == plan.id and current_subscription.active:
-            messages.info(request, 'Ya tienes ese plan seleccionado.')
-            return redirect('vexora:subscription_detail')
+        # Ya tiene ese plan
+        if (
+            current_subscription
+            and current_subscription.plan_id == plan.id
+            and current_subscription.active
+        ):
+            messages.info(request, "Ya tienes ese plan seleccionado.")
+            return redirect("vexora:subscription_detail")
 
+        # Actualizar suscripción existente
         if current_subscription:
+
             current_subscription.plan = plan
-            current_subscription.status = 'active'
+            current_subscription.status = "active"
             current_subscription.start_date = start_date
             current_subscription.end_date = end_date
             current_subscription.trial = False
             current_subscription.active = True
             current_subscription.save()
+
             subscription = current_subscription
+
+        # Crear nueva suscripción
         else:
-            # Crear suscripción asociada al usuario, no a la empresa
+
             subscription = Subscription.objects.create(
-                user=user,  # Cambio: user en lugar de company
+                company=company,
                 plan=plan,
-                status='active',
+                status="active",
                 start_date=start_date,
                 end_date=end_date,
                 trial=False,
                 active=True,
             )
 
-        # Crear pago asociado a la empresa
         payment.objects.create(
             company=company,
             subscription=subscription,
             amount=plan.price,
-            payment_method='cash',
-            status='completed',
-            transaction_id=f'PAY-{timezone.now().strftime("%Y%m%d%H%M%S")}',
+            payment_method="cash",
+            status="completed",
+            transaction_id=f"PAY-{timezone.now().strftime('%Y%m%d%H%M%S')}",
             paid_at=timezone.now(),
         )
 
-        messages.success(request, f'Suscripción a {plan.name} activada correctamente.')
-        return redirect('vexora:subscription_detail')
+        messages.success(
+            request,
+            f"Suscripción a {plan.name} activada correctamente."
+        )
 
-
+        return redirect("vexora:subscription_detail")
 class SubscriptionDetailView(LoginRequiredMixin, TemplateView):
     template_name = 'vexora/subscriptions/detail.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Obtener la empresa del usuario (si existe)
-        company = getattr(self.request.user, 'company', None)
+
+        user = self.request.user
+        company = getattr(user, 'company', None)
+
         context['company'] = company
-        
-        # Buscar la suscripción del usuario (NO de la empresa)
+
+        # Si no hay empresa, no hay suscripción
+        if not company:
+            context['subscription'] = None
+            context['payments'] = None
+            return context
+
         try:
-            subscription = Subscription.objects.get(user=self.request.user)
+            # AHORA es por company, no por user
+            subscription = Subscription.objects.get(company=company)
+
             context['subscription'] = subscription
-            
-            # Buscar pagos asociados a esta suscripción
-            # Nota: Asumiendo que Payment tiene relación con Subscription
+
             context['payments'] = payment.objects.filter(
                 subscription=subscription
             ).order_by('-paid_at')
-            
+
         except Subscription.DoesNotExist:
             context['subscription'] = None
             context['payments'] = None
-            
+
         return context
-    
 #---------------------User List----------------------
 class UserListView(LoginRequiredMixin, ListView):
     template_name = "vexora/users/list.html"
@@ -1028,4 +1217,32 @@ class SalesUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Edit Sale'
+        return context
+    
+#=====================================MEMBERS VIEW========================================
+class MembersView(LoginRequiredMixin, ListView):
+    model = CompanyMember
+    template_name = 'vexora/members/list.html'
+    context_object_name = 'members'
+
+    def get_queryset(self):
+        if self.request.user.company:
+            return CompanyMember.objects.filter(company=self.request.user.company)
+        return CompanyMember.objects.none()  # Si no tiene empresa, no muestra nada
+
+class MemberCreateView(LoginRequiredMixin, CreateView):
+    model = CompanyMember
+    form_class = MemberForm
+    template_name = 'vexora/members/create.html'
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Member created successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_members')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'New Member'
         return context

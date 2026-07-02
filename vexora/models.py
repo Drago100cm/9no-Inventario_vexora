@@ -107,26 +107,77 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     cover = models.ImageField(upload_to='vexora/user/profile/', null=True, blank=True)
     avatar = models.ImageField(upload_to='vexora/user/avatar/', null=True, blank=True)
     # Evitar conflictos con auth.User
-    groups = models.ManyToManyField(Group,related_name="customuser_set",blank=True,help_text="The groups this user belongs to.",verbose_name="groups",)
     user_permissions = models.ManyToManyField(Permission,related_name="customuser_set",blank=True,help_text="Specific permissions for this user.",verbose_name="user permissions",)
-    companies = models.ManyToManyField(
-        Company,
-        related_name="members",null=True,blank=True
-    )
-
+    companies = models.ManyToManyField(Company,related_name="members",null=True,blank=True)
     @property
     def company(self):
         """Return a primary company for the user if one exists."""
         return self.owned_companies.first() or self.companies.first()
 
     objects = CustomUserManager()
+    def has_perm(self, perm, obj=None):
 
+        # Superusuario siempre tiene permisos
+        if self.is_superuser:
+            return True
+
+        # Permisos asignados directamente al usuario
+        if super().has_perm(perm, obj):
+            return True
+
+        # Empresa activa
+        company = self.company
+
+        if not company:
+            return False
+
+        try:
+            membership = self.memberships.select_related("role").get(
+                company=company
+            )
+        except CompanyMember.DoesNotExist:
+            return False
+
+        try:
+            app_label, codename = perm.split(".")
+        except ValueError:
+            return False
+
+        return membership.role.permissions.filter(
+            content_type__app_label=app_label,
+            codename=codename
+        ).exists()
     USERNAME_FIELD = "email"  # login con email
     REQUIRED_FIELDS = ["username","first_name", "last_name"]
 
     def __str__(self):
         return self.email
+    
 
+
+class Role(models.Model):
+
+    company = models.ForeignKey(Company,on_delete=models.CASCADE,related_name="roles")
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True,null=True)
+    permissions = models.ManyToManyField(Permission,blank=True,related_name="roles")
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = ("company", "name")
+
+    def __str__(self):
+        return f"{self.company.name} - {self.name}"
+    
+class CompanyMember(models.Model):
+
+    company = models.ForeignKey(Company,on_delete=models.CASCADE,related_name="memberships")
+    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="memberships")
+    role = models.ForeignKey(Role,on_delete=models.PROTECT,related_name="members")
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("company", "user")
 #--------------------Plan de suscripción-------------------
 class Plan(models.Model):
 
@@ -136,20 +187,27 @@ class Plan(models.Model):
     )
 
     name = models.CharField(max_length=100)
-    description = models.TextField(blank=True,null=True)
-    price = models.DecimalField(max_digits=10,decimal_places=2)
-    billing_type = models.CharField(max_length=20,choices=PLAN_TYPES,default='monthly')
-    max_users = models.IntegerField(default=1)
-    max_products = models.IntegerField(default=100)
-    max_branches = models.IntegerField(default=1)
+    description = models.TextField(blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    billing_type = models.CharField(max_length=20, choices=PLAN_TYPES)
+
+    # Límites
+    max_users = models.PositiveIntegerField(default=1)
+    max_products = models.PositiveIntegerField(default=100)
+    max_branches = models.PositiveIntegerField(default=1)
+    max_groups = models.PositiveIntegerField(default=1)
+    max_providers = models.PositiveIntegerField(default=10)
+    max_collaborators = models.PositiveIntegerField(default=1)
+
+    # Funcionalidades
+    sales_module = models.BooleanField(default=True)
+    users_module = models.BooleanField(default=False)
+    groups_module = models.BooleanField(default=False)
+    providers_module = models.BooleanField(default=True)
     custom_domain = models.BooleanField(default=False)
     priority_support = models.BooleanField(default=False)
+
     active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True,)
-
-    def __str__(self):
-
-        return self.name
     
 class Subscription(models.Model):
 
@@ -159,7 +217,7 @@ class Subscription(models.Model):
         ('cancelled', 'Cancelada'),
         ('pending', 'Pendiente'),
     )
-    user = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='subscription') 
+    company = models.OneToOneField(Company,on_delete=models.PROTECT,related_name='subscription') 
     plan = models.ForeignKey(Plan,on_delete=models.CASCADE)
     status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
     start_date = models.DateField()

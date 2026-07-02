@@ -15,7 +15,7 @@ class GroupForm(forms.ModelForm):
 
     class Meta:
 
-        model = Group
+        model = Role
 
         fields = ['name']
 #--------------------Configuración del sitio-------------------
@@ -503,3 +503,70 @@ class SalesForm(forms.ModelForm):
         model = Sale
         fields = ["company", "customer_name", "customer_email", "customer_phone"]
 
+#----------------------------planes----------------------
+
+class PlanesForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].widget.attrs.update({
+            'class': 'form-control',
+            'required': 'required   '
+        })
+        self.fields['price'].widget.attrs.update({
+            'class': 'form-control',
+        })
+        self.fields['description'].widget.attrs.update({
+            'class': 'form-control',
+        })
+
+        self.fields['max_users'].widget.attrs.update({
+            'class': 'form-control',
+            'required': 'required'
+        })
+        self.fields['max_products'].widget.attrs.update({
+            'class': 'form-control',
+            'required': 'required'
+        })
+        self.fields['max_groups'].widget.attrs.update({
+            'class': 'form-control',
+            'required': 'required'
+        })
+        self.fields['max_providers'].widget.attrs.update({
+            'class': 'form-control',
+            'required': 'required'
+        })
+        self.fields['custom_domain'].widget.attrs.update({
+            'class': 'form-control-input',
+        })
+        self.fields['active'].widget.attrs.update({
+            'class': 'form-control-input',
+        })
+        self.fields['priority_support'].widget.attrs.update({
+            'class': 'form-control-input',
+        })
+
+
+    
+    class Meta:
+        model = Plan
+        fields = ["name", "price", "max_users","description", "max_products", "max_groups", "max_providers", "custom_domain", "priority_support", "active"]
+
+#============================================Members Forms===========================================
+class MemberForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['company'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        self.fields['user'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        self.fields['role'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        
+
+    
+    class Meta:
+        model = CompanyMember
+        fields = ["company", "user", "role"]

@@ -1,4 +1,6 @@
 {% extends 'partials/base.html' %}
+{% load custom_filters %}  <!-- ← IMPORTANTE: Cargar los filtros -->
+
 {% load static %}
 
 {% block title %}
@@ -192,6 +194,7 @@
                   <div class="mt-3 p-3 bg-dark rounded">
                     <div class="d-flex justify-content-between">
                       <strong>Total pagado:</strong>
+                      <strong class="text-success">${{ payments|sum:'amount'|floatformat:2 }}</strong>
                     </div>
                   </div>
                   

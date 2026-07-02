@@ -27,21 +27,24 @@ class SubscriptionMiddleware:
 
         path = request.path
 
-        # Ignorar rutas públicas
         if path.startswith(tuple(EXCLUDED_PATHS)):
             return self.get_response(request)
 
-        # Usuario no autenticado
         if not request.user.is_authenticated:
             return self.get_response(request)
 
-        # Verificar suscripción del usuario
-        active = subscription_is_active(request.user)
+        company = request.user.company
 
-        if not active:
+        if company is None:
+            return JsonResponse(
+                {"error": "No perteneces a ninguna empresa."},
+                status=403
+            )
+
+        if not subscription_is_active(company):
             return JsonResponse(
                 {
-                    "error": "Tu suscripción expiró o no está activa. Por favor, renueva tu suscripción para continuar usando la aplicación."
+                    "error": "La suscripción de tu empresa expiró o no está activa."
                 },
                 status=403
             )

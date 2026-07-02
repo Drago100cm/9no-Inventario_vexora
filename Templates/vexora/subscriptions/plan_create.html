@@ -1,0 +1,102 @@
+{% load static %}
+
+<div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-content">
+
+    <div class="modal-header bg-light p-3">
+      <h5 class="modal-title">
+        Crear Plan
+      </h5>
+
+      <button type="button"
+              class="btn-close"
+              data-bs-dismiss="modal">
+      </button>
+    </div>
+
+    <form method="POST"
+          enctype="multipart/form-data"
+          action="{% url 'vexora:plan_create' %}"
+           class="validate-required"><!--===========solo cambia el link de tu url-->
+
+      {% csrf_token %}
+
+      <div class="modal-body">
+
+        <div class="tab-content mt-3">
+
+          <div class="tab-pane active"
+               id="general_info">
+
+            <div class="row gy-4 mb-4">
+
+              <div class="col-md-4">
+                <label>Nombre del plan <span class="text-danger">*</span></label>
+                {{ form.name }}
+              </div>
+              <div class="col-md-4">
+                <label>
+                  Precio<span class="text-danger">*</span></label>
+                {{ form.price }}
+              </div>
+
+              <div class="col-md-4">
+                <label>Usuarios maximos<span class="text-danger">*</span></label>
+                {{ form.max_users }}
+              </div>
+              <div class="col-md-4">
+                <label>Productos maximos<span class="text-danger">*</span></label>
+                {{ form.max_products }}
+              </div>
+              <div class="col-md-4">
+                <label>Grupos maximos<span class="text-danger">*</span></label>
+                {{ form.max_groups }}
+              </div>
+              <div class="col-md-4">
+                <label>Proveedores maximos<span class="text-danger">*</span></label>
+                {{ form.max_providers }}
+              </div>
+              <div class="col-md-4">
+                <label>Dominios<span class="text-danger">*</span></label>
+                {{ form.custom_domain }}
+              </div>
+              <div class="col-md-4">
+                <label>¿Esta activo?<span class="text-danger">*</span></label>
+                {{ form.active }}
+              </div>
+              <div class="col-md-4">
+                <label>Prioridad<span class="text-danger">*</span></label>
+                {{ form.priority_support }}
+              </div>
+
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <div class="hstack gap-2 justify-content-end">
+
+          <button type="button"
+                  class="btn btn-sm btn-light"
+                  data-bs-dismiss="modal">
+            Cerrar
+          </button>
+
+          <button type="submit"
+                  class="btn btn-sm btn-success">
+            Guardar
+          </button>
+
+        </div>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+<script src="{% static 'JS/form-validator.js' %}"></script>

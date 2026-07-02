@@ -23,6 +23,12 @@ urlpatterns = [
     path('group_edit/<int:pk>/',GroupUpdateView.as_view(),name='group_edit'),
     path('group_delete/<int:pk>/', views.delete_group, name='group_delete'),
     
+    #----------------------Planes de suscripción----------------------
+    path('plans/', PlanListView.as_view(), name='plan_list'),
+    path('plans/create/', PlanCreateView.as_view(), name='plan_create'),
+    path('plans/edit/<int:pk>/', PlanUpdateView.as_view(), name='plan_edit'),
+    path('plans/delete/<int:pk>/', views.delete_plan, name='plan_delete'),
+    
     #----------------------Suscripciones----------------------
     path('subscription_list/', SubscriptionPlanListView.as_view(), name='subscription_list'),
     path('subscriptions/choose/<int:plan_id>/', SubscriptionChooseView.as_view(), name='subscription_choose'),

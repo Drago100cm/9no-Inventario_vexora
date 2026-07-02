@@ -101,6 +101,12 @@ SIDEBAR.HTML
             <i class="fas fa-crown"></i>
             <span>Suscripción</span>
         </a>
+        <!-- Planes -->
+        <a href="{% url 'vexora:plan_list' %}"
+           class="menu-item {% if url_name == 'plan_list' %}active{% endif %}">
+            <i class="fas fa-crown"></i>
+            <span>Planes</span>
+        </a>
 
     {% endif %}
 

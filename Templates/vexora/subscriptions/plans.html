@@ -1,0 +1,388 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}
+    - Grupos
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+
+    <div class="page-content">
+
+        <div class="container-fluid">
+
+            <!-- Mensajes -->
+
+            {% if messages %}
+
+                {% for m in messages %}
+
+                <script>
+
+                    Swal.fire({
+
+                        position: 'center',
+                        icon: '{{ m.level_tag }}' == 'error' ? 'error' : 'success',
+                        title: '{{ m }}',
+                        showConfirmButton: false,
+                        timer: 2500
+
+                    })
+
+                </script>
+
+                {% endfor %}
+
+            {% endif %}
+
+            <!-- Header -->
+
+            <div class="row mb-4">
+
+                <div class="col-12">
+
+                    <div class="bg-light rounded-3 shadow-sm p-3">
+
+                        <!-- Botón agregar -->
+
+                        <div class="d-flex justify-content-end mb-3">
+
+                            {% if perms.auth.add_group %}
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                                onclick="creationModal('{% url 'vexora:plan_create' %}')">
+
+                                <i class="ri-add-line me-1 align-bottom"></i>
+
+                                <span>
+                                    Agregar plan
+                                </span>
+
+                            </button>
+
+                            {% endif %}
+
+                        </div>
+
+                        <!-- Buscador -->
+
+                        <div class="d-flex justify-content-end">
+
+                            <div class="input-group input-group-sm"
+                                 style="max-width: 380px;">
+
+                                <span class="input-group-text">
+
+                                    <i class="fas fa-search"></i>
+
+                                </span>
+
+                                <input
+                                    type="text"
+                                    class="form-control input-busqueda-global"
+                                    placeholder="Buscar grupo..."
+                                    data-tabla="tabla-grupos"
+                                />
+
+                                <button
+                                    class="btn btn-outline-secondary"
+                                    type="button"
+                                    onclick="busquedaGlobal.limpiarBusqueda(this.closest('.input-group').querySelector('input'))">
+
+                                    <i class="fas fa-times"></i>
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Tabla -->
+
+            <div class="table-container">
+
+                <table class="table table-nowrap" id="tabla-grupos">
+
+                    <thead>
+
+                        <tr>
+
+                            <th data-sort="id">ID<i class="fas fa-sort ms-1"></i></th>
+
+                            <th data-sort="name">Nombre del Plan<i class="fas fa-sort ms-1"></i></th>
+                            <th data-sort="name">Precio del Plan<i class="fas fa-sort ms-1"></i></th>
+                            <th data-sort="name">Duración del Plan<i class="fas fa-sort ms-1"></i></th>
+                            <th data-sort="name">Maximo de usuarios<i class="fas fa-sort ms-1"></i></th>
+                            <th data-sort="name">Maximo de productos<i class="fas fa-sort ms-1"></i></th>
+                            <th data-sort="name">Maximo de grupos<i class="fas fa-sort ms-1"></i></th>
+                            <th data-sort="name">Maximo de proveedores<i class="fas fa-sort ms-1"></i></th>
+                            <th data-sort="name">Dominio<i class="fas fa-sort ms-1"></i></th>
+                            <th data-sort="name">Prioridad del Plan<i class="fas fa-sort ms-1"></i></th>
+                            <th data-sort="name">Estatus del Plan<i class="fas fa-sort ms-1"></i></th>
+                            <th>
+
+                                Acciones
+
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for plan in plans %}
+
+                        <tr>
+
+                            <td>{{ plan.id }}</td>
+                            <td>{{ plan.name }}</td>
+                            <td>{{ plan.price }}</td>
+                            <td>{{ plan.duration }}</td>
+                            <td>{{ plan.max_users }}</td>
+                            <td>{{ plan.max_products }}</td>
+                            <td>{{ plan.max_groups }}</td>
+                            <td>{{ plan.max_suppliers }}</td>
+                            <td>{{ plan.max_domains }}</td>
+                            <td>{{ plan.priority }}</td>
+                            <td>{{ plan.status }}</td>
+
+                            <td>
+
+                                {% if perms.auth.delete_group %}
+
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light"
+                                    onclick="deleteE('{{ plan.id }}')"
+                                    style="width: 95px;">
+
+                                    <i class="ri-delete-bin-6-fill me-1 align-bottom"></i>
+
+                                    Eliminar
+
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary btn-icon waves-effect waves-light"
+                                    onclick="editModal('{% url 'vexora:plan_edit' plan.id %}')"
+                                    style="width: 95px;">
+
+                                    <i class="ri-edit-2-fill me-1 align-bottom"></i>
+
+                                    Editar
+                                </button>
+                        
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Modal -->
+
+<div
+    class="modal fade fadeInUp"
+    id="ModalOptions"
+    data-bs-backdrop="static">
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+
+    function creationModal(url){
+
+        $('#ModalOptions').load(url, function(){
+
+            $(this).modal('show')
+
+        })
+
+    }
+
+    function editModal(url){
+
+        $('#ModalOptions').load(url, function(){
+
+            $(this).modal('show')
+
+        })
+
+    }
+
+    function deleteE(id){
+
+        Swal.fire({
+
+            html: `
+                <div class="mt-3">
+
+                    <lord-icon
+                        src="https://cdn.lordicon.com/wpyrrmcq.json"
+                        trigger="loop"
+                        delay="700"
+                        colors="primary:#c71f16"
+                        style="width:100px;height:100px">
+
+                    </lord-icon>
+
+                    <div class="mt-4 pt-2 fs-15 mx-5">
+
+                        <h4>
+                            ¿Está seguro?
+                        </h4>
+
+                        <p class="text-muted mx-4 mb-0">
+
+                            ¡Este cambio no se puede deshacer!
+
+                        </p>
+
+                    </div>
+
+                </div>
+            `,
+
+            showCancelButton: true,
+
+            confirmButtonText: 'Confirmar',
+
+            cancelButtonText: 'Cancelar',
+
+            reverseButtons: true
+
+        }).then((result) => {
+
+            if(result.isConfirmed){
+
+                window.location.href =
+                    '{% url "vexora:group_delete" 0 %}'
+                .replace('0', id)
+
+            }
+
+        })
+
+    }
+
+</script>
+
+<!-- Ordenamiento -->
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function(){
+
+    const getCellValue = (tr, idx) =>
+        tr.children[idx].innerText || tr.children[idx].textContent
+
+    const comparer = (idx, asc) => (a, b) =>
+
+        ((v1, v2) =>
+
+            (
+                v1 !== '' &&
+                v2 !== '' &&
+                !isNaN(v1) &&
+                !isNaN(v2)
+
+            )
+
+            ? v1 - v2
+
+            : v1.toString().localeCompare(v2)
+
+        )(
+
+            getCellValue(asc ? a : b, idx),
+            getCellValue(asc ? b : a, idx)
+
+        )
+
+    document.querySelectorAll('th[data-sort]').forEach((th) => {
+
+        th.addEventListener('click', function(){
+
+            const table = this.closest('table')
+
+            const tbody = table.querySelector('tbody')
+
+            const index =
+                Array.from(this.parentNode.children).indexOf(this)
+
+            const asc =
+                this.getAttribute('data-sort-direction') === 'asc'
+
+            table.querySelectorAll('th[data-sort]').forEach((header) => {
+
+                header.removeAttribute('data-sort-direction')
+
+                const icon = header.querySelector('i')
+
+                if(icon){
+
+                    icon.className = 'fas fa-sort ms-1'
+
+                }
+
+            })
+
+            this.setAttribute(
+                'data-sort-direction',
+                asc ? 'desc' : 'asc'
+            )
+
+            const currentIcon = this.querySelector('i')
+
+            if(currentIcon){
+
+                currentIcon.className =
+                    asc
+                    ? 'fas fa-sort-down ms-1'
+                    : 'fas fa-sort-up ms-1'
+
+            }
+
+            Array.from(tbody.querySelectorAll('tr'))
+
+                .sort(comparer(index, asc))
+
+                .forEach((tr) => tbody.appendChild(tr))
+
+        })
+
+    })
+
+})
+
+</script>
+
+{% endblock %}
