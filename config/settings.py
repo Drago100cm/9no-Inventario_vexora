@@ -85,7 +85,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'vexora',       # Nombre de tu base de datos
+        'NAME': 'pruebas',       # Nombre de tu base de datos
         'USER': 'root',               # Usuario de MySQL
         'PASSWORD': '',       # Contraseña de MySQL
         'HOST': 'localhost',               # o la IP del servidor MySQL

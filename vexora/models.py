@@ -115,38 +115,41 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.owned_companies.first() or self.companies.first()
 
     objects = CustomUserManager()
+
+    def get_role_permissions(self):
+        company = self.company
+        if not company:
+            return set()
+
+        try:
+            membership = self.memberships.select_related("role").get(company=company)
+        except CompanyMember.DoesNotExist:
+            return set()
+
+        return {
+            f"{p.content_type.app_label}.{p.codename}"
+            for p in membership.role.permissions.all()
+        }
+    def get_all_permissions(self, obj=None):
+
+        if self.is_superuser:
+            return {
+                f"{p.content_type.app_label}.{p.codename}"
+                for p in Permission.objects.all()
+            }
+
+        permissions = set()
+
+        permissions.update(super().get_all_permissions(obj))
+        permissions.update(self.get_role_permissions())
+
+        return permissions
     def has_perm(self, perm, obj=None):
 
-        # Superusuario siempre tiene permisos
         if self.is_superuser:
             return True
 
-        # Permisos asignados directamente al usuario
-        if super().has_perm(perm, obj):
-            return True
-
-        # Empresa activa
-        company = self.company
-
-        if not company:
-            return False
-
-        try:
-            membership = self.memberships.select_related("role").get(
-                company=company
-            )
-        except CompanyMember.DoesNotExist:
-            return False
-
-        try:
-            app_label, codename = perm.split(".")
-        except ValueError:
-            return False
-
-        return membership.role.permissions.filter(
-            content_type__app_label=app_label,
-            codename=codename
-        ).exists()
+        return perm in self.get_all_permissions()
     USERNAME_FIELD = "email"  # login con email
     REQUIRED_FIELDS = ["username","first_name", "last_name"]
 
@@ -217,7 +220,7 @@ class Subscription(models.Model):
         ('cancelled', 'Cancelada'),
         ('pending', 'Pendiente'),
     )
-    company = models.OneToOneField(Company,on_delete=models.PROTECT,related_name='subscription') 
+    company = models.OneToOneField(Company,    on_delete=models.CASCADE,related_name='subscription') 
     plan = models.ForeignKey(Plan,on_delete=models.CASCADE)
     status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
     start_date = models.DateField()
@@ -229,7 +232,7 @@ class Subscription(models.Model):
 
     def __str__(self):
 
-        return f"{self.user.email} - {self.plan.name}"
+        return f" - {self.plan.name}"
 #--------------------Pagos-------------------
 class payment(models.Model):
 

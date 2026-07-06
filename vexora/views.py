@@ -1,4 +1,5 @@
 from pyexpat.errors import messages
+from django.contrib.auth.decorators import login_required
 from urllib import request
 from django.contrib.auth import  login, logout
 from django.shortcuts import get_object_or_404, redirect, render
@@ -181,17 +182,25 @@ class GroupListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
 
-        company = self.request.user.company
+        user = self.request.user
+    
+        # 🔥 Superusuario ve TODO
+        if user.is_superuser:
+            return Role.objects.filter(active=True).order_by("name")
 
-        if not company:
+        # 🏢 Empresa del usuario
+        membership = user.memberships.select_related("company").first()
+
+        if not membership:
             return Role.objects.none()
 
         return Role.objects.filter(
-            company=company,
+            company=membership.company,
             active=True
         ).order_by("name")
+        
 class GroupCreateView(LoginRequiredMixin, CreateView):
-    template_name = 'vexora/groups/create.html'
+    template_name = "vexora/groups/create.html"
     form_class = GroupForm
 
     def get(self, request, *args, **kwargs):
@@ -209,8 +218,6 @@ class GroupCreateView(LoginRequiredMixin, CreateView):
             return redirect("vexora:plans")
 
         plan = subscription.plan
-
-        # Solo contar los roles de ESTA empresa
         total_roles = company.roles.count()
 
         if plan.max_groups != 0 and total_roles >= plan.max_groups:
@@ -240,13 +247,12 @@ class GroupCreateView(LoginRequiredMixin, CreateView):
             return redirect("vexora:plans")
 
         plan = subscription.plan
-
         total_roles = company.roles.count()
 
         if plan.max_groups != 0 and total_roles >= plan.max_groups:
             messages.error(
                 request,
-                f"Has alcanzado el límite de {plan.max_groups} roles para tu plan."
+                f"Has alcanzado el límite de {plan.max_groups} roles."
             )
             return redirect("vexora:group_list")
 
@@ -258,9 +264,20 @@ class GroupCreateView(LoginRequiredMixin, CreateView):
                 "group_permissions": request.POST.getlist("permissions")
             })
 
-        role = form.save(commit=False)
+        # Validar duplicado
+        if Role.objects.filter(
+            company=company,
+            name=form.cleaned_data["name"]
+        ).exists():
 
-        # Asociar el rol a la empresa
+            messages.warning(
+                request,
+                f'El rol "{form.cleaned_data["name"]}" ya existe.'
+            )
+
+            return redirect("vexora:group_list")
+
+        role = form.save(commit=False)
         role.company = company
         role.save()
 
@@ -271,56 +288,80 @@ class GroupCreateView(LoginRequiredMixin, CreateView):
         role.permissions.set(permissions)
 
         messages.success(request, "Rol creado correctamente.")
-
         return redirect("vexora:group_list")
-
 class GroupUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "vexora/groups/edit.html"
 
-    def get(self, request, pk):
+    def get_role(self, request, pk):
+        user = request.user
 
-        company = request.user.company
+        # 🔥 Superusuario puede ver todo
+        if user.is_superuser:
+            return get_object_or_404(Role, pk=pk)
 
-        role = get_object_or_404(
+        # 🏢 Usuario normal solo su empresa
+        membership = user.memberships.select_related("company").first()
+
+        if not membership:
+            return None
+
+        return get_object_or_404(
             Role,
             pk=pk,
-            company=company
+            company=membership.company
         )
+
+    def get(self, request, pk):
+        role = self.get_role(request, pk)
+
+        if not role:
+            return redirect("vexora:group_list")
 
         form = GroupForm(instance=role)
 
         permissions = Permission.objects.all()
 
-        role_permissions = role.permissions.values_list(
-            "codename",
-            flat=True
-        )
-
         context = {
             "group": role,
             "form": form,
             "permissions": permissions,
-            "group_permissions": role_permissions,
+            "group_permissions": role.permissions.values_list("codename", flat=True),
         }
 
         return render(request, self.template_name, context)
 
     def post(self, request, pk):
+        role = self.get_role(request, pk)
 
-        company = request.user.company
+        if not role:
+            return redirect("vexora:group_list")
 
-        role = get_object_or_404(Role,pk=pk,company=company)
-
-        form = GroupForm(
-            request.POST,
-            instance=role
-        )
+        form = GroupForm(request.POST, instance=role)
 
         if form.is_valid():
 
-            role = form.save(commit=False)
-            role.company = company
-            role.save()
+            user = request.user
+
+            # 🔥 Validación duplicado por empresa
+            if not user.is_superuser:
+                membership = user.memberships.select_related("company").first()
+                company = membership.company if membership else None
+
+                if Role.objects.filter(
+                    company=company,
+                    name=form.cleaned_data["name"]
+                ).exclude(pk=role.pk).exists():
+
+                    messages.warning(
+                        request,
+                        f'El rol "{form.cleaned_data["name"]}" ya existe.'
+                    )
+
+                    return redirect("vexora:group_list")
+
+                role.company = company
+
+            role = form.save()
 
             permissions = Permission.objects.filter(
                 codename__in=request.POST.getlist("permissions")
@@ -328,10 +369,7 @@ class GroupUpdateView(LoginRequiredMixin, UpdateView):
 
             role.permissions.set(permissions)
 
-            messages.success(
-                request,
-                "Rol actualizado correctamente."
-            )
+            messages.success(request, "Rol actualizado correctamente.")
 
             return redirect("vexora:group_list")
 
@@ -344,13 +382,7 @@ class GroupUpdateView(LoginRequiredMixin, UpdateView):
             "group_permissions": request.POST.getlist("permissions"),
         }
 
-        messages.error(
-            request,
-            "Error al actualizar el rol."
-        )
-
         return render(request, self.template_name, context)
-    
 def delete_group(request, pk):
     group = get_object_or_404(Role, id=pk)
     group.delete()
@@ -370,25 +402,6 @@ class RegisterView(CreateView):
         response = super().form_valid(form)
 
         user = self.object
-
-        # Buscar un plan activo
-        plan = Plan.objects.filter(active=True).first()
-
-        if plan:
-            Subscription.objects.get_or_create(
-                user=user,
-                defaults={
-                    'plan': plan,
-                    'status': 'active',
-                    'start_date': timezone.now().date(),
-                    'end_date': subscription_end_date(
-                        timezone.now().date(),
-                        plan.billing_type
-                    ),
-                    'trial': True,
-                    'active': True,
-                }
-            )
 
         login(self.request, user)
 
@@ -680,20 +693,24 @@ class UserListView(LoginRequiredMixin, ListView):
 
     def get(self, request):
 
-        companies = Company.objects.filter(
-            Q(owner=request.user) |
-            Q(members=request.user)
-        ).distinct()
+        if request.user.is_superuser:
+            list_user = CustomUser.objects.all()
 
-        list_user = CustomUser.objects.filter(
-            companies__in=companies
-        ).distinct()
+        else:
+            companies = Company.objects.filter(
+                Q(owner=request.user) |
+                Q(members=request.user)
+            ).distinct()
+
+            list_user = CustomUser.objects.filter(
+                companies__in=companies
+            ).distinct()
 
         data = {
-            'list_user': list_user
+            "list_user": list_user
         }
 
-        if request.user.has_perm("vexora.view_customuser"):
+        if request.user.is_superuser or request.user.has_perm("vexora.view_customuser"):
             return render(request, self.template_name, data)
 
         return redirect("vexora:home")
@@ -778,6 +795,38 @@ class CompanyListView(LoginRequiredMixin,ListView):
     template_name = "vexora/companies/list.html"
 
     def get(self, request):
+        user = request.user
+        admin_role = Role.objects.filter(name="Administrador").first()
+
+        print(Permission.objects.count())
+        print(admin_role.permissions.count())
+        print("\n========== PERMISOS DEL SISTEMA DE ROLES ==========\n")
+
+        roles = Role.objects.select_related("company").prefetch_related("permissions")
+
+        all_permissions = set()
+
+        for role in roles:
+            for p in role.permissions.all():
+                perm = f"{p.content_type.app_label}.{p.codename}"
+                all_permissions.add(perm)
+
+        for perm in sorted(all_permissions):
+            print(perm)
+
+        print("\n====================================================\n")
+
+        print("\n========================================\n")
+        print("\nMemberships:")
+        for membership in user.memberships.select_related("role", "company"):
+            print(f"Empresa: {membership.company}")
+            print(f"Rol: {membership.role}")
+
+            print("Permisos del rol:")
+            for perm in membership.role.permissions.all():
+                print(f" - {perm.content_type.app_label}.{perm.codename}")
+
+        print("====================================\n")
         
         list_company = Company.objects.all()
 
@@ -785,12 +834,9 @@ class CompanyListView(LoginRequiredMixin,ListView):
             'list_company': list_company
         }
 
-        permisos = request.user.get_all_permissions()
 
-        if "vexora.view_company" in permisos:
-            return render(request, self.template_name, data)
-        else:
-            return redirect("vexora:home")
+        return render(request, self.template_name, data)
+
 
 #--------------------Detalle Empresa -------------------
 class CompanyDetailView(LoginRequiredMixin,DetailView):
@@ -816,27 +862,33 @@ class CompanyCreateView(LoginRequiredMixin,CreateView):
     def get_form_kwargs(self):
         kwargs = super(CompanyCreateView, self).get_form_kwargs()
         return kwargs
-
     def post(self, request, *args, **kwargs):
-        form = CompanyForm(request.POST or None, request.FILES or None)
+        form = CompanyForm(request.POST, request.FILES)
+
         if form.is_valid():
             company = form.save(commit=False)
-
-            company.owner = self.request.user
-
+            company.owner = request.user
             company.save()
 
-            # Vincular usuario
-            company.owner = self.request.user
-            company.save()
-            self.request.user.companies.add(company)
-            user = self.request.user
-            user.company = company
-            user.save()
+            admin_role = Role.objects.create(
+                company=company,
+                name="Administrador",
+                description="Administrador de la empresa"
+            )
+
+            admin_role.permissions.set(Permission.objects.all())
+
+            CompanyMember.objects.create(
+                company=company,
+                user=request.user,
+                role=admin_role
+            )
+
             messages.success(request, "✅ ¡Empresa creada correctamente!")
+
             return redirect("vexora:subscription_list")
-        else:
-            messages.error(request, "❌ Error al crear la empresa. Verifica los datos.")
+
+        messages.error(request, "❌ Error al crear la empresa.")
         return redirect("vexora:company_list")
 #--------------------Actualizar Empresa -------------------
 class CompanyUpdateView(LoginRequiredMixin,UpdateView):
@@ -856,12 +908,24 @@ class CompanyUpdateView(LoginRequiredMixin,UpdateView):
     def get_success_url(self):
         return reverse('vexora:company_list')
 
+@login_required
 def delete_company(request, pk):
-    company = get_object_or_404(Company, id=pk)
-    company.delete()
-    messages.success(request, "✅ Empresa eliminada correctamente!")
-    return redirect('vexora:company_list')  # ruta a la lista de empresas
 
+    company = get_object_or_404(Company, id=pk)
+
+    # Validación básica de seguridad
+    if request.user.company != company and not request.user.is_superuser:
+        messages.error(request, "No tienes permiso para eliminar esta empresa.")
+        return redirect("vexora:company_list")
+
+    # 🔥 SOFT DELETE (RECOMENDADO)
+    company.is_active = False
+    company.deleted_at = timezone.now()
+    company.save()
+
+    messages.success(request, "✅ Empresa desactivada correctamente!")
+
+    return redirect("vexora:company_list")
 # ============================================
 # CATEGORY VIEWS (Categorías)
 # ============================================
@@ -1230,22 +1294,7 @@ class MembersView(LoginRequiredMixin, ListView):
             return CompanyMember.objects.filter(company=self.request.user.company)
         return CompanyMember.objects.none()  # Si no tiene empresa, no muestra nada
 
-class MemberCreateView(LoginRequiredMixin, CreateView):
-    model = CompanyMember
-    form_class = MemberForm
-    template_name = 'vexora/members/create.html'
 
-    def form_valid(self, form):
-        messages.success(self.request, "✅ Member created successfully!")
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse('vexora:list_members')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'New Member'
-        return context
 
 # =====================================
 # SALES MAIN (CRUD Frontend)

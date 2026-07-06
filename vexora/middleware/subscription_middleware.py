@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.shortcuts import redirect
 
 from vexora.subscriptions.services import (
     subscription_is_active
@@ -7,14 +8,17 @@ from vexora.subscriptions.services import (
 
 EXCLUDED_PATHS = [
     '/login/',
+    '//',
     '/Registro/',
     '/register/',
     '/logout/',
     '/admin/',
-    '/users/',
     '/subscription_list/',
     '/subscriptions/choose/',
     '/subscriptions/detail/',
+    '/company_create/',
+    #-----------------------Vista de compañía-----------------------
+    '/companies/',    
 ]
 
 
@@ -36,10 +40,7 @@ class SubscriptionMiddleware:
         company = request.user.company
 
         if company is None:
-            return JsonResponse(
-                {"error": "No perteneces a ninguna empresa."},
-                status=403
-            )
+            return redirect("vexora:company_list")
 
         if not subscription_is_active(company):
             return JsonResponse(

@@ -14,36 +14,31 @@ from vexora.models import (
 @receiver(post_save, sender=Company)
 def create_company_setup(sender, instance, created, **kwargs):
 
-    if created:
+    if not created:
+        return
 
-        # =========================
-        # Crear configuración inicial
-        # =========================
+    # =========================
+    # Configuración inicial del sistema
+    # =========================
+    SiteConfiguration.objects.create(
+        company=instance
+    )
 
-        SiteConfiguration.objects.create(
-            company=instance
-        )
+    # =========================
+    # Plan trial por defecto
+    # =========================
+    trial_plan = Plan.objects.filter(active=True).first()
 
-        # =========================
-        # Obtener plan trial
-        # =========================
-
-        trial_plan = Plan.objects.filter(
+    # =========================
+    # Crear suscripción inicial (TRIAL)
+    # =========================
+    if trial_plan:
+        Subscription.objects.create(
+            company=instance,   # ✅ CORRECTO (NO user)
+            plan=trial_plan,
+            status='active',
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=14),
+            trial=True,
             active=True
-        ).first()
-
-        # =========================
-        # Crear suscripción para el propietario
-        # =========================
-
-        if trial_plan and instance.owner:
-
-            Subscription.objects.create(
-                user=instance.owner,
-                plan=trial_plan,
-                status='active',
-                start_date=timezone.now().date(),
-                end_date=timezone.now().date() + timedelta(days=14),
-                trial=True,
-                active=True
-            )
+        )

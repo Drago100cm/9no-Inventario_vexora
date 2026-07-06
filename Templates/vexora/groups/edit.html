@@ -75,30 +75,49 @@
             <div class="card">
               <div class="card-body row">
 
-                <div class="col-md-3">
-                  <input type="checkbox" name="permissions" value="add_customuser"
-                         {% if "add_customuser" in group_permissions %}checked{% endif %}>
+                <div class="col-md-3"> 
+                  <input type="checkbox" name="permissions" value="add_customuser" {% if "add_customuser" in group_permissions %}checked{% endif %}>
                   Crear
                 </div>
 
                 <div class="col-md-3">
-                  <input type="checkbox" name="permissions" value="change_customuser"
-                         {% if "change_customuser" in group_permissions %}checked{% endif %}>
+                  <input type="checkbox" name="permissions" value="change_customuser" {% if "change_customuser" in group_permissions %}checked{% endif %}>
                   Editar
                 </div>
 
                 <div class="col-md-3">
-                  <input type="checkbox" name="permissions" value="delete_customuser"
-                         {% if "delete_customuser" in group_permissions %}checked{% endif %}>
+                  <input type="checkbox" name="permissions" value="delete_customuser" {% if "delete_customuser" in group_permissions %}checked{% endif %}>
                   Eliminar
                 </div>
 
                 <div class="col-md-3">
-                  <input type="checkbox" name="permissions" value="view_customuser"
-                         {% if "view_customuser" in group_permissions %}checked{% endif %}>
+                  <input type="checkbox" name="permissions" value="view_customuser" {% if "view_customuser" in group_permissions %}checked{% endif %}>
                   Ver
                 </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body row">
 
+                <div class="col-md-3"> 
+                  <input type="checkbox" name="permissions" value="add_role" {% if "add_role" in group_permissions %}checked{% endif %}>
+                  Crear
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="change_role" {% if "change_role" in group_permissions %}checked{% endif %}>
+                  Editar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="delete_role" {% if "delete_role" in group_permissions %}checked{% endif %}>
+                  Eliminar
+                </div>
+
+                <div class="col-md-3">
+                  <input type="checkbox" name="permissions" value="view_role" {% if "view_role" in group_permissions %}checked{% endif %}>
+                  Ver
+                </div>
               </div>
             </div>
           </div>
