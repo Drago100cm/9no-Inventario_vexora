@@ -1,0 +1,88 @@
+{% load static %}
+
+<div class="modal-dialog modal-dialog-centered modal-md">
+  <div class="modal-content">
+    <div class="modal-header bg-light p-3">
+      <h5 class="modal-title">
+        <i class="ri-truck-line me-2"></i> Crear Nuevo Proveedor
+      </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <form method="POST" action="{% url 'vexora:create_supplier' %}">
+      {% csrf_token %}
+      <div class="modal-body">
+        
+        <!-- Mostrar errores del formulario -->
+        {% if form.errors %}
+          <div class="alert alert-danger">
+            <strong>Error:</strong> Por favor corrige los siguientes errores:
+            <ul>
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <li><strong>{{ field }}:</strong> {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <!-- Información de la compañía -->
+        <div class="alert alert-info mb-3">
+          <i class="ri-building-line me-2"></i>
+          <strong>Compañía:</strong> {{ user.company.name }}
+          <br>
+          <small class="text-muted">El proveedor será creado para esta compañía</small>
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.name.id_for_label }}" class="form-label">
+            Nombre del proveedor <span class="text-danger">*</span>
+          </label>
+          {{ form.name }}
+          {% if form.name.errors %}
+            <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+          {% endif %}
+          <small class="text-muted">El nombre debe ser único para esta compañía</small>
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.address.id_for_label }}" class="form-label">
+            Dirección
+          </label>
+          {{ form.address }}
+          {% if form.address.errors %}
+            <div class="text-danger small mt-1">{{ form.address.errors }}</div>
+          {% endif %}
+          <small class="text-muted">Dirección física del proveedor</small>
+        </div>
+
+        <!-- Campo oculto para company -->
+        {{ form.company.as_hidden }}
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">
+          <i class="ri-close-line me-1"></i> Cancelar
+        </button>
+        <button type="submit" class="btn btn-sm btn-success">
+          <i class="ri-save-line me-1 align-bottom"></i> Guardar Proveedor
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Cerrar modal con ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('ModalOptions');
+      if (modal && modal.classList.contains('show')) {
+        const closeBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+        if (closeBtn) closeBtn.click();
+      }
+    }
+  });
+</script>

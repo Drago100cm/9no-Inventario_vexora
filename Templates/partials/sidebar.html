@@ -68,7 +68,7 @@ SIDEBAR.HTML
     <a href="{% url 'vexora:group_list' %}"
        class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
         <i class="fas fa-user-group"></i>
-        <span>Grupos</span>
+        <span>Roles</span>
     </a>
 
     <!-- Empresas -->
@@ -88,10 +88,17 @@ SIDEBAR.HTML
             <span>Productos</span>
         </a>
 
+        <!-- Categorías -->
+        <a href="{% url 'vexora:list_categories' %}"
+        class="menu-item {% if url_name == 'list_categories' %}active{% endif %}">
+            <i class="fas fa-tags"></i>
+            <span>Categorías</span>
+        </a>
+
         <!-- Proveedores -->
         <a href="{% url 'vexora:list_suppliers' %}"
-           class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
-            <i class="fas fa-truck-field"></i>
+        class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
+            <i class="fas fa-truck"></i>
             <span>Proveedores</span>
         </a>
 
@@ -100,6 +107,13 @@ SIDEBAR.HTML
          class="menu-item {% if url_name == 'sales_main_list' or url_name == 'sales_main_create' or url_name == 'sales_main_update' %}active{% endif %}">
          <i class="fas fa-cash-register"></i>
          <span>Ventas</span>
+        </a>
+
+        <!-- Miembros -->
+        <a href="{% url 'vexora:list_members' %}"
+           class="menu-item {% if url_name == 'list_members' or url_name == 'create_member' %}active{% endif %}">
+            <i class="fas fa-users"></i>
+            <span>Miembros</span>
         </a>
 
         <!-- Suscripción -->

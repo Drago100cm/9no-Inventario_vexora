@@ -274,6 +274,7 @@ class CompanyForm(forms.ModelForm):
 #==============================================
 class CategoryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
         self.fields['name'].widget.attrs.update({
@@ -285,14 +286,23 @@ class CategoryForm(forms.ModelForm):
             'rows': 3,
         })
 
+        # Asignar compañía automáticamente
+        if user and hasattr(user, 'company') and user.company:
+            self.fields['company'].widget = forms.HiddenInput()
+            self.fields['company'].initial = user.company
+        else:
+            self.fields['company'].widget.attrs.update({
+                'class': 'form-control'
+            })
+            self.fields['company'].queryset = Company.objects.all()
+
     class Meta:
         model = Category
-        fields = ["name", "description"]
-        
+        fields = ["name", "description", "company"]
 
-# ============================================
-# SUPPLIER FORM
-# ============================================
+#==============================================
+# SUPPLIER FORM 
+#==============================================
 class SupplierForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -310,7 +320,7 @@ class SupplierForm(forms.ModelForm):
             'rows': 3
         })
 
-        # 👇 ASIGNAR COMPANY AUTOMÁTICAMENTE
+        # Asignar company automáticamente
         if self.user and hasattr(self.user, 'company') and self.user.company:
             self.fields['company'].widget = forms.HiddenInput()
             self.fields['company'].initial = self.user.company
@@ -324,10 +334,9 @@ class SupplierForm(forms.ModelForm):
         model = Supplier
         fields = ["name", "address", "company"]
 
-
-# ============================================
+#==============================================
 # PRODUCT FORM
-# ============================================
+#==============================================
 class ProductForm(forms.ModelForm):
     stock_addition = forms.IntegerField(
         label='Cantidad a agregar al stock',
@@ -346,61 +355,64 @@ class ProductForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Determinar si es edición (tiene instancia) o creación
         is_edit = self.instance and self.instance.pk is not None
 
-        # Nombre
+        # Campo item_number - solo lectura (se muestra pero no se edita)
+        self.fields['item_number'] = forms.IntegerField(
+            label='N° Producto',
+            required=False,
+            widget=forms.NumberInput(attrs={
+                'class': 'form-control',
+                'readonly': 'readonly',
+                'disabled': 'disabled'
+            }),
+            help_text='Número secuencial asignado automáticamente'
+        )
+
         self.fields['name'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Nombre del producto'
         })
 
-        # SKU
         self.fields['sku'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'SKU (código único)'
         })
 
-        # Código de barras
         self.fields['barcode'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Código de barras'
         })
 
-        # Descripción
         self.fields['description'].widget.attrs.update({
             'class': 'form-control',
             'rows': 3,
             'placeholder': 'Descripción del producto'
         })
 
-        # Fecha de compra
         self.fields['purchase_date'].widget.attrs.update({
             'class': 'form-control',
             'type': 'date'
         })
 
-        # Precio
         self.fields['price'].widget.attrs.update({
             'class': 'form-control',
             'step': '0.01',
             'placeholder': '0.00'
         })
 
-        # Precio de venta
         self.fields['sale_price'].widget.attrs.update({
             'class': 'form-control',
             'step': '0.01',
             'placeholder': '0.00'
         })
 
-        # Stock - Solo lectura si es edición
         if is_edit:
             self.fields['stock'].widget.attrs.update({
                 'class': 'form-control',
                 'min': 0,
                 'placeholder': '0',
-                'readonly': 'readonly'  # Solo lectura en edición
+                'readonly': 'readonly'
             })
         else:
             self.fields['stock'].widget.attrs.update({
@@ -409,54 +421,49 @@ class ProductForm(forms.ModelForm):
                 'placeholder': '0'
             })
 
-        # Stock mínimo
         self.fields['min_stock'].widget.attrs.update({
             'class': 'form-control',
             'min': 0,
             'placeholder': '0'
         })
 
-        # Activo
         self.fields['is_active'].widget.attrs.update({
             'class': 'form-check-input'
         })
 
-        # Imagen
         self.fields['image'].widget.attrs.update({
             'class': 'form-control',
             'accept': 'image/*'
         })
 
-        # Proveedor
+        # Filtrar proveedores SOLO de la compañía del usuario
         self.fields['supplier'].widget.attrs.update({
             'class': 'form-control'
         })
         if self.user and hasattr(self.user, 'company') and self.user.company:
-            self.fields['supplier'].queryset = Supplier.objects.filter(
-                models.Q(company=self.user.company) | models.Q(company__isnull=True)
-            )
+            self.fields['supplier'].queryset = Supplier.objects.filter(company=self.user.company)
         else:
-            self.fields['supplier'].queryset = Supplier.objects.all()
+            self.fields['supplier'].queryset = Supplier.objects.none()
 
-        # Categoría
+        # Filtrar categorías SOLO de la compañía del usuario
         self.fields['category'].widget.attrs.update({
             'class': 'form-control'
         })
         if self.user and hasattr(self.user, 'company') and self.user.company:
             self.fields['category'].queryset = Category.objects.filter(company=self.user.company)
         else:
-            self.fields['category'].queryset = Category.objects.all()
+            self.fields['category'].queryset = Category.objects.none()
 
-        # Tags
+        # Filtrar tags SOLO de la compañía del usuario
         self.fields['tags'].widget.attrs.update({
-            'class': 'form-control'
+            'class': 'form-control selectpicker'
         })
         if self.user and hasattr(self.user, 'company') and self.user.company:
             self.fields['tags'].queryset = Tag.objects.filter(company=self.user.company)
         else:
-            self.fields['tags'].queryset = Tag.objects.all()
+            self.fields['tags'].queryset = Tag.objects.none()
 
-        # Company
+        # Company - ocultar y asignar automáticamente
         if self.user and hasattr(self.user, 'company') and self.user.company:
             self.fields['company'].widget = forms.HiddenInput()
             self.fields['company'].initial = self.user.company
@@ -473,11 +480,11 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = [
-            "name", "sku", "barcode", "description", "purchase_date",
+            "item_number", "name", "sku", "barcode", "description", "purchase_date",
             "price", "sale_price", "stock", "min_stock", "is_active",
             "supplier", "category", "tags", "company", "image",
             "stock_addition"  
-        ]   
+        ]
                  
 #---------------ventas
 class SalesForm(forms.ModelForm):

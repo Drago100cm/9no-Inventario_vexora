@@ -51,9 +51,9 @@
               <div class="d-flex justify-content-end mb-3">
                 <!-- Botón agregar (arriba, alineado a la derecha) -->
                 {% if perms.vexora.add_paquete %}
-                  <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:user_create' %}')">
+                  <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:create_member' %}')">
                     <i class="ri-add-line me-1 align-bottom"></i>
-                    <span>Agregar usuario</span>
+                    <span>Agregar miembro</span>
                   </button>
                 {% endif %}
               </div>

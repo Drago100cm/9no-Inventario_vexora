@@ -352,11 +352,11 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+# ========== CATEGORY MODEL ==========
 class Category(models.Model):
-
     name = models.CharField(max_length=50)
-    description = models.TextField(blank=True,null=True)
-    company = models.ForeignKey(Company,on_delete=models.CASCADE,related_name='categories')
+    description = models.TextField(blank=True, null=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='categories')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -367,13 +367,13 @@ class Category(models.Model):
                 name='unique_category_per_company'
             )
         ]
+        ordering = ['name']
 
     def __str__(self):
         return self.name
 
-# ========== SUPPLIER MODEL (Proveedores) ==========
+# ========== SUPPLIER MODEL ==========
 class Supplier(models.Model):
-    """Supplier model - this is the "proveedores" table"""
     name = models.CharField(max_length=100, verbose_name="Supplier name")
     address = models.CharField(max_length=200, verbose_name="Address")
     company = models.ForeignKey(
@@ -394,17 +394,23 @@ class Supplier(models.Model):
                 name='unique_supplier_per_company'
             )
         ]
+        ordering = ['name']
 
-
-# ========== PRODUCT MODEL (Productos) ==========
+# ========== PRODUCT MODEL ==========
 class Product(models.Model):
-    """Product model - this is the "productos" table"""
+    # Campo para ID secuencial por compañía
+    item_number = models.PositiveIntegerField(
+        default=0, 
+        verbose_name="Número de producto",
+        help_text="Número secuencial del producto para esta compañía"
+    )
+    
     name = models.CharField(max_length=150, verbose_name="Product name")
     purchase_date = models.DateField(verbose_name="Purchase date")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Price")
-    supplier = models.ForeignKey(Supplier,on_delete=models.CASCADE,related_name='products',verbose_name="Supplier")
-    company = models.ForeignKey(Company,on_delete=models.CASCADE,null=True,blank=True,related_name='products')
-    category = models.ForeignKey(Category,on_delete=models.SET_NULL,null=True,blank=True,related_name='products',verbose_name="Category")
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='products', verbose_name="Supplier")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True, related_name='products')
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name="Category")
     tags = models.ManyToManyField(Tag, blank=True, related_name='products', verbose_name="Tags")
     stock = models.IntegerField(default=0, verbose_name="Stock")
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Sale price")
@@ -415,6 +421,18 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Active")
     barcode = models.CharField(max_length=100, blank=True, null=True, verbose_name="Barcode", db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        # Si es un nuevo producto y no tiene item_number, asignar el siguiente número
+        if not self.pk and not self.item_number:
+            # Obtener el último item_number para esta compañía
+            last_product = Product.objects.filter(company=self.company).order_by('-item_number').first()
+            if last_product:
+                self.item_number = last_product.item_number + 1
+            else:
+                self.item_number = 1
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return f"{self.name} - {self.supplier.name}"
     
@@ -425,7 +443,11 @@ class Product(models.Model):
             models.Index(fields=['company', 'name']),
             models.Index(fields=['company', 'sku']),
             models.Index(fields=['company', 'barcode']),
+            models.Index(fields=['company', 'item_number']),
         ]
+        # Para evitar duplicados de item_number por compañía
+        unique_together = ['company', 'item_number']
+        ordering = ['item_number']
 
 # ========== SALE MODEL (Ventas) ==========
 
