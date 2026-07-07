@@ -45,24 +45,13 @@ SIDEBAR.HTML
         ========================= -->
 
         {% with url_name=request.resolver_match.url_name %}
-
 <nav class="sidebar-menu">
 
-    <!-- Inicio -->
-    <a href="{% url 'vexora:home' %}"
-       class="menu-item {% if url_name == 'home' %}active{% endif %}">
-        <i class="fas fa-house"></i>
-        <span>Inicio</span>
-    </a>
+    <!-- ===================== -->
+    <!-- Administración -->
+    <!-- ===================== -->
 
-    <!-- Usuarios -->
-    {% if "vexora.view_customuser" in request.user.get_all_permissions %}
-    <a href="{% url 'vexora:user_list' %}"
-       class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
-        <i class="fas fa-users"></i>
-        <span>Usuarios</span>
-    </a>
-    {% endif %}
+    <div class="menu-module">
 
     <!-- Grupos -->
     <a href="{% url 'vexora:group_list' %}"
@@ -71,22 +60,44 @@ SIDEBAR.HTML
         <span>Roles</span>
     </a>
 
-    <!-- Empresas -->
-    {% if "vexora.view_company" in request.user.get_all_permissions %}
-    <a href="{% url 'vexora:company_list' %}"
-       class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
-        <i class="fas fa-building"></i>
-        <span>Empresas</span>
-    </a>
-    {% endif %}
+        <button class="module-btn" type="button">
+            <i class="fas fa-shield-alt"></i>
+            <span>Administración</span>
+            <i class="fas fa-chevron-down arrow"></i>
+        </button>
 
-{% if request.user.is_authenticated %}
-        <!-- Productos -->
-        <a href="{% url 'vexora:list_products' %}"
-           class="menu-item {% if url_name == 'list_products' %}active{% endif %}">
-            <i class="fas fa-box-open"></i>
-            <span>Productos</span>
-        </a>
+
+        <div class="module-content">
+
+            {% if request.user.is_superuser %}
+            <a href="{% url 'vexora:user_list' %}"
+               class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                <span>Usuarios</span>
+            </a>
+            {% endif %}
+            {% if "vexora.view_company" in request.user.get_all_permissions %}
+            <a href="{% url 'vexora:company_list' %}"
+               class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
+                <i class="fas fa-building"></i>
+                <span>Empresas</span>
+            </a>
+            {% endif %}
+            {% if "vexora.view_companymember" in request.user.get_all_permissions %}
+            <a href="{% url 'vexora:member_list' %}"
+               class="menu-item {% if url_name == 'member_list' %}active{% endif %}">
+                <i class="fas fa-user-friends"></i>
+                <span>Miembros</span>
+            </a>
+            {% endif %}
+            {% if "vexora.view_role" in request.user.get_all_permissions %}
+            <a href="{% url 'vexora:group_list' %}"
+               class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
+                <i class="fas fa-user-group"></i>
+                <span>Roles</span>
+            </a>
+            {% endif %}
+
 
         <!-- Categorías -->
         <a href="{% url 'vexora:list_categories' %}"
@@ -102,12 +113,7 @@ SIDEBAR.HTML
             <span>Proveedores</span>
         </a>
 
-        <!-- Ventas -->
-         <a href="{% url 'vexora:sales_main_list' %}"
-         class="menu-item {% if url_name == 'sales_main_list' or url_name == 'sales_main_create' or url_name == 'sales_main_update' %}active{% endif %}">
-         <i class="fas fa-cash-register"></i>
-         <span>Ventas</span>
-        </a>
+
 
         <!-- Miembros -->
         <a href="{% url 'vexora:list_members' %}"
@@ -119,25 +125,125 @@ SIDEBAR.HTML
         <!-- Suscripción -->
         <a href="{% url 'vexora:subscription_list' %}"
            class="menu-item {% if url_name == 'subscription_list' or url_name == 'subscription_detail' %}active{% endif %}">
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================== -->
+    <!-- Inventario -->
+    <!-- ===================== -->
+
+    <div class="menu-module">
+
+        <button class="module-btn" type="button">
+            <i class="fas fa-boxes"></i>
+            <span>Inventario</span>
+            <i class="fas fa-chevron-down arrow"></i>
+        </button>
+
+        <div class="module-content">
+
+            <a href="{% url 'vexora:list_products' %}"
+               class="menu-item {% if url_name == 'list_products' %}active{% endif %}">
+                <i class="fas fa-box-open"></i>
+                <span>Productos</span>
+            </a>
+
+            <a href="{% url 'vexora:list_suppliers' %}"
+               class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
+                <i class="fas fa-truck-field"></i>
+                <span>Proveedores</span>
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================== -->
+    <!-- Ventas -->
+    <!-- ===================== -->
+
+    <div class="menu-module">
+
+        <button class="module-btn" type="button">
+            <i class="fas fa-cash-register"></i>
+            <span>Ventas</span>
+            <i class="fas fa-chevron-down arrow"></i>
+        </button>
+
+        <div class="module-content">
+
+            <a href="{% url 'vexora:sales_main_list' %}"
+               class="menu-item {% if url_name == 'sales_main_list' or url_name == 'sales_main_create' or url_name == 'sales_main_update' %}active{% endif %}">
+                <i class="fas fa-receipt"></i>
+                <span>Ventas</span>
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================== -->
+    <!-- Suscripción -->
+    <!-- ===================== -->
+
+    <div class="menu-module">
+
+        <button class="module-btn" type="button">
             <i class="fas fa-crown"></i>
             <span>Suscripción</span>
-        </a>
-        <!-- Planes -->
-        <a href="{% url 'vexora:plan_list' %}"
-           class="menu-item {% if url_name == 'plan_list' %}active{% endif %}">
-            <i class="fas fa-crown"></i>
-            <span>Planes</span>
-        </a>
+            <i class="fas fa-chevron-down arrow"></i>
+        </button>
 
-    {% endif %}
+        <div class="module-content">
 
+            <a href="{% url 'vexora:subscription_list' %}"
+               class="menu-item {% if url_name == 'subscription_list' or url_name == 'subscription_detail' %}active{% endif %}">
+                <i class="fas fa-credit-card"></i>
+                <span>Mi suscripción</span>
+            </a>
+
+            <a href="{% url 'vexora:plan_list' %}"
+               class="menu-item {% if url_name == 'plan_list' %}active{% endif %}">
+                <i class="fas fa-layer-group"></i>
+                <span>Planes</span>
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================== -->
     <!-- Configuración -->
-    {% if "vexora.view_siteconfiguration" in request.user.get_all_permissions %}
-    <a href="{% url 'vexora:site_configuration' %}"
-       class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}">
-        <i class="fas fa-gear"></i>
-        <span>Configuración</span>
-    </a>
+    <!-- ===================== -->
+
+    {% if request.user.company %}
+
+    <div class="menu-module">
+
+        <button class="module-btn" type="button">
+            <i class="fas fa-gear"></i>
+            <span>Configuración</span>
+            <i class="fas fa-chevron-down arrow"></i>
+        </button>
+
+        <div class="module-content">
+
+            <a href="{% url 'vexora:site_configuration' %}"
+               class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}">
+                <i class="fas fa-sliders"></i>
+                <span>General</span>
+            </a>
+
+        </div>
+
+    </div>
+
     {% endif %}
 
 </nav>
@@ -153,7 +259,60 @@ STYLES
 ========================= -->
 
 <style>
+.sidebar-menu{
+    overflow-y:auto;
+    overflow-x:hidden;
+    flex:1;
+    padding-right:5px;
+}
 
+.sidebar-menu::-webkit-scrollbar{
+    width:6px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb{
+    background:#666;
+    border-radius:20px;
+}
+
+.menu-module{
+    margin-bottom:12px;
+}
+
+.module-btn{
+    width:100%;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:transparent;
+    color:white;
+    border:none;
+    padding:14px 16px;
+    border-radius:14px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+.module-btn:hover{
+    background:rgba(255,255,255,.06);
+}
+
+.module-content{
+    display:none;
+    padding-left:12px;
+}
+
+.menu-module.active .module-content{
+    display:block;
+}
+
+.arrow{
+    transition:.3s;
+}
+
+.menu-module.active .arrow{
+    transform:rotate(180deg);
+}
 .sidebar-container{
 
     position:fixed;
@@ -306,3 +465,16 @@ STYLES
 }
 
 </style>
+<script>
+
+document.querySelectorAll(".module-btn").forEach(btn=>{
+
+    btn.addEventListener("click",function(){
+
+        this.parentElement.classList.toggle("active");
+
+    });
+
+});
+
+</script>

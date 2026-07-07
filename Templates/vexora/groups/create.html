@@ -112,6 +112,39 @@
                 </div>
               </div>
             </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong>👥 Gestión de Roles</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_role" id="add_role" class="form-check-input" {% if 'add_role' in group_permissions %}checked{% endif %}>
+                      <label for="add_role" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_role" id="change_role" class="form-check-input" {% if 'change_role' in group_permissions %}checked{% endif %}>
+                      <label for="change_role" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_role" id="delete_role" class="form-check-input" {% if 'delete_role' in group_permissions %}checked{% endif %}>
+                      <label for="delete_role" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_role" id="view_role" class="form-check-input" {% if 'view_role' in group_permissions %}checked{% endif %}>
+                      <label for="view_role" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Pestaña 2: Compañías -->

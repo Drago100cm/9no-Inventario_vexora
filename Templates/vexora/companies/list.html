@@ -33,12 +33,10 @@
                 <!-- Botón Agregar arriba -->
                 <div class="d-flex justify-content-end mb-3">
                     <!-- Botón agregar (arriba, alineado a la derecha) -->
-                    {% if perms.vexora.add_paquete %}
                     <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:company_create' %}')">
                         <i class="ri-add-line me-1 align-bottom"></i>
                         <span>Agregar Empresa</span>
                     </button>
-                    {% endif %}
                 </div>
                 <!-- Barra de búsqueda abajo -->
                 <div class="d-flex justify-content-end">

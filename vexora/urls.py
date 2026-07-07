@@ -41,10 +41,11 @@ urlpatterns = [
     path("user_edit/<int:pk>", UserUpdateView.as_view(), name="user_edit"),
     path("user_delete/<int:pk>", views.delete_user, name="user_delete"),
     path('profil/<int:pk>/', ProfileView.as_view(), name='profil'),
+    path('members/', MembersView.as_view(), name='member_list'),
     #----------------------Empresas----------------------
     path("companies/", CompanyListView.as_view(), name="company_list"),
     path("company/<slug:slug>/", CompanyDetailView.as_view(), name="company_detail"),
-    path("company_create", CompanyCreateView.as_view(), name="company_create"),
+    path("company_create/", CompanyCreateView.as_view(), name="company_create"),
     path("company_edit/<int:pk>", CompanyUpdateView.as_view(), name="company_edit"),
     path("company_delete/<int:pk>", views.delete_company, name="company_delete"),
 
