@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             sql="""
                 ALTER TABLE vexora_subscription
-                ADD COLUMN IF NOT EXISTS user_id bigint(20) NULL;
+                ADD COLUMN user_id BIGINT(20) NULL;
 
                 UPDATE vexora_subscription s
                 JOIN vexora_company c ON s.company_id = c.id
@@ -19,15 +19,17 @@ class Migration(migrations.Migration):
                 WHERE s.user_id IS NULL;
 
                 ALTER TABLE vexora_subscription
-                DROP FOREIGN KEY IF EXISTS vexora_subscription_company_id_e02bce15_fk_vexora_company_id;
+                DROP FOREIGN KEY vexora_subscription_company_id_e02bce15_fk_vexora_company_id;
+
                 ALTER TABLE vexora_subscription
-                DROP INDEX IF EXISTS company_id;
+                DROP INDEX company_id;
+
                 ALTER TABLE vexora_subscription
-                DROP COLUMN IF EXISTS company_id;
+                DROP COLUMN company_id;
             """,
             reverse_sql="""
                 ALTER TABLE vexora_subscription
-                ADD COLUMN IF NOT EXISTS company_id bigint(20) NULL;
+                ADD COLUMN company_id BIGINT(20) NULL;
 
                 UPDATE vexora_subscription s
                 JOIN vexora_company c ON c.owner_id = s.user_id
@@ -35,7 +37,7 @@ class Migration(migrations.Migration):
                 WHERE s.company_id IS NULL;
 
                 ALTER TABLE vexora_subscription
-                DROP COLUMN IF EXISTS user_id;
+                DROP COLUMN user_id;
             """,
         ),
     ]

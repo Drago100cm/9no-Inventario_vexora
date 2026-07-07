@@ -369,27 +369,10 @@ class RegisterView(CreateView):
 
         response = super().form_valid(form)
 
+        # Usuario creado
         user = self.object
 
-        # Buscar un plan activo
-        plan = Plan.objects.filter(active=True).first()
-
-        if plan:
-            Subscription.objects.get_or_create(
-                user=user,
-                defaults={
-                    'plan': plan,
-                    'status': 'active',
-                    'start_date': timezone.now().date(),
-                    'end_date': subscription_end_date(
-                        timezone.now().date(),
-                        plan.billing_type
-                    ),
-                    'trial': True,
-                    'active': True,
-                }
-            )
-
+        # Iniciar sesión automáticamente
         login(self.request, user)
 
         return response
@@ -680,14 +663,7 @@ class UserListView(LoginRequiredMixin, ListView):
 
     def get(self, request):
 
-        companies = Company.objects.filter(
-            Q(owner=request.user) |
-            Q(members=request.user)
-        ).distinct()
-
-        list_user = CustomUser.objects.filter(
-            companies__in=companies
-        ).distinct()
+        list_user = CustomUser.objects.all()
 
         data = {
             'list_user': list_user
@@ -863,7 +839,7 @@ def delete_company(request, pk):
     return redirect('vexora:company_list')  # ruta a la lista de empresas
 
 # ============================================
-# CATEGORY VIEWS (Categorías)
+# CATEGORY VIEWS
 # ============================================
 
 class CategoryListView(LoginRequiredMixin, ListView):
@@ -872,56 +848,77 @@ class CategoryListView(LoginRequiredMixin, ListView):
     context_object_name = 'categories'
 
     def get_queryset(self):
-        if self.request.user.company:
-            return Category.objects.filter(company=self.request.user.company).order_by('name')
-        return Category.objects.all().order_by('name')
+        company = self.request.user.company
+        if not company:
+            return Category.objects.none()
+        return Category.objects.filter(company=company).order_by('name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        company = self.request.user.company
+        if company:
+            context['stats'] = {
+                'total': Category.objects.filter(company=company).count(),
+            }
+        else:
+            context['stats'] = {'total': 0}
+        return context
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
     model = Category
     form_class = CategoryForm
     template_name = 'vexora/category/create.html'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         if self.request.user.company:
             form.instance.company = self.request.user.company
-        messages.success(self.request, "✅ Categoria creada correctamente!")
-        return super().form_valid(form)
+            messages.success(self.request, "✅ Categoría creada correctamente!")
+            return super().form_valid(form)
+        else:
+            messages.error(self.request, "❌ No tienes una empresa asignada.")
+            return redirect('vexora:list_categories')
 
     def get_success_url(self):
         return reverse('vexora:list_categories')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'New Category'
-        return context
-    
 class CategoryUpdateView(LoginRequiredMixin, UpdateView):
     model = Category
     form_class = CategoryForm
     template_name = 'vexora/category/update.html'
     pk_url_kwarg = 'id'
 
+    def get_queryset(self):
+        company = self.request.user.company
+        if not company:
+            return Category.objects.none()
+        return Category.objects.filter(company=company)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
-        messages.success(self.request, "✅ Categoria actualizada correctamente!")
+        messages.success(self.request, "✅ Categoría actualizada correctamente!")
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('vexora:list_categories')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Edit Category'
-        return context
-
 def delete_category(request, pk):
-    category = get_object_or_404(Category, id=pk)
+    company = request.user.company
+    category = get_object_or_404(Category, id=pk, company=company)
     category.delete()
-    messages.success(request, "✅ Categoria eliminada correctamente!")
-    return redirect('vexora:list_categories') 
-
+    messages.success(request, "✅ Categoría eliminada correctamente!")
+    return redirect('vexora:list_categories')
 
 # ============================================
-# SUPPLIER VIEWS (Proveedores)
+# SUPPLIER VIEWS
 # ============================================
 
 class SupplierListView(LoginRequiredMixin, ListView):
@@ -930,26 +927,21 @@ class SupplierListView(LoginRequiredMixin, ListView):
     context_object_name = 'suppliers'
 
     def get_queryset(self):
-        if self.request.user.company:
-            return Supplier.objects.filter(company=self.request.user.company).order_by('name')
-        return Supplier.objects.none()  # Si no tiene empresa, no muestra nada
+        company = self.request.user.company
+        if not company:
+            return Supplier.objects.none()
+        return Supplier.objects.filter(company=company).order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Estadísticas
-        if self.request.user.company:
-            suppliers = Supplier.objects.filter(company=self.request.user.company)
+        company = self.request.user.company
+        if company:
             context['stats'] = {
-                'total': suppliers.count(),
+                'total': Supplier.objects.filter(company=company).count(),
             }
         else:
-            context['stats'] = {
-                'total': 0,
-            }
-        
+            context['stats'] = {'total': 0}
         return context
-
 
 class SupplierCreateView(LoginRequiredMixin, CreateView):
     model = Supplier
@@ -973,7 +965,6 @@ class SupplierCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse('vexora:list_suppliers')
 
-
 class SupplierUpdateView(LoginRequiredMixin, UpdateView):
     model = Supplier
     form_class = SupplierForm
@@ -981,12 +972,12 @@ class SupplierUpdateView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = 'id'
 
     def get_queryset(self):
-        if self.request.user.company:
-            return Supplier.objects.filter(company=self.request.user.company)
-        return Supplier.objects.none()
+        company = self.request.user.company
+        if not company:
+            return Supplier.objects.none()
+        return Supplier.objects.filter(company=company)
 
     def get_form_kwargs(self):
-        # 👇 PASAR EL USUARIO AL FORMULARIO
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
@@ -998,17 +989,17 @@ class SupplierUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse('vexora:list_suppliers')
 
-
 def delete_supplier(request, pk):
-    supplier = get_object_or_404(Supplier, id=pk, company=request.user.company)
+    company = request.user.company
+    supplier = get_object_or_404(Supplier, id=pk, company=company)
     supplier_name = supplier.name
     supplier.delete()
     messages.success(request, f"✅ Proveedor '{supplier_name}' eliminado correctamente!")
     return redirect('vexora:list_suppliers')
 
-# ===========================================
-# PRODUCT VIEWS (Productos)
-# ===========================================
+# ============================================
+# PRODUCT VIEWS
+# ============================================
 
 class ProductListView(LoginRequiredMixin, ListView):
     model = Product
@@ -1016,11 +1007,11 @@ class ProductListView(LoginRequiredMixin, ListView):
     context_object_name = 'products'
 
     def get_queryset(self):
-        # Mostrar productos de la empresa del usuario
-        if self.request.user.company:
-            queryset = Product.objects.filter(company=self.request.user.company)
-        else:
-            queryset = Product.objects.all()
+        company = self.request.user.company
+        if not company:
+            return Product.objects.none()
+        
+        queryset = Product.objects.filter(company=company)
 
         # Filtro por proveedor
         supplier = self.request.GET.get('supplier')
@@ -1044,49 +1035,41 @@ class ProductListView(LoginRequiredMixin, ListView):
         fecha_fin = self.request.GET.get('fecha_fin')
         if fecha_inicio and fecha_fin:
             try:
-                from datetime import datetime
                 fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d')
                 fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d')
                 queryset = queryset.filter(purchase_date__range=[fecha_inicio_dt, fecha_fin_dt])
             except ValueError:
                 pass
 
-        # Búsqueda global
+        # Búsqueda global (incluye item_number)
         search = self.request.GET.get('search')
         if search:
             queryset = queryset.filter(
                 Q(name__icontains=search) |
                 Q(sku__icontains=search) |
-                Q(barcode__icontains=search)
+                Q(barcode__icontains=search) |
+                Q(item_number__icontains=search)
             )
 
-        return queryset.order_by('-purchase_date')
+        return queryset.order_by('item_number')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # Base para estadísticas
-        if self.request.user.company:
-            base_queryset = Product.objects.filter(company=self.request.user.company)
+        company = self.request.user.company
+        
+        if company:
+            base_queryset = Product.objects.filter(company=company)
+            context['stats'] = {
+                'total': base_queryset.count(),
+                'disponibles': base_queryset.filter(is_active=True, stock__gt=0).count(),
+                'no_disponibles': base_queryset.filter(Q(is_active=False) | Q(stock=0)).count(),
+            }
+            context['suppliers'] = Supplier.objects.filter(company=company)
+            context['categories'] = Category.objects.filter(company=company)
         else:
-            base_queryset = Product.objects.all()
-
-        # Estadísticas
-        context['stats'] = {
-            'total': base_queryset.count(),
-            'disponibles': base_queryset.filter(is_active=True, stock__gt=0).count(),
-            'no_disponibles': base_queryset.filter(Q(is_active=False) | Q(stock=0)).count(),
-        }
-
-        # Proveedores para el filtro
-        if self.request.user.company:
-            context['suppliers'] = Supplier.objects.filter(
-                Q(company=self.request.user.company) | Q(company__isnull=True)
-            )
-            context['categories'] = Category.objects.filter(company=self.request.user.company)
-        else:
-            context['suppliers'] = Supplier.objects.all()
-            context['categories'] = Category.objects.all()
+            context['stats'] = {'total': 0, 'disponibles': 0, 'no_disponibles': 0}
+            context['suppliers'] = Supplier.objects.none()
+            context['categories'] = Category.objects.none()
 
         return context
     
@@ -1103,12 +1086,14 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         if self.request.user.company:
             form.instance.company = self.request.user.company
-        messages.success(self.request, "✅ Producto creado correctamente!")
-        return super().form_valid(form)
+            messages.success(self.request, "✅ Producto creado correctamente!")
+            return super().form_valid(form)
+        else:
+            messages.error(self.request, "❌ No tienes una empresa asignada.")
+            return redirect('vexora:list_products')
 
     def get_success_url(self):
         return reverse('vexora:list_products')
-
 
 class ProductUpdateView(LoginRequiredMixin, UpdateView):
     model = Product
@@ -1117,7 +1102,10 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = 'id'
 
     def get_queryset(self):
-        return Product.objects.all()
+        company = self.request.user.company
+        if not company:
+            return Product.objects.none()
+        return Product.objects.filter(company=company)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -1125,35 +1113,29 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
-        # Mantener la empresa original si no viene en el form
+        # Mantener la empresa original
         if not form.instance.company and self.object:
             form.instance.company = self.object.company
-        # O asignar la empresa del usuario
         elif self.request.user.company:
             form.instance.company = self.request.user.company
         
-        # 👇 NUEVA LÓGICA PARA EL STOCK
         product = form.save(commit=False)
         
-        # Obtener la cantidad a agregar
+        # Lógica para agregar stock
         stock_addition = form.cleaned_data.get('stock_addition', 0)
-        
-        # Si se agregó stock, sumarlo al stock actual
         if stock_addition and stock_addition > 0:
-            # Mantener el stock actual y sumarle la adición
             product.stock = self.object.stock + stock_addition
             messages.success(
                 self.request, 
                 f'✅ Se agregaron {stock_addition} unidades al stock. Nuevo stock total: {product.stock}'
             )
         else:
-            # Si no se agregó stock, mantener el stock actual
             product.stock = self.object.stock
         
-        # Guardar el producto
-        product.save()
+        # Mantener el item_number original
+        product.item_number = self.object.item_number
         
-        # Guardar los campos ManyToMany (tags)
+        product.save()
         form.save_m2m()
         
         messages.success(self.request, "✅ Producto actualizado correctamente!")
@@ -1162,9 +1144,9 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse('vexora:list_products')
 
-
 def delete_product(request, pk):
-    product = get_object_or_404(Product, id=pk)
+    company = request.user.company
+    product = get_object_or_404(Product, id=pk, company=company)
     product.delete()
     messages.success(request, "✅ Producto eliminado correctamente!")
     return redirect('vexora:list_products')

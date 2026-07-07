@@ -75,6 +75,12 @@ urlpatterns = [
 
     path('products/delete/<int:pk>/', views.delete_product, name='delete_product'), 
     
+    # =================================
+    # Members URLs (Miembros)
+    # =================================
+    
+    path('members/', views.MembersView.as_view(), name='list_members'),
+    path('members/create/', views.MemberCreateView.as_view(), name='create_member'),
     
     # ============================================
     # SALES URLs (Ventas )
