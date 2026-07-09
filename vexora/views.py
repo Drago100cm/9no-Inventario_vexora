@@ -46,6 +46,7 @@ def company_home(request, slug):
 
 
 
+
 class AIChatView(LoginRequiredMixin, FormView):
     template_name = 'vexora/assistant/chat.html'
     form_class = AIChatForm
@@ -765,6 +766,9 @@ class UserUpdateView(LoginRequiredMixin,UpdateView):
 
 def delete_user(request, pk):
     user = get_object_or_404(CustomUser, id=pk)
+    if Company.objects.filter(owner=user).exists():
+        messages.error(request, "No puedes eliminar este usuario porque es propietario de una empresa.")
+        return redirect("vexora:user_list")
     user.delete()
     messages.success(request, "✅ Usuario eliminado correctamente!")
     return redirect('vexora:user_list')  # ruta a la lista de clientes
@@ -797,49 +801,26 @@ class ProfileView(LoginRequiredMixin, DetailView):
         })
         return context
     
-#---------------------Company----------------------
-class CompanyListView(LoginRequiredMixin,ListView):
-    #template_name = "logamex/departments/departaments.html"
+#==================== Company Views (Empresas) ====================
+class CompanyListView(LoginRequiredMixin, ListView):
     template_name = "vexora/companies/list.html"
 
     def get(self, request):
+
         user = request.user
-        admin_role = Role.objects.filter(name="Administrador").first()
 
-        print(Permission.objects.count())
+        # Superusuario ve todas las empresas
+        if user.is_superuser:
+            list_company = Company.objects.all()
+            print(Permission.objects.count())
 
-        roles = Role.objects.select_related("company").prefetch_related("permissions")
-
-        all_permissions = set()
-
-        for role in roles:
-            for p in role.permissions.all():
-                perm = f"{p.content_type.app_label}.{p.codename}"
-                all_permissions.add(perm)
-
-        for perm in sorted(all_permissions):
-            print(perm)
-
-        print("\n====================================================\n")
-
-        print("\n========================================\n")
-        print("\nMemberships:")
-        for membership in user.memberships.select_related("role", "company"):
-            print(f"Empresa: {membership.company}")
-            print(f"Rol: {membership.role}")
-
-            print("Permisos del rol:")
-            for perm in membership.role.permissions.all():
-                print(f" - {perm.content_type.app_label}.{perm.codename}")
-
-        print("====================================\n")
-        
-        list_company = Company.objects.all()
+        # Usuario normal solo ve las empresas que creó
+        else:
+            list_company = Company.objects.filter(owner=user)
 
         data = {
-            'list_company': list_company
+            "list_company": list_company
         }
-
 
         return render(request, self.template_name, data)
 

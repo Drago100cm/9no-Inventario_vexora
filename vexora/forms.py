@@ -244,19 +244,28 @@ class CompanyForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['name'].widget.attrs.update({
-            'class': 'form-control'
+            'class': 'form-control',
+            'required': True,
         })
         self.fields['address'].widget.attrs.update({
-            'class': 'form-control'
+            'class': 'form-control',
+            'required': True,
+
         })
         self.fields['phone'].widget.attrs.update({
-            'class': 'form-control'
+            'class': 'form-control',
+            'required': True,
+
         })
         self.fields['email'].widget.attrs.update({
-            'class': 'form-control'
+            'class': 'form-control',
+            'required': True,
+
         })
         self.fields['slug'].widget.attrs.update({
-            'class': 'form-control'
+            'class': 'form-control',
+            'required': True,
+
         })
         
     

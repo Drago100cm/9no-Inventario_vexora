@@ -1,7 +1,8 @@
-    {% extends 'partials/base.html' %}
+{% extends 'partials/base.html' %}
+{% load static %}
 
 {% block title %}
-    - Configuración
+    - Configuración SaaS
 {% endblock %}
 
 {% block content %}
@@ -16,195 +17,312 @@
 
                 <div class="card-body p-4">
 
-                    <div class="d-flex align-items-center mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
 
                         <div>
-
                             <h2 class="fw-bold mb-1">
+                                <i class="ri-settings-4-line me-2" style="color: {{ config.primary_color|default:'#2563EB' }};"></i>
                                 Configuración SaaS
                             </h2>
-
                             <p class="text-muted mb-0">
-                                Personaliza tu plataforma
+                                Personaliza la apariencia de tu plataforma
                             </p>
-
                         </div>
+
+                        <!-- Vista previa en vivo -->
+                        <button type="button" class="btn btn-outline-primary" onclick="toggleLivePreview()">
+                            <i class="ri-eye-line me-1"></i> Vista previa
+                        </button>
 
                     </div>
 
                     <form method="POST"
-                          enctype="multipart/form-data">
+                          enctype="multipart/form-data"
+                          id="configForm">
 
                         {% csrf_token %}
 
                         <div class="row">
 
-                            <!-- Logo -->
-<!-- Logo -->
+                            <!-- ========== LOGO ========== -->
+                            <div class="col-md-6 mb-4">
 
-<div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold mb-3">
+                                    <i class="ri-image-line me-1"></i> Logo de la empresa
+                                    <span class="text-muted fw-normal small">(Recomendado: 200x200px)</span>
+                                </label>
 
-    <label class="form-label fw-bold mb-3">
-        Logo
-    </label>
+                                <div class="logo-container">
+                                    <!-- Input oculto -->
+                                    <input
+                                        type="file"
+                                        name="logo"
+                                        id="id_logo"
+                                        accept="image/*"
+                                        hidden
+                                    >
 
-    <!-- Input oculto -->
-    <input
-        type="file"
-        name="logo"
-        id="id_logo"
-        accept="image/*"
-        hidden
-    >
+                                    <!-- Upload box -->
+                                    <div
+                                        id="logo-upload-box"
+                                        class="border rounded-4 d-flex flex-column justify-content-center align-items-center text-center position-relative overflow-hidden"
+                                        style="
+                                            height: 260px;
+                                            cursor: pointer;
+                                            background: #f8fafc;
+                                            transition: all 0.3s ease;
+                                            border: 2px dashed #dee2e6;
+                                        "
+                                    >
 
-    <!-- Upload box -->
-    <div
-        id="logo-upload-box"
-        class="border rounded-4 d-flex flex-column justify-content-center align-items-center text-center position-relative overflow-hidden"
-        style="
-            height: 260px;
-            cursor: pointer;
-            background: #f8fafc;
-            transition: 0.3s;
-        "
-    >
+                                        <!-- Imagen -->
+                                        <img
+                                            id="logo-preview"
+                                            src="{% if config.logo %}{{ config.logo.url }}{% endif %}"
+                                            alt="Logo preview"
+                                            style="
+                                                max-width: 100%;
+                                                max-height: 100%;
+                                                object-fit: contain;
+                                                display: {% if config.logo %}block{% else %}none{% endif %};
+                                                padding: 20px;
+                                            "
+                                        >
 
-        <!-- Imagen -->
-        <img
-            id="logo-preview"
-            src=""
-            alt="Preview"
-            style="
-                max-width: 100%;
-                max-height: 100%;
-                object-fit: contain;
-                display: none;
-            "
-        >
+                                        <!-- Placeholder -->
+                                        <div id="logo-placeholder" {% if config.logo %}style="display: none;"{% endif %}>
+                                            <i class="ri-image-add-line fa-3x mb-3" style="color: #94a3b8; font-size: 3rem;"></i>
+                                            <h6 class="fw-bold text-secondary">Subir logo</h6>
+                                            <p class="text-muted small mb-0">Haz clic para seleccionar una imagen</p>
+                                            <p class="text-muted small">Formatos: PNG, JPG, SVG</p>
+                                        </div>
 
-        <!-- Placeholder -->
-        <div id="logo-placeholder">
+                                        <!-- Badge de estado -->
+                                        <div id="logo-status" class="position-absolute top-0 end-0 m-2" style="display: {% if config.logo %}block{% else %}none{% endif %};">
+                                            <span class="badge bg-success">
+                                                <i class="ri-check-line me-1"></i> Subido
+                                            </span>
+                                        </div>
 
-            <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+                                    </div>
 
-            <h6 class="fw-bold">
-                Subir logo
-            </h6>
+                                    <!-- Botones de acción -->
+                                    <div class="d-flex gap-2 mt-3">
+                                        <button
+                                            type="button"
+                                            id="change-logo-btn"
+                                            class="btn btn-outline-primary btn-sm flex-grow-1"
+                                            {% if not config.logo %}style="display: none;"{% endif %}
+                                        >
+                                            <i class="ri-pencil-line me-1"></i> Cambiar logo
+                                        </button>
 
-            <p class="text-muted small mb-0">
-                Haz clic para seleccionar una imagen
-            </p>
+                                        <button
+                                            type="button"
+                                            id="remove-logo-btn"
+                                            class="btn btn-outline-danger btn-sm flex-grow-1"
+                                            {% if not config.logo %}style="display: none;"{% endif %}
+                                        >
+                                            <i class="ri-delete-bin-line me-1"></i> Quitar logo
+                                        </button>
 
-        </div>
+                                        <button
+                                            type="button"
+                                            id="add-logo-btn"
+                                            class="btn btn-primary btn-sm flex-grow-1"
+                                            {% if config.logo %}style="display: none;"{% endif %}
+                                        >
+                                            <i class="ri-upload-line me-1"></i> Subir logo
+                                        </button>
+                                    </div>
+                                </div>
 
-    </div>
+                            </div>
 
-    <!-- Botón eliminar -->
-    <button
-        type="button"
-        id="remove-logo"
-        class="btn btn-outline-danger btn-sm mt-3 w-100"
-        style="display: none;"
-    >
+                            <!-- ========== FAVICON ========== -->
+                            <div class="col-md-6 mb-4">
 
-        <i class="fas fa-trash me-2"></i>
+                                <label class="form-label fw-bold mb-3">
+                                    <i class="ri-window-line me-1"></i> Favicon
+                                    <span class="text-muted fw-normal small">(Recomendado: 32x32px)</span>
+                                </label>
 
-        Quitar logo
+                                <div class="favicon-container">
+                                    <!-- Input oculto -->
+                                    <input
+                                        type="file"
+                                        name="favicon"
+                                        id="id_favicon"
+                                        accept="image/*"
+                                        hidden
+                                    >
 
-    </button>
+                                    <!-- Upload box -->
+                                    <div
+                                        id="favicon-upload-box"
+                                        class="border rounded-4 d-flex flex-column justify-content-center align-items-center text-center position-relative overflow-hidden"
+                                        style="
+                                            height: 260px;
+                                            cursor: pointer;
+                                            background: #f8fafc;
+                                            transition: all 0.3s ease;
+                                            border: 2px dashed #dee2e6;
+                                        "
+                                    >
 
-</div>
+                                        <!-- Imagen -->
+                                        <img
+                                            id="favicon-preview"
+                                            src="{% if config.favicon %}{{ config.favicon.url }}{% endif %}"
+                                            alt="Favicon preview"
+                                            style="
+                                                max-width: 100%;
+                                                max-height: 100%;
+                                                object-fit: contain;
+                                                display: {% if config.favicon %}block{% else %}none{% endif %};
+                                                padding: 20px;
+                                            "
+                                        >
 
+                                        <!-- Placeholder -->
+                                        <div id="favicon-placeholder" {% if config.favicon %}style="display: none;"{% endif %}>
+                                            <i class="ri-window-2-line fa-3x mb-3" style="color: #94a3b8; font-size: 3rem;"></i>
+                                            <h6 class="fw-bold text-secondary">Subir favicon</h6>
+                                            <p class="text-muted small mb-0">Haz clic para seleccionar una imagen</p>
+                                            <p class="text-muted small">Formatos: PNG, ICO, SVG</p>
+                                        </div>
 
+                                        <!-- Badge de estado -->
+                                        <div id="favicon-status" class="position-absolute top-0 end-0 m-2" style="display: {% if config.favicon %}block{% else %}none{% endif %};">
+                                            <span class="badge bg-success">
+                                                <i class="ri-check-line me-1"></i> Subido
+                                            </span>
+                                        </div>
 
-                            <!-- Colores -->
+                                    </div>
+
+                                    <!-- Botones de acción -->
+                                    <div class="d-flex gap-2 mt-3">
+                                        <button
+                                            type="button"
+                                            id="change-favicon-btn"
+                                            class="btn btn-outline-primary btn-sm flex-grow-1"
+                                            {% if not config.favicon %}style="display: none;"{% endif %}
+                                        >
+                                            <i class="ri-pencil-line me-1"></i> Cambiar favicon
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            id="remove-favicon-btn"
+                                            class="btn btn-outline-danger btn-sm flex-grow-1"
+                                            {% if not config.favicon %}style="display: none;"{% endif %}
+                                        >
+                                            <i class="ri-delete-bin-line me-1"></i> Quitar favicon
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            id="add-favicon-btn"
+                                            class="btn btn-primary btn-sm flex-grow-1"
+                                            {% if config.favicon %}style="display: none;"{% endif %}
+                                        >
+                                            <i class="ri-upload-line me-1"></i> Subir favicon
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- ========== COLORES ========== -->
+                            <div class="col-12 mt-3">
+                                <h5 class="fw-bold mb-3">
+                                    <i class="ri-palette-line me-1" style="color: {{ config.primary_color|default:'#2563EB' }};"></i>
+                                    Colores personalizados
+                                </h5>
+                            </div>
 
                             <div class="col-md-2 mb-4">
-
                                 <label class="form-label fw-bold">
                                     Color Primario
                                 </label>
-
                                 {{ form.primary_color }}
-
+                                <small class="text-muted d-block mt-1">Principal</small>
                             </div>
 
                             <div class="col-md-2 mb-4">
-
                                 <label class="form-label fw-bold">
                                     Color Secundario
                                 </label>
-
                                 {{ form.secondary_color }}
-
+                                <small class="text-muted d-block mt-1">Secundario</small>
                             </div>
 
                             <div class="col-md-2 mb-4">
-
                                 <label class="form-label fw-bold">
                                     Color Accent
                                 </label>
-
                                 {{ form.accent_color }}
-
+                                <small class="text-muted d-block mt-1">Destacar</small>
                             </div>
 
-                            <!-- Fondos -->
-
                             <div class="col-md-2 mb-4">
-
                                 <label class="form-label fw-bold">
                                     Fondo
                                 </label>
-
                                 {{ form.background_color }}
-
+                                <small class="text-muted d-block mt-1">Background</small>
                             </div>
 
-                            <div class="col-md-4 mb-4">
-
+                            <div class="col-md-2 mb-4">
                                 <label class="form-label fw-bold">
                                     Card
                                 </label>
-
                                 {{ form.card_background }}
-
+                                <small class="text-muted d-block mt-1">Tarjetas</small>
                             </div>
 
-                            <div class="col-md-4 mb-4">
-
+                            <div class="col-md-2 mb-4">
                                 <label class="form-label fw-bold">
                                     Texto
                                 </label>
-
                                 {{ form.text_color }}
-
+                                <small class="text-muted d-block mt-1">Letras</small>
                             </div>
 
-                            <!-- Favicon -->
-
-                            <div class="col-md-6 mb-4">
-
-                                <label class="form-label fw-bold">
-                                    Favicon
-                                </label>
-
-                                {{ form.favicon }}
-
+                            <!-- ========== MODO OSCURO ========== -->
+                            <div class="col-12 mb-4">
+                                <div class="form-check form-switch">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="dark_mode"
+                                        id="id_dark_mode"
+                                        {% if config.dark_mode %}checked{% endif %}
+                                        style="width: 3rem; height: 1.5rem;"
+                                    >
+                                    <label class="form-check-label fw-bold ms-2" for="id_dark_mode">
+                                        <i class="ri-moon-line me-1"></i> Modo oscuro
+                                    </label>
+                                    <small class="text-muted d-block ms-2">Activar modo oscuro para toda la plataforma</small>
+                                </div>
                             </div>
 
                         </div>
 
-                        <div class="mt-4">
-
-                            <button class="btn btn-primary px-5">
-
-                                <i class="fas fa-save me-2"></i>
-
+                        <!-- ========== BOTONES DE ACCIÓN ========== -->
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-5">
+                                <i class="ri-save-3-line me-2"></i>
                                 Guardar configuración
-
                             </button>
 
+                            <button type="reset" class="btn btn-outline-secondary px-4">
+                                <i class="ri-refresh-line me-2"></i>
+                                Restablecer
+                            </button>
+
+                    
                         </div>
 
                     </form>
@@ -219,96 +337,477 @@
 
 </div>
 
+<!-- ========== MODAL DE VISTA PREVIA ========== -->
+<div class="modal fade" id="livePreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="ri-eye-line me-2"></i> Vista previa en vivo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent" style="padding: 20px; border-radius: 12px;">
+                    <!-- Vista previa dinámica -->
+                    <div class="preview-card" style="padding: 30px; border-radius: 12px; text-align: center;">
+                        <img id="preview-logo" src="{% if config.logo %}{{ config.logo.url }}{% endif %}" alt="Logo" style="max-height: 80px; margin-bottom: 20px; display: {% if config.logo %}block{% else %}none{% endif %}; margin: 0 auto 20px;">
+                        <h3 style="margin-bottom: 10px;">Título de ejemplo</h3>
+                        <p style="margin-bottom: 20px;">Este es un texto de ejemplo para mostrar los colores</p>
+                        <button class="btn" style="padding: 10px 30px; border: none; border-radius: 8px;">Botón de ejemplo</button>
+                        <div class="mt-3">
+                            <span class="badge" style="padding: 6px 12px;">Etiqueta</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos mejorados */
+    .logo-container, .favicon-container {
+        position: relative;
+    }
+
+    #logo-upload-box:hover,
+    #favicon-upload-box:hover {
+        border-color: #2563eb !important;
+        background: #f1f5f9 !important;
+        transform: scale(1.01);
+        box-shadow: 0 4px 20px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Animación de los botones */
+    .btn {
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Color pickers más grandes */
+    input[type="color"] {
+        width: 100%;
+        height: 50px;
+        padding: 4px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    input[type="color"]:hover {
+        border-color: #2563eb;
+        transform: scale(1.02);
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+        border: none;
+        border-radius: 6px;
+    }
+
+    /* Vista previa en modal */
+    .preview-card {
+        background: var(--card-bg, #ffffff);
+        color: var(--text-color, #000000);
+        border: 1px solid #e2e8f0;
+    }
+
+    .preview-card .btn {
+        background: var(--primary-color, #2563EB);
+        color: white;
+    }
+
+    .preview-card .badge {
+        background: var(--secondary-color, #1E293B);
+        color: white;
+    }
+
+    /* Badge de estado */
+    .badge {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+    }
+</style>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
 
-    const uploadBox = document.getElementById(
-        'logo-upload-box'
-    );
+document.addEventListener('DOMContentLoaded', function() {
 
-    const logoInput = document.getElementById(
-        'id_logo'
-    );
+    // ============================================
+    // LOGO
+    // ============================================
+    const logoUploadBox = document.getElementById('logo-upload-box');
+    const logoInput = document.getElementById('id_logo');
+    const logoPreview = document.getElementById('logo-preview');
+    const logoPlaceholder = document.getElementById('logo-placeholder');
+    const logoStatus = document.getElementById('logo-status');
+    const changeLogoBtn = document.getElementById('change-logo-btn');
+    const removeLogoBtn = document.getElementById('remove-logo-btn');
+    const addLogoBtn = document.getElementById('add-logo-btn');
 
-    const logoPreview = document.getElementById(
-        'logo-preview'
-    );
+    // Función para actualizar UI del logo
+    function updateLogoUI(hasLogo) {
+        if (hasLogo) {
+            logoPreview.style.display = 'block';
+            logoPlaceholder.style.display = 'none';
+            logoStatus.style.display = 'block';
+            changeLogoBtn.style.display = 'block';
+            removeLogoBtn.style.display = 'block';
+            addLogoBtn.style.display = 'none';
+        } else {
+            logoPreview.style.display = 'none';
+            logoPlaceholder.style.display = 'block';
+            logoStatus.style.display = 'none';
+            changeLogoBtn.style.display = 'none';
+            removeLogoBtn.style.display = 'none';
+            addLogoBtn.style.display = 'block';
+        }
+    }
 
-    const logoPlaceholder = document.getElementById(
-        'logo-placeholder'
-    );
-
-    const removeLogoBtn = document.getElementById(
-        'remove-logo'
-    );
-
-    // Abrir selector
-    uploadBox.addEventListener('click', () => {
-
+    // Abrir selector - clic en la caja
+    logoUploadBox.addEventListener('click', () => {
         logoInput.click();
+    });
 
+    // Abrir selector - botón "Subir logo"
+    addLogoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        logoInput.click();
+    });
+
+    // Abrir selector - botón "Cambiar logo"
+    changeLogoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        logoInput.click();
     });
 
     // Mostrar preview
     logoInput.addEventListener('change', function(event) {
-
         const file = event.target.files[0];
-
         if (file) {
+            // Validar tamaño (máx 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Archivo demasiado grande',
+                    text: 'El logo no puede superar los 2MB',
+                    confirmButtonText: 'Entendido'
+                });
+                this.value = '';
+                return;
+            }
+
+            // Validar formato
+            const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Formato no soportado',
+                    text: 'Usa PNG, JPG, SVG o WEBP',
+                    confirmButtonText: 'Entendido'
+                });
+                this.value = '';
+                return;
+            }
 
             const reader = new FileReader();
-
             reader.onload = function(e) {
-
                 logoPreview.src = e.target.result;
-
-                logoPreview.style.display = 'block';
-
-                logoPlaceholder.style.display = 'none';
-
-                removeLogoBtn.style.display = 'block';
-
+                updateLogoUI(true);
             };
-
             reader.readAsDataURL(file);
+        }
+    });
 
+    // Quitar logo
+    removeLogoBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        Swal.fire({
+            title: '¿Quitar logo?',
+            text: 'Esta acción eliminará el logo actual',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, quitar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                logoInput.value = '';
+                logoPreview.src = '';
+                updateLogoUI(false);
+                
+                // Crear input oculto para indicar que se eliminó
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'clear_logo';
+                hiddenInput.value = 'true';
+                document.getElementById('configForm').appendChild(hiddenInput);
+            }
+        });
+    });
+
+    // ============================================
+    // FAVICON
+    // ============================================
+    const faviconUploadBox = document.getElementById('favicon-upload-box');
+    const faviconInput = document.getElementById('id_favicon');
+    const faviconPreview = document.getElementById('favicon-preview');
+    const faviconPlaceholder = document.getElementById('favicon-placeholder');
+    const faviconStatus = document.getElementById('favicon-status');
+    const changeFaviconBtn = document.getElementById('change-favicon-btn');
+    const removeFaviconBtn = document.getElementById('remove-favicon-btn');
+    const addFaviconBtn = document.getElementById('add-favicon-btn');
+
+    // Función para actualizar UI del favicon
+    function updateFaviconUI(hasFavicon) {
+        if (hasFavicon) {
+            faviconPreview.style.display = 'block';
+            faviconPlaceholder.style.display = 'none';
+            faviconStatus.style.display = 'block';
+            changeFaviconBtn.style.display = 'block';
+            removeFaviconBtn.style.display = 'block';
+            addFaviconBtn.style.display = 'none';
+        } else {
+            faviconPreview.style.display = 'none';
+            faviconPlaceholder.style.display = 'block';
+            faviconStatus.style.display = 'none';
+            changeFaviconBtn.style.display = 'none';
+            removeFaviconBtn.style.display = 'none';
+            addFaviconBtn.style.display = 'block';
+        }
+    }
+
+    // Abrir selector - clic en la caja
+    faviconUploadBox.addEventListener('click', () => {
+        faviconInput.click();
+    });
+
+    // Abrir selector - botón "Subir favicon"
+    addFaviconBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        faviconInput.click();
+    });
+
+    // Abrir selector - botón "Cambiar favicon"
+    changeFaviconBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        faviconInput.click();
+    });
+
+    // Mostrar preview
+    faviconInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            // Validar tamaño (máx 500KB)
+            if (file.size > 500 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Archivo demasiado grande',
+                    text: 'El favicon no puede superar los 500KB',
+                    confirmButtonText: 'Entendido'
+                });
+                this.value = '';
+                return;
+            }
+
+            // Validar formato
+            const validTypes = ['image/png', 'image/x-icon', 'image/svg+xml', 'image/vnd.microsoft.icon'];
+            if (!validTypes.includes(file.type) && !file.name.endsWith('.ico')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Formato no soportado',
+                    text: 'Usa PNG, ICO o SVG',
+                    confirmButtonText: 'Entendido'
+                });
+                this.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                faviconPreview.src = e.target.result;
+                updateFaviconUI(true);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Quitar favicon
+    removeFaviconBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        Swal.fire({
+            title: '¿Quitar favicon?',
+            text: 'Esta acción eliminará el favicon actual',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, quitar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                faviconInput.value = '';
+                faviconPreview.src = '';
+                updateFaviconUI(false);
+                
+                // Crear input oculto para indicar que se eliminó
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'clear_favicon';
+                hiddenInput.value = 'true';
+                document.getElementById('configForm').appendChild(hiddenInput);
+            }
+        });
+    });
+
+    // ============================================
+    // VISTA PREVIA EN VIVO
+    // ============================================
+    let previewModal = null;
+
+    window.toggleLivePreview = function() {
+        if (!previewModal) {
+            previewModal = new bootstrap.Modal(document.getElementById('livePreviewModal'));
+        }
+        
+        // Actualizar preview con los valores actuales
+        updateLivePreview();
+        previewModal.show();
+    };
+
+    function updateLivePreview() {
+        const primaryColor = document.querySelector('[name="primary_color"]')?.value || '#2563EB';
+        const secondaryColor = document.querySelector('[name="secondary_color"]')?.value || '#1E293B';
+        const accentColor = document.querySelector('[name="accent_color"]')?.value || '#F59E0B';
+        const bgColor = document.querySelector('[name="background_color"]')?.value || '#ffffff';
+        const cardBg = document.querySelector('[name="card_background"]')?.value || '#f8fafc';
+        const textColor = document.querySelector('[name="text_color"]')?.value || '#000000';
+        const darkMode = document.getElementById('id_dark_mode')?.checked || false;
+
+        const previewCard = document.querySelector('.preview-card');
+        const previewLogo = document.getElementById('preview-logo');
+        
+        // Aplicar colores
+        previewCard.style.background = darkMode ? '#1a1a2e' : (cardBg || '#f8fafc');
+        previewCard.style.color = darkMode ? '#ffffff' : (textColor || '#000000');
+        
+        const title = previewCard.querySelector('h3');
+        if (title) title.style.color = darkMode ? '#ffffff' : (textColor || '#000000');
+        
+        const paragraph = previewCard.querySelector('p');
+        if (paragraph) paragraph.style.color = darkMode ? '#94a3b8' : '#475569';
+        
+        const button = previewCard.querySelector('.btn');
+        if (button) {
+            button.style.background = darkMode ? primaryColor : primaryColor;
+            button.style.color = '#ffffff';
+        }
+        
+        const badge = previewCard.querySelector('.badge');
+        if (badge) {
+            badge.style.background = darkMode ? accentColor : accentColor;
+            badge.style.color = '#ffffff';
         }
 
+        // Logo
+        const logoImg = document.getElementById('logo-preview');
+        if (logoImg && logoImg.src && logoImg.src !== window.location.origin + '/') {
+            previewLogo.src = logoImg.src;
+            previewLogo.style.display = 'block';
+        } else {
+            previewLogo.style.display = 'none';
+        }
+
+        // Fondo del modal
+        document.querySelector('#livePreviewModal .modal-content').style.background = darkMode ? '#0f172a' : '#ffffff';
+        document.querySelector('#livePreviewModal .modal-header').style.background = darkMode ? '#1e293b' : '#f8fafc';
+        document.querySelector('#livePreviewModal .modal-header').style.color = darkMode ? '#ffffff' : '#000000';
+    }
+
+    // Actualizar preview al cambiar colores
+    document.querySelectorAll('input[type="color"]').forEach(input => {
+        input.addEventListener('input', updateLivePreview);
     });
 
-    // Eliminar imagen
-    removeLogoBtn.addEventListener('click', function() {
+    document.getElementById('id_dark_mode')?.addEventListener('change', updateLivePreview);
 
-        logoInput.value = '';
-
-        logoPreview.src = '';
-
-        logoPreview.style.display = 'none';
-
-        logoPlaceholder.style.display = 'block';
-
-        removeLogoBtn.style.display = 'none';
-
+    // ============================================
+    // VALIDACIÓN ANTES DE ENVIAR
+    // ============================================
+    document.getElementById('configForm').addEventListener('submit', function(e) {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin me-2"></i> Guardando...';
     });
 
-    // Hover effects
-    uploadBox.addEventListener('mouseenter', () => {
-
-        uploadBox.style.borderColor = '#2563eb';
-
-        uploadBox.style.transform = 'scale(1.01)';
-
+    // ============================================
+    // RESETEAR FORMULARIO
+    // ============================================
+    document.querySelector('button[type="reset"]')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        Swal.fire({
+            title: '¿Restablecer configuración?',
+            text: 'Se perderán todos los cambios no guardados',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, restablecer',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                location.reload();
+            }
+        });
     });
 
-    uploadBox.addEventListener('mouseleave', () => {
+    // ============================================
+    // DRAG & DROP PARA LOGO Y FAVICON
+    // ============================================
+    [logoUploadBox, faviconUploadBox].forEach(box => {
+        box.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            box.style.borderColor = '#2563eb';
+            box.style.background = '#f1f5f9';
+        });
 
-        uploadBox.style.borderColor = '#dee2e6';
+        box.addEventListener('dragleave', () => {
+            box.style.borderColor = '#dee2e6';
+            box.style.background = '#f8fafc';
+        });
 
-        uploadBox.style.transform = 'scale(1)';
-
+        box.addEventListener('drop', (e) => {
+            e.preventDefault();
+            box.style.borderColor = '#dee2e6';
+            box.style.background = '#f8fafc';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const input = box.id === 'logo-upload-box' ? logoInput : faviconInput;
+                input.files = files;
+                input.dispatchEvent(new Event('change'));
+            }
+        });
     });
+
+    // Estado inicial
+    updateLogoUI({{ config.logo|yesno:"true,false" }});
+    updateFaviconUI({{ config.favicon|yesno:"true,false" }});
+
+});
 
 </script>
 {% endblock %}
