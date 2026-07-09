@@ -13,10 +13,11 @@
               data-bs-dismiss="modal">
       </button>
     </div>
-
-    <form method="POST"
-          enctype="multipart/form-data"
-          action="{% url 'vexora:company_create' %}"><!--===========solo cambia el link de tu url-->
+<form method="POST"
+      enctype="multipart/form-data"
+      onsubmit="return validarRequeridos(this)"
+      novalidate
+      action="{% url 'vexora:company_create' %}"><!--===========solo cambia el link de tu url-->
 
       {% csrf_token %}
 
@@ -30,34 +31,22 @@
             <div class="row gy-4 mb-4">
 
               <div class="col-md-12">
-                <label>
-                  Nombre de la empresa
-                  <span class="text-danger">*</span>
-                </label>
+                <label>Nombre de la empresa<span class="text-danger">*</span></label>
                 {{ form.name }}
               </div>
 
               <div class="col-md-4">
-                <label>
-                  Email
-                  <span class="text-danger">*</span>
-                </label>
+                <label>Email<span class="text-danger">*</span></label>
                 {{ form.email }}
               </div>
 
               <div class="col-md-4">
-                <label>
-                  Dirección
-                  <span class="text-danger">*</span>
-                </label>
+                <label>Dirección<span class="text-danger">*</span></label>
                 {{ form.address }}
               </div>
 
               <div class="col-md-4">
-                <label>
-                  Teléfono
-                  <span class="text-danger">*</span>
-                </label>
+                <label>Teléfono<span class="text-danger">*</span></label>
                 {{ form.phone }}
               </div>
               <div class="col-md-4">
@@ -97,3 +86,33 @@
 
   </div>
 </div>
+<script>
+  // Si usas SweetAlert2
+function validarRequeridos(form) {
+    const requeridos = form.querySelectorAll('[required]');
+    let errores = [];
+    
+    requeridos.forEach(campo => {
+        const label = campo.closest('.col-md-4, .col-md-12, .col-md-6')?.querySelector('label');
+        const nombre = label ? label.textContent.trim().replace('*', '').trim() : campo.name;
+        
+        if (!campo.value || campo.value.trim() === '') {
+            errores.push(nombre);
+            campo.classList.add('is-invalid');
+        } else {
+            campo.classList.remove('is-invalid');
+        }
+    });
+    
+    if (errores.length > 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos obligatorios',
+            text: errores.join(', '),
+            confirmButtonText: 'OK'
+        });
+        return false;
+    }
+    return true;
+}
+</script>

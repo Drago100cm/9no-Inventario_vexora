@@ -11,37 +11,48 @@ import uuid
 
 class Company(models.Model):
 
-    name = models.CharField(max_length=150,unique=True)
-    
-    address = models.CharField(max_length=255, blank=True, null=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
+    name = models.CharField(max_length=150, unique=True)
     slug = models.SlugField(unique=True)
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="owned_companies")
+
+    # Información de contacto
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)
+
+    # Información fiscal
+    rfc = models.CharField(max_length=13, blank=True, null=True)
+    tax_name = models.CharField(max_length=200, blank=True, null=True)
+
+    # Imagen
+    logo = models.ImageField(upload_to="vexora/company/logo/",blank=True,null=True)
+
+    # Estado
+    is_active = models.BooleanField(default=True)
+
+    # Fechas
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def save(self, *args, **kwargs):
-
         if not self.slug:
-
-            self.slug = (
-                f"{slugify(self.name)}"
-            )
+            self.slug = slugify(self.name)
 
         super().save(*args, **kwargs)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='owned_companies')
-    created_at = models.DateTimeField(auto_now_add=True
-    )
 
     def __str__(self):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('vexora:company_detail', kwargs={'slug': self.slug})
+        return reverse("vexora:company_detail",kwargs={"slug": self.slug})
 
 #--- Models para la configuración del sitio y el usuario personalizado
 class SiteConfiguration(models.Model):
     company = models.OneToOneField(Company,on_delete=models.CASCADE,null=True,blank=True)
     background_color = models.CharField(max_length=7,default="#0f172a")
     card_background = models.CharField(max_length=7,default="#1e293b")
-    text_color = models.CharField(max_length=7,default="#ffffff")
+    text_color = models.CharField(max_length=7,default="#000000")
     primary_color = models.CharField(max_length=7,default="#2563EB")
     secondary_color = models.CharField(max_length=7,default="#1E293B")
     accent_color = models.CharField(max_length=7,default="#F59E0B")
