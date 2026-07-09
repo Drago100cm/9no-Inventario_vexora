@@ -72,17 +72,18 @@ urlpatterns = [
     path('list_products/', views.ProductListView.as_view(), name='list_products'),
     path('products/create/', views.ProductCreateView.as_view(), name='create_product'),
     path('products/update/<int:id>/', views.ProductUpdateView.as_view(), name='edit_product'),
+    path('products/view/<int:pk>/', views.view_product, name='view_product'),    
     path('products/delete/<int:id>/', views.delete_product, name='delete_product'), 
-
-    path('products/delete/<int:pk>/', views.delete_product, name='delete_product'), 
-    
     # =================================
     # Members URLs (Miembros)
     # =================================
     
     path('members/', views.MembersView.as_view(), name='list_members'),
-    path('members/create/', views.MemberCreateView.as_view(), name='create_member'),
-    
+    path('members/create/', views.MembersCreateView.as_view(), name='create_member'),
+    path('members/update/<int:id>/', views.MemberUpdateView.as_view(), name='edit_member'),
+    path('members/delete/<int:id>/', views.delete_member, name='delete_member'),
+
+
     # ============================================
     # SALES URLs (Ventas )
     # ============================================

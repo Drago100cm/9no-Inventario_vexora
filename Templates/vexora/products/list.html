@@ -26,73 +26,74 @@
                 {% endfor %}
             {% endif %}
 
-            <!-- Estadísticas -->
+            <!-- ESTADÍSTICAS - FUERA DEL BG-LIGHT -->
             <div class="row mb-4">
-                <div class="col-12">
-                    <div class="bg-light rounded-3 shadow-sm p-3">
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center">
-                                            <div class="flex-grow-1">
-                                                <p class="text-muted mb-1">Total Productos</p>
-                                                <h3 class="mb-0">{{ stats.total }}</h3>
-                                            </div>
-                                            <div class="flex-shrink-0">
-                                                <i class="ri-box-3-line fs-1 text-primary"></i>
-                                            </div>
-                                        </div>
-                                    </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Total Productos</p>
+                                    <h3 class="mb-0">{{ stats.total }}</h3>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center">
-                                            <div class="flex-grow-1">
-                                                <p class="text-muted mb-1">Disponibles</p>
-                                                <h3 class="mb-0 text-success">{{ stats.disponibles }}</h3>
-                                            </div>
-                                            <div class="flex-shrink-0">
-                                                <i class="ri-checkbox-circle-line fs-1 text-success"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center">
-                                            <div class="flex-grow-1">
-                                                <p class="text-muted mb-1">Sin Stock</p>
-                                                <h3 class="mb-0 text-danger">{{ stats.no_disponibles }}</h3>
-                                            </div>
-                                            <div class="flex-shrink-0">
-                                                <i class="ri-close-circle-line fs-1 text-danger"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center">
-                                            <div class="flex-grow-1">
-                                                <p class="text-muted mb-1">Compañía</p>
-                                                <h5 class="mb-0">{{ user.company.name }}</h5>
-                                            </div>
-                                            <div class="flex-shrink-0">
-                                                <i class="ri-building-line fs-1 text-info"></i>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-box-3-line fs-1 text-primary"></i>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Disponibles</p>
+                                    <h3 class="mb-0 text-success">{{ stats.disponibles }}</h3>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-checkbox-circle-line fs-1 text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Sin Stock</p>
+                                    <h3 class="mb-0 text-danger">{{ stats.no_disponibles }}</h3>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-close-circle-line fs-1 text-danger"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Compañía</p>
+                                    <h5 class="mb-0">{{ user.company.name }}</h5>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-building-line fs-1 text-info"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- CONTENEDOR BG-LIGHT CON FILTROS Y TABLA -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="bg-light rounded-3 shadow-sm p-3">
                         <!-- FILTROS RÁPIDOS -->
                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
                             <div class="btn-group flex-wrap mb-2 mb-md-0" role="group">
@@ -121,7 +122,7 @@
                         </div>
 
                         <!-- FILTROS AVANZADOS -->
-                        <form method="GET" class="row g-3 mb-3">
+                        <form method="GET" class="row g-3 mb-3" id="filterForm">
                             <div class="col-md-3">
                                 <select name="supplier" class="form-select">
                                     <option value="">Todos los proveedores</option>
@@ -147,13 +148,17 @@
                             </div>
 
                             <div class="col-md-2">
-                                <input type="date" name="fecha_inicio" class="form-control" 
-                                       value="{{ request.GET.fecha_inicio|default:'' }}" placeholder="Fecha inicio">
+                                <input type="date" name="fecha_inicio" class="form-control date-restricted" 
+                                       value="{{ request.GET.fecha_inicio|default:'' }}" 
+                                       placeholder="Fecha inicio"
+                                       id="fecha_inicio">
                             </div>
 
                             <div class="col-md-2">
-                                <input type="date" name="fecha_fin" class="form-control" 
-                                       value="{{ request.GET.fecha_fin|default:'' }}" placeholder="Fecha fin">
+                                <input type="date" name="fecha_fin" class="form-control date-restricted" 
+                                       value="{{ request.GET.fecha_fin|default:'' }}" 
+                                       placeholder="Fecha fin"
+                                       id="fecha_fin">
                             </div>
 
                             <div class="col-md-2">
@@ -210,7 +215,8 @@
                                     <td>
                                         <strong>{{ product.name }}</strong>
                                     </td>
-                                    <td>{% if product.category %}{{ product.category.name }}{% else %}-{% endif %}</td>                                    <td class="text-success fw-bold">${{ product.price|floatformat:2 }}</td>
+                                    <td>{% if product.category %}{{ product.category.name }}{% else %}-{% endif %}</td>
+                                    <td class="text-success fw-bold">${{ product.price|floatformat:2 }}</td>
                                     <td>
                                         <span class="badge {% if product.stock == 0 %}bg-danger{% elif product.stock <= product.min_stock %}bg-warning text-dark{% else %}bg-success{% endif %}">
                                             {{ product.stock }}
@@ -231,6 +237,10 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-info btn-icon" 
+                                                    onclick="viewProduct('{{ product.id }}')" title="Ver">
+                                                <i class="ri-eye-fill"></i>
+                                            </button>
                                             <button type="button" class="btn btn-outline-secondary btn-icon" 
                                                     onclick="editModal('{% url 'vexora:edit_product' product.id %}')" title="Editar">
                                                 <i class="ri-pencil-fill"></i>
@@ -264,7 +274,37 @@
     </div>
 </div>
 
-<!-- Modal dinámico -->
+<!-- Modal de Ver Producto -->
+<div class="modal fade" id="viewProductModal" tabindex="-1" aria-labelledby="viewProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light p-3">
+                <h5 class="modal-title" id="viewProductModalLabel">
+                    <i class="ri-eye-fill me-2"></i>
+                    Detalle del Producto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="viewProductContent">
+                <!-- El contenido se cargará vía AJAX -->
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando información del producto...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dinámico para editar/crear -->
 <div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
 {% endblock %}
 
@@ -273,6 +313,28 @@
     function editModal(url) {
         $('#ModalOptions').load(url, function () {
             $(this).modal('show');
+        });
+    }
+
+    function viewProduct(productId) {
+        // Mostrar el modal
+        $('#viewProductModal').modal('show');
+        
+        // Cargar los datos del producto vía AJAX
+        $.ajax({
+            url: '/products/view/' + productId + '/',
+            method: 'GET',
+            success: function(data) {
+                $('#viewProductContent').html(data);
+            },
+            error: function() {
+                $('#viewProductContent').html(`
+                    <div class="alert alert-danger">
+                        <i class="ri-error-warning-line me-2"></i>
+                        Error al cargar los datos del producto.
+                    </div>
+                `);
+            }
         });
     }
 
@@ -308,8 +370,62 @@
         }
     }
 
+    // Función para establecer la fecha máxima en los inputs de fecha
+    function setMaxDate() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const maxDate = `${year}-${month}-${day}`;
+        
+        const dateInputs = document.querySelectorAll('.date-restricted');
+        dateInputs.forEach(input => {
+            input.setAttribute('max', maxDate);
+        });
+    }
+
+    // Validar que fecha_inicio no sea mayor que fecha_fin
+    function validateDates() {
+        const fechaInicio = document.getElementById('fecha_inicio');
+        const fechaFin = document.getElementById('fecha_fin');
+        
+        if (fechaInicio && fechaFin) {
+            fechaInicio.addEventListener('change', function() {
+                if (fechaFin.value && this.value > fechaFin.value) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Fechas inválidas',
+                        text: 'La fecha de inicio no puede ser mayor que la fecha de fin.',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                    this.value = '';
+                }
+            });
+            
+            fechaFin.addEventListener('change', function() {
+                if (fechaInicio.value && this.value < fechaInicio.value) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Fechas inválidas',
+                        text: 'La fecha de fin no puede ser menor que la fecha de inicio.',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                    this.value = '';
+                }
+            });
+        }
+    }
+
     // Búsqueda en tabla (fallback si no funciona el filtro del servidor)
     document.addEventListener('DOMContentLoaded', function () {
+        // Establecer fecha máxima
+        setMaxDate();
+        
+        // Validar fechas
+        validateDates();
+        
         const searchInput = document.getElementById('globalSearch');
         const table = document.getElementById('tabla-products');
         

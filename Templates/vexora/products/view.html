@@ -1,0 +1,101 @@
+{% load static %}
+
+<div class="row g-3">
+    <!-- Imagen -->
+    <div class="col-md-4 text-center">
+        {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded" style="max-height: 250px;">
+        {% else %}
+            <div class="bg-light rounded p-5">
+                <i class="ri-image-line" style="font-size: 4rem; color: #ccc;"></i>
+                <p class="text-muted mt-2">Sin imagen</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Información -->
+    <div class="col-md-8">
+        <div class="row g-2">
+            <div class="col-6">
+                <small class="text-muted">N° de producto</small>
+                <p class="fw-bold">{{ product.item_number }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Estado</small>
+                <p>
+                    {% if product.is_active and product.stock > 0 %}
+                        <span class="badge bg-success">Disponible</span>
+                    {% elif not product.is_active %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% else %}
+                        <span class="badge bg-danger">Sin stock</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-12">
+                <small class="text-muted">Nombre</small>
+                <p class="fw-bold fs-5">{{ product.name }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">SKU</small>
+                <p>{{ product.sku|default:"-" }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Código de barras</small>
+                <p>{{ product.barcode|default:"-" }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Categoría</small>
+                <p>{{ product.category.name|default:"-" }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Proveedor</small>
+                <p>{{ product.supplier.name }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Precio de compra</small>
+                <p class="text-success fw-bold">${{ product.price|floatformat:2 }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Precio de venta</small>
+                <p class="text-primary fw-bold">${{ product.sale_price|floatformat:2|default:"-" }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Stock actual</small>
+                <p>
+                    <span class="badge {% if product.stock == 0 %}bg-danger{% elif product.stock <= product.min_stock %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                        {{ product.stock }}
+                    </span>
+                </p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Stock mínimo</small>
+                <p>{{ product.min_stock }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Fecha de compra</small>
+                <p>{{ product.purchase_date|date:"d/m/Y" }}</p>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Fecha de creación</small>
+                <p>{{ product.created_at|date:"d/m/Y H:i" }}</p>
+            </div>
+            <div class="col-12">
+                <small class="text-muted">Tags</small>
+                <p>
+                    {% for tag in tags %}
+                        <span class="badge bg-info">{{ tag.name }}</span>
+                    {% empty %}
+                        <span class="text-muted">Sin tags</span>
+                    {% endfor %}
+                </p>
+            </div>
+            {% if product.description %}
+                <div class="col-12">
+                    <small class="text-muted">Descripción</small>
+                    <p class="text-muted">{{ product.description|linebreaks }}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

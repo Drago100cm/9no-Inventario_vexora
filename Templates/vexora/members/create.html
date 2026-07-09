@@ -1,88 +1,264 @@
 {% load static %}
 
-<div class="modal-dialog modal-dialog-centered modal-md">
-  <div class="modal-content">
-    <div class="modal-header bg-light p-3">
-      <h5 class="modal-title">
-        <i class="ri-truck-line me-2"></i> Crear Nuevo Proveedor
-      </h5>
-      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+        <div class="modal-header bg-light p-3">
+            <h5 class="modal-title">
+                <i class="ri-user-add-line me-2"></i> 
+                {{ title|default:"Crear Miembro" }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form method="POST" action="{% url 'vexora:create_member' %}" id="createMemberForm">
+            {% csrf_token %}
+
+            <div class="modal-body">
+                <!-- Errores generales del formulario -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="ri-error-warning-line me-2"></i>
+                        <strong>Error:</strong>
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+
+                <!-- Errores por campo -->
+                {% if form.errors %}
+                    {% for field in form %}
+                        {% if field.errors %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>
+                                <strong>{{ field.label }}:</strong>
+                                {% for error in field.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Información de la compañía -->
+                <div class="alert alert-info mb-3">
+                    <div class="d-flex align-items-center">
+                        <i class="ri-building-4-line fs-4 me-2"></i>
+                        <div>
+                            <strong>Compañía:</strong> {{ user.company.name }}
+                            <br>
+                            <small class="text-muted">El miembro será agregado a esta empresa</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <!-- Campo: Company (hidden) -->
+                    {{ form.company.as_hidden }}
+
+                    <!-- Nombre de usuario -->
+                    <div class="col-md-6">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            <i class="ri-user-line me-1"></i>
+                            Nombre de usuario <span class="text-danger">*</span>
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.username.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-md-6">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            <i class="ri-mail-line me-1"></i>
+                            Correo electrónico <span class="text-danger">*</span>
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Nombre -->
+                    <div class="col-md-6">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                            <i class="ri-user-line me-1"></i>
+                            Nombre <span class="text-danger">*</span>
+                        </label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.first_name.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Apellidos -->
+                    <div class="col-md-6">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                            <i class="ri-user-line me-1"></i>
+                            Apellidos <span class="text-danger">*</span>
+                        </label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.last_name.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="col-md-6">
+                        <label for="{{ form.phone.id_for_label }}" class="form-label">
+                            <i class="ri-phone-line me-1"></i>
+                            Teléfono
+                        </label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.phone.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="col-md-6">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">
+                            <i class="ri-lock-line me-1"></i>
+                            Contraseña <span class="text-danger">*</span>
+                        </label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.password.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Mínimo 8 caracteres</small>
+                    </div>
+
+                    <!-- Confirmar Contraseña -->
+                    <div class="col-md-6">
+                        <label for="{{ form.password_confirm.id_for_label }}" class="form-label">
+                            <i class="ri-lock-line me-1"></i>
+                            Confirmar contraseña <span class="text-danger">*</span>
+                        </label>
+                        {{ form.password_confirm }}
+                        {% if form.password_confirm.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.password_confirm.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Rol -->
+                    <div class="col-12">
+                        <label for="{{ form.role.id_for_label }}" class="form-label">
+                            <i class="ri-shield-user-line me-1"></i>
+                            Rol <span class="text-danger">*</span>
+                        </label>
+                        {{ form.role }}
+                        {% if form.role.help_text %}
+                            <small class="text-muted d-block mt-1">{{ form.role.help_text }}</small>
+                        {% endif %}
+                        {% if form.role.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.role.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-success btn-sm" id="submitBtn">
+                    <i class="ri-save-line me-1"></i>
+                    Crear miembro
+                </button>
+            </div>
+        </form>
     </div>
-
-    <form method="POST" action="{% url 'vexora:create_supplier' %}">
-      {% csrf_token %}
-      <div class="modal-body">
-        
-        <!-- Mostrar errores del formulario -->
-        {% if form.errors %}
-          <div class="alert alert-danger">
-            <strong>Error:</strong> Por favor corrige los siguientes errores:
-            <ul>
-              {% for field, errors in form.errors.items %}
-                {% for error in errors %}
-                  <li><strong>{{ field }}:</strong> {{ error }}</li>
-                {% endfor %}
-              {% endfor %}
-            </ul>
-          </div>
-        {% endif %}
-
-        <!-- Información de la compañía -->
-        <div class="alert alert-info mb-3">
-          <i class="ri-building-line me-2"></i>
-          <strong>Compañía:</strong> {{ user.company.name }}
-          <br>
-          <small class="text-muted">El proveedor será creado para esta compañía</small>
-        </div>
-
-        <div class="mb-3">
-          <label for="{{ form.name.id_for_label }}" class="form-label">
-            Nombre del proveedor <span class="text-danger">*</span>
-          </label>
-          {{ form.name }}
-          {% if form.name.errors %}
-            <div class="text-danger small mt-1">{{ form.name.errors }}</div>
-          {% endif %}
-          <small class="text-muted">El nombre debe ser único para esta compañía</small>
-        </div>
-
-        <div class="mb-3">
-          <label for="{{ form.address.id_for_label }}" class="form-label">
-            Dirección
-          </label>
-          {{ form.address }}
-          {% if form.address.errors %}
-            <div class="text-danger small mt-1">{{ form.address.errors }}</div>
-          {% endif %}
-          <small class="text-muted">Dirección física del proveedor</small>
-        </div>
-
-        <!-- Campo oculto para company -->
-        {{ form.company.as_hidden }}
-
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">
-          <i class="ri-close-line me-1"></i> Cancelar
-        </button>
-        <button type="submit" class="btn btn-sm btn-success">
-          <i class="ri-save-line me-1 align-bottom"></i> Guardar Proveedor
-        </button>
-      </div>
-    </form>
-  </div>
 </div>
 
 <script>
-  // Cerrar modal con ESC
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      const modal = document.getElementById('ModalOptions');
-      if (modal && modal.classList.contains('show')) {
-        const closeBtn = modal.querySelector('[data-bs-dismiss="modal"]');
-        if (closeBtn) closeBtn.click();
-      }
-    }
-  });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Prevenir envío múltiple del formulario
+        const form = document.getElementById('createMemberForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin me-1"></i> Creando...';
+            });
+        }
+
+        // Cerrar modal con tecla Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('ModalOptions');
+                if (modal && modal.classList.contains('show')) {
+                    const closeBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+                    if (closeBtn) closeBtn.click();
+                }
+            }
+        });
+
+        // Validación en tiempo real de contraseñas
+        const passwordField = document.getElementById('{{ form.password.id_for_label }}');
+        const passwordConfirmField = document.getElementById('{{ form.password_confirm.id_for_label }}');
+        
+        if (passwordField && passwordConfirmField) {
+            passwordConfirmField.addEventListener('input', function() {
+                if (passwordField.value !== this.value) {
+                    this.classList.add('is-invalid');
+                    this.classList.remove('is-valid');
+                } else {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                }
+            });
+            
+            passwordField.addEventListener('input', function() {
+                if (passwordConfirmField.value && this.value !== passwordConfirmField.value) {
+                    passwordConfirmField.classList.add('is-invalid');
+                    passwordConfirmField.classList.remove('is-valid');
+                } else if (passwordConfirmField.value) {
+                    passwordConfirmField.classList.remove('is-invalid');
+                    passwordConfirmField.classList.add('is-valid');
+                }
+            });
+        }
+
+        // Validación en tiempo real para otros campos (versión corregida)
+        const usernameField = document.getElementById('{{ form.username.id_for_label }}');
+        const emailField = document.getElementById('{{ form.email.id_for_label }}');
+        const firstNameField = document.getElementById('{{ form.first_name.id_for_label }}');
+        const lastNameField = document.getElementById('{{ form.last_name.id_for_label }}');
+        const phoneField = document.getElementById('{{ form.phone.id_for_label }}');
+        const roleField = document.getElementById('{{ form.role.id_for_label }}');
+        
+        // Función para eliminar clases de error
+        function removeErrorClass(e) {
+            this.classList.remove('is-invalid');
+        }
+        
+        // Aplicar a cada campo
+        if (usernameField) usernameField.addEventListener('input', removeErrorClass);
+        if (emailField) emailField.addEventListener('input', removeErrorClass);
+        if (firstNameField) firstNameField.addEventListener('input', removeErrorClass);
+        if (lastNameField) lastNameField.addEventListener('input', removeErrorClass);
+        if (phoneField) phoneField.addEventListener('input', removeErrorClass);
+        if (roleField) roleField.addEventListener('change', removeErrorClass);
+    });
 </script>

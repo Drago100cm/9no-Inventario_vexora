@@ -106,6 +106,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     address = models.CharField(max_length=255, null=True, blank=True)
     cover = models.ImageField(upload_to='vexora/user/profile/', null=True, blank=True)
     avatar = models.ImageField(upload_to='vexora/user/avatar/', null=True, blank=True)
+    roles = models.ManyToManyField('Role',through='CompanyMember',related_name='users',blank=True)
+    
     # Evitar conflictos con auth.User
     user_permissions = models.ManyToManyField(Permission,related_name="customuser_set",blank=True,help_text="Specific permissions for this user.",verbose_name="user permissions",)
     companies = models.ManyToManyField(Company,related_name="members",null=True,blank=True)

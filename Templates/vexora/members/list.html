@@ -2,172 +2,247 @@
 {% load static %}
 
 {% block title %}
-  - Miembros
+    - Miembros de {{ user.company.name }}
 {% endblock %}
 
 {% block content %}
-  <div class="main-content">
+<div class="main-content">
     <div class="page-content">
-      <div class="container-fluid">
-        {% block pagetitle %}
+        <div class="container-fluid">
+            {% block pagetitle %}
+            {% endblock %}
 
-        {% endblock %}
+            <!-- Mensajes -->
+            {% if messages %}
+                {% for m in messages %}
+                    <script>
+                        Swal.fire({
+                            position: 'center',
+                            icon: '{{ m.tags }}' == 'error' ? 'error' : 'success',
+                            title: '{{ m }}',
+                            showConfirmButton: false,
+                            timer: 2500
+                        })
+                    </script>
+                {% endfor %}
+            {% endif %}
 
-        <!-- Mensajes -->
-        {% if messages %}
-          {% for m in messages %}
-            <script>
-              Swal.fire({
-                position: 'center',
-                icon: '{{ m.level_tag }}' == 'error' ? 'error' : 'success',
-                title: '{{ m }}',
-                showConfirmButton: false,
-                timer: 2500
-              })
-            </script>
-          {% endfor %}
-        {% endif %}
-        <div class="row mb-4">
-          <div class="col-12">
-            <div class="bg-light rounded-3 shadow-sm p-3">
-                                <div class="row mb-3">
-                  <div class="col-md-3">
+            <!-- ESTADÍSTICAS - FUERA DEL BG-LIGHT -->
+            <div class="row mb-4">
+                <div class="col-md-3">
                     <div class="card border-0 shadow-sm">
-                      <div class="card-body">
-                        <div class="d-flex align-items-center">
-                          <div class="flex-grow-1">
-                            <p class="text-muted mb-1">Usuarios registrados</p>
-                            <h3 class="mb-0">{{ total_users }}</h3>
-                          </div>
-                          <div class="flex-shrink-0">
-                            <i class="ri-user-3-line fs-1 text-primary"></i>
-                          </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Total Miembros</p>
+                                    <h3 class="mb-0">{{ total_users|default:0 }}</h3>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-user-3-line fs-1 text-primary"></i>
+                                </div>
+                            </div>
                         </div>
-                      </div>
                     </div>
-                  </div>
                 </div>
-              <!-- Botón Agregar arriba -->
-              <div class="d-flex justify-content-end mb-3">
-                <!-- Botón agregar (arriba, alineado a la derecha) -->
-                {% if perms.vexora.add_paquete %}
-                  <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" onclick="editModal('{% url 'vexora:create_member' %}')">
-                    <i class="ri-add-line me-1 align-bottom"></i>
-                    <span>Agregar miembro</span>
-                  </button>
-                {% endif %}
-              </div>
-              <!-- Barra de búsqueda abajo -->
-              <div class="d-flex justify-content-end">
-
-                <div class="input-group input-group-sm" style="max-width: 380px;">
-                  <span class="input-group-text"><i class="fas fa-search"></i></span>
-
-                  <input type="text" class="form-control input-busqueda-global" placeholder="Buscar en esta tabla (cualquier campo)..." data-tabla="tabla-destinos" />
-                  <button class="btn btn-outline-secondary" type="button" onclick="busquedaGlobal.limpiarBusqueda(this.closest('.input-group').querySelector('input'))"><i class="fas fa-times"></i></button>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Administradores</p>
+                                    <h3 class="mb-0 text-danger">{{ total_admins|default:0 }}</h3>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-shield-user-line fs-1 text-danger"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Gerentes</p>
+                                    <h3 class="mb-0 text-warning">{{ total_managers|default:0 }}</h3>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-user-settings-line fs-1 text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Empleados</p>
+                                    <h3 class="mb-0 text-info">{{ total_employees|default:0 }}</h3>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-user-follow-line fs-1 text-info"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        <!-- Tabla de exámenes -->
-        <div class="table-container">
-          <table class="table table-nowrap" id="tabla-destinos">
-            <thead>
-              <tr>
-                <th data-sort="name">Nombre del miembro</th>
-                <th data-sort="status">Rol</th>
 
-                <th data-sort="status">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for user in members %}
-                <tr>
-                  <td>{{ user.user }}</td>
-                  <td>{{ user.role }}</td>
-                  <td>
-                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:user_edit' user.id|stringformat:'d' %}')" style="width: 75px;"><i class="ri-pencil-fill me-1 align-bottom"></i> Editar</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light" onclick="deleteE('{{ user.id }}')" style="width: 85px;"><i class="ri-delete-bin-6-fill me-1 align-bottom"></i> Eliminar</button>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+            <!-- CONTENEDOR BG-LIGHT CON FILTROS Y TABLA -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="bg-light rounded-3 shadow-sm p-3">
+                        <!-- Botón Agregar -->
+                        <div class="d-flex justify-content-end mb-3">
+                            {% if perms.vexora.add_companymember or perms.vexora.add_member %}
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                                        onclick="editModal('{% url 'vexora:create_member' %}')">
+                                    <i class="ri-add-line me-1 align-bottom"></i>
+                                    <span>Agregar miembro</span>
+                                </button>
+                            {% endif %}
+                        </div>
+                        <!-- Tabla de miembros -->
+                        <div class="table-container">
+                            <div class="table-responsive">
+                                <table class="table table-nowrap align-middle" id="tabla-miembros">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th data-sort="name">Nombre del miembro</th>
+                                            <th data-sort="role">Rol</th>
+                                            <th data-sort="joined">Fecha de ingreso</th>
+                                            <th data-sort="actions">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for member in members %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ member.user.get_full_name|default:member.user.username }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ member.user.email }}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{% if member.role.name == 'admin' or member.role == 'admin' %}danger{% elif member.role.name == 'manager' or member.role == 'manager' %}warning{% else %}info{% endif %}">
+                                                        {{ member.role.name|default:member.role|capfirst }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">{{ member.joined_at|date:"d/m/Y H:i" }}</small>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button type="button" class="btn btn-outline-secondary btn-icon" 
+                                                                onclick="editModal('{% url 'vexora:edit_member' member.id %}')" title="Editar">
+                                                            <i class="ri-pencil-fill"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-danger btn-icon" 
+                                                                onclick="deleteMember('{{ member.id }}', '{{ member.user.get_full_name|default:member.user.username|escapejs }}')" title="Eliminar">
+                                                            <i class="ri-delete-bin-6-fill"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="4" class="text-center py-5">
+                                                    <i class="ri-user-3-line" style="font-size: 3rem; color: #ccc;"></i>
+                                                    <p class="text-muted mt-2">No hay miembros registrados en esta empresa</p>
+                                                    {% if perms.vexora.add_companymember or perms.vexora.add_member %}
+                                                        <button type="button" class="btn btn-primary btn-sm mt-2"
+                                                                onclick="editModal('{% url 'vexora:create_member' %}')">
+                                                            <i class="ri-add-line me-1"></i> Agregar primer miembro
+                                                        </button>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
-  <!-- Modal dinámico -->
-  <div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
-{% endblock %}
-{% block extra_js %}
-  <script type="text/javascript">
-    function creationModal(url) {
-      $('#ModalOptions').load(url, function () {
-        $(this).modal('show')
-      })
-    }
-    function editModal(url) {
-      $('#ModalOptions').load(url, function () {
-        $(this).modal('show')
-      })
-    }
-    
-    function deleteE(id) {
-      console.log('id recibidooooo es:', id)
-      const swalWithBootstrapButtons = Swal.mixin({
-        customClass: {
-          confirmButton: 'btn btn-success',
-          cancelButton: 'btn btn-danger m-3'
-        },
-        buttonsStyling: false
-      })
-    
-      Swal.fire({
-        html: '<div class="mt-3"><lord-icon src="https://cdn.lordicon.com/wpyrrmcq.json" trigger="loop" delay="700" colors="primary:#c71f16" style="width:100px;height:100px"></lord-icon><div class="mt-4 pt-2 fs-15 mx-5"><h4>¿Está seguro?</h4><p class="text-muted mx-4 mb-0">¡Este cambio no se puede deshacer!</p></div></div>',
-        showCancelButton: true,
-        confirmButtonText: 'Confirmar',
-        cancelButtonText: 'Cancelar',
-        reverseButtons: true
-      }).then((result) => {
-        if (result.isConfirmed) {
-          window.location.href = "{% url 'vexora:user_delete' 0 %}".replace('0', id)
-        }
-      })
-    }
-  </script>
+</div>
 
-  <script>
-    // Funcionalidad de ordenamiento para la tabla
+<!-- Modal dinámico -->
+<div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript">
+    function editModal(url) {
+        $('#ModalOptions').load(url, function () {
+            $(this).modal('show');
+        });
+    }
+
+    function deleteMember(id, name) {
+        const swalWithBootstrapButtons = Swal.mixin({
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-danger m-3'
+            },
+            buttonsStyling: false
+        });
+
+        Swal.fire({
+            html: '<div class="mt-3"><lord-icon src="https://cdn.lordicon.com/wpyrrmcq.json" trigger="loop" delay="700" colors="primary:#c71f16" style="width:100px;height:100px"></lord-icon><div class="mt-4 pt-2 fs-15 mx-5"><h4>¿Estás seguro?</h4><p class="text-muted mx-4 mb-0">Estás a punto de eliminar al miembro <strong>"' + name + '"</strong><br>Esta acción no se puede deshacer!</p></div></div>',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{% url 'vexora:delete_member' 0 %}".replace('0', id);
+            }
+        });
+    }
+
+    function limpiarBusqueda() {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('search');
+        window.location.href = url.toString();
+    }
+
+    // Ordenamiento de tabla
     document.addEventListener('DOMContentLoaded', function () {
-      const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent
-    
-      const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx))
-    
-      document.querySelectorAll('th[data-sort]').forEach((th) => {
-        th.addEventListener('click', function () {
-          const table = this.closest('table')
-          const tbody = table.querySelector('tbody')
-          const index = Array.from(this.parentNode.children).indexOf(this)
-          const asc = this.getAttribute('data-sort-direction') === 'asc'
-    
-          // Reset all sort directions
-          table.querySelectorAll('th[data-sort]').forEach((header) => {
-            header.removeAttribute('data-sort-direction')
-            header.querySelector('i').className = 'fas fa-sort'
-          })
-    
-          // Set current sort direction
-          this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc')
-          this.querySelector('i').className = asc ? 'fas fa-sort-down' : 'fas fa-sort-up'
-    
-          // Sort the table
-          Array.from(tbody.querySelectorAll('tr'))
-            .sort(comparer(index, asc))
-            .forEach((tr) => tbody.appendChild(tr))
-        })
-      })
-    })
-  </script>
+        const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+        const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+
+        document.querySelectorAll('th[data-sort]').forEach((th) => {
+            if (!th.querySelector('i')) {
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-sort ms-1';
+                th.appendChild(icon);
+            }
+            
+            th.addEventListener('click', function () {
+                const table = this.closest('table');
+                const tbody = table.querySelector('tbody');
+                const index = Array.from(this.parentNode.children).indexOf(this);
+                const asc = this.getAttribute('data-sort-direction') === 'asc';
+                
+                table.querySelectorAll('th[data-sort]').forEach((header) => {
+                    header.removeAttribute('data-sort-direction');
+                    if (header.querySelector('i')) header.querySelector('i').className = 'fas fa-sort ms-1';
+                });
+                
+                this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc');
+                this.querySelector('i').className = asc ? 'fas fa-sort-down ms-1' : 'fas fa-sort-up ms-1';
+                
+                Array.from(tbody.querySelectorAll('tr'))
+                    .sort(comparer(index, asc))
+                    .forEach((tr) => tbody.appendChild(tr));
+            });
+        });
+    });
+</script>
 {% endblock %}

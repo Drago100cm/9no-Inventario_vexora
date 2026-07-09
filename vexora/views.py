@@ -718,7 +718,12 @@ class UserListView(LoginRequiredMixin, ListView):
 
         return redirect("vexora:home")
 
-       
+#=================================================================
+#=================================================================
+#=================================================================
+#=================================================================
+#=================================================================
+#=================================================================
 #--------------------Crear usuario -------------------
 class UserCreateView(LoginRequiredMixin,CreateView):
     model = CustomUser
@@ -802,8 +807,6 @@ class CompanyListView(LoginRequiredMixin,ListView):
         admin_role = Role.objects.filter(name="Administrador").first()
 
         print(Permission.objects.count())
-        print(admin_role.permissions.count())
-        print("\n========== PERMISOS DEL SISTEMA DE ROLES ==========\n")
 
         roles = Role.objects.select_related("company").prefetch_related("permissions")
 
@@ -1234,6 +1237,20 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse('vexora:list_products')
+    
+def view_product(request, pk):
+    company = request.user.company
+    product = get_object_or_404(Product, id=pk, company=company)
+    
+    # Obtener tags
+    tags = product.tags.all()
+    
+    context = {
+        'product': product,
+        'tags': tags,
+    }
+    
+    return render(request, 'vexora/products/view.html', context)
 
 def delete_product(request, pk):
     company = request.user.company
@@ -1292,18 +1309,103 @@ class SalesUpdateView(LoginRequiredMixin, UpdateView):
         context['title'] = 'Edit Sale'
         return context
     
-#=====================================MEMBERS VIEW========================================
+# ============================================
+# MEMBERS VIEWS
+# ============================================
+
 class MembersView(LoginRequiredMixin, ListView):
     model = CompanyMember
     template_name = 'vexora/members/list.html'
     context_object_name = 'members'
 
     def get_queryset(self):
+        company = self.request.user.company
+        if not company:
+            return CompanyMember.objects.none()
+        return CompanyMember.objects.filter(company=company).select_related('user', 'role').order_by('user__username')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        company = self.request.user.company
+        if company:
+            context['total_users'] = CompanyMember.objects.filter(company=company).count()
+        else:
+            context['total_users'] = 0
+        return context
+
+
+class MembersCreateView(LoginRequiredMixin, CreateView):
+    model = CompanyMember
+    form_class = MemberCreateForm  # Usar MemberCreateForm
+    template_name = 'vexora/members/create.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
         if self.request.user.company:
-            return CompanyMember.objects.filter(company=self.request.user.company)
-        return CompanyMember.objects.none()  # Si no tiene empresa, no muestra nada
+            form.instance.company = self.request.user.company
+            response = super().form_valid(form)
+            member_user = form.instance.user
+            member_name = f"{member_user.first_name} {member_user.last_name}".strip() or member_user.username
+
+            messages.success(
+                self.request, 
+                f"✅ Miembro '{member_user.get_full_name() or member_user.username}' creado correctamente!"
+            )
+            return response
+        else:
+            messages.error(self.request, "❌ No tienes una empresa asignada.")
+            return redirect('vexora:list_members')
+
+    def get_success_url(self):
+        return reverse('vexora:list_members')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Crear Miembro'
+        return context
 
 
+class MemberUpdateView(LoginRequiredMixin, UpdateView):
+    model = CompanyMember
+    form_class = MemberForm  # Usar MemberForm para edición
+    template_name = 'vexora/members/update.html'
+    pk_url_kwarg = 'id'
+
+    def get_queryset(self):
+        company = self.request.user.company
+        if not company:
+            return CompanyMember.objects.none()
+        return CompanyMember.objects.filter(company=company)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, f"✅ Miembro actualizado correctamente!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('vexora:list_members')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Editar Miembro'
+        return context
+
+
+def delete_member(request, pk):
+    company = request.user.company
+    member = get_object_or_404(CompanyMember, id=pk, company=company)
+    member_name = member.user.get_full_name() or member.user.username
+    member.delete()
+    messages.success(request, f"✅ Miembro '{member_name}' eliminado correctamente!")
+    return redirect('vexora:list_members')
 
 # =====================================
 # SALES MAIN (CRUD Frontend)
