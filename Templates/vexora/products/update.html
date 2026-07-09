@@ -5,7 +5,7 @@
     <div class="modal-header bg-light p-3">
       <h5 class="modal-title">
         <i class="ri-edit-box-line me-2"></i>
-        Editar Producto: {{ product.name }}
+        Editar Producto #{{ product.item_number }} - {{ product.name }}
       </h5>
       <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
@@ -14,6 +14,37 @@
       {% csrf_token %}
 
       <div class="modal-body">
+        <!-- Mostrar errores del formulario -->
+        {% if form.errors %}
+          <div class="alert alert-danger">
+            <strong>Error:</strong> Por favor corrige los siguientes errores:
+            <ul>
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <li><strong>{{ field }}:</strong> {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <!-- Información de la compañía -->
+        <div class="alert alert-info mb-3">
+          <i class="ri-building-line me-2"></i>
+          <strong>Compañía:</strong> {{ user.company.name }}
+          <br>
+          <small class="text-muted">Este producto pertenece a esta compañía</small>
+        </div>
+
+        <!-- Número de producto (solo lectura) -->
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">N° Producto</label>
+            <input type="text" class="form-control" value="{{ product.item_number }}" disabled>
+            <small class="text-muted">Número secuencial asignado automáticamente</small>
+          </div>
+        </div>
+
         <ul class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
           <li class="nav-item">
             <a class="nav-link active" data-bs-toggle="tab" href="#general_info" role="tab">
@@ -178,6 +209,7 @@
               <div class="col-md-12">
                 <label class="form-label">Tags / Etiquetas</label>
                 {{ form.tags }}
+                <small class="text-muted">Mantén presionado Ctrl para seleccionar múltiples tags</small>
                 {% if form.tags.errors %}
                   <div class="text-danger small mt-1">{{ form.tags.errors }}</div>
                 {% endif %}
@@ -205,9 +237,9 @@
           </div>
         </div>
 
-        <!-- CAMPO COMPANY OCULTO -->
-        <input type="hidden" name="company" value="{{ request.user.company.id }}">
-
+        <!-- Campo oculto para company y item_number -->
+        {{ form.company.as_hidden }}
+        {{ form.item_number.as_hidden }}
       </div>
 
       <div class="modal-footer">
@@ -229,7 +261,8 @@
       $('#id_supplier, #id_category, #id_tags').select2({
         theme: 'bootstrap-5',
         dropdownParent: $('#ModalOptions'),
-        width: '100%'
+        width: '100%',
+        placeholder: 'Seleccione una opción'
       });
     }
 
@@ -266,7 +299,7 @@
         badge.removeClass('bg-info bg-success bg-warning bg-danger');
         
         if (newStock <= 5) {
-          badge.addClass('bg-warning');
+          badge.addClass('bg-warning text-dark');
         } else if (newStock <= 10) {
           badge.addClass('bg-info');
         } else {
@@ -279,5 +312,16 @@
     
     // Disparar el evento al cargar para mostrar si hay valor inicial
     $('#id_stock_addition').trigger('input');
+  });
+
+  // Cerrar modal con ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('ModalOptions');
+      if (modal && modal.classList.contains('show')) {
+        const closeBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+        if (closeBtn) closeBtn.click();
+      }
+    }
   });
 </script>

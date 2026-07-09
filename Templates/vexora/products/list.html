@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-    - Productos
+    - Productos de {{ user.company.name }}
 {% endblock %}
 
 {% block content %}
@@ -17,7 +17,7 @@
                     <script>
                         Swal.fire({
                             position: 'center',
-                            icon: '{{ m.level_tag }}' == 'error' ? 'error' : 'success',
+                            icon: '{{ m.tags }}' == 'error' ? 'error' : 'success',
                             title: '{{ m }}',
                             showConfirmButton: false,
                             timer: 2500
@@ -26,11 +26,76 @@
                 {% endfor %}
             {% endif %}
 
+            <!-- ESTADÍSTICAS - FUERA DEL BG-LIGHT -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Total Productos</p>
+                                    <h3 class="mb-0">{{ stats.total }}</h3>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-box-3-line fs-1 text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Disponibles</p>
+                                    <h3 class="mb-0 text-success">{{ stats.disponibles }}</h3>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-checkbox-circle-line fs-1 text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Sin Stock</p>
+                                    <h3 class="mb-0 text-danger">{{ stats.no_disponibles }}</h3>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-close-circle-line fs-1 text-danger"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-1">Compañía</p>
+                                    <h5 class="mb-0">{{ user.company.name }}</h5>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <i class="ri-building-line fs-1 text-info"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR BG-LIGHT CON FILTROS Y TABLA -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="bg-light rounded-3 shadow-sm p-3">
+                        <!-- FILTROS RÁPIDOS -->
                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-                            <!-- FILTROS RÁPIDOS -->
                             <div class="btn-group flex-wrap mb-2 mb-md-0" role="group">
                                 <a href="?{% if request.GET.urlencode %}{% for key, value in request.GET.items %}{% if key != 'disponibilidad' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}{% endif %}" 
                                    class="btn btn-outline-info {% if not request.GET.disponibilidad %}active{% endif %}">
@@ -42,7 +107,7 @@
                                 </a>
                                 <a href="?disponibilidad=no_disponibles{% for key, value in request.GET.items %}{% if key != 'disponibilidad' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
                                    class="btn btn-outline-danger {% if request.GET.disponibilidad == 'no_disponibles' %}active{% endif %}">
-                                    <i class="ri-close-circle-line me-1"></i> No Disponibles ({{ stats.no_disponibles }})
+                                    <i class="ri-close-circle-line me-1"></i> Sin Stock ({{ stats.no_disponibles }})
                                 </a>
                             </div>
 
@@ -57,7 +122,7 @@
                         </div>
 
                         <!-- FILTROS AVANZADOS -->
-                        <form method="GET" class="row g-3 mb-3">
+                        <form method="GET" class="row g-3 mb-3" id="filterForm">
                             <div class="col-md-3">
                                 <select name="supplier" class="form-select">
                                     <option value="">Todos los proveedores</option>
@@ -83,13 +148,17 @@
                             </div>
 
                             <div class="col-md-2">
-                                <input type="date" name="fecha_inicio" class="form-control" 
-                                       value="{{ request.GET.fecha_inicio|default:'' }}" placeholder="Fecha inicio">
+                                <input type="date" name="fecha_inicio" class="form-control date-restricted" 
+                                       value="{{ request.GET.fecha_inicio|default:'' }}" 
+                                       placeholder="Fecha inicio"
+                                       id="fecha_inicio">
                             </div>
 
                             <div class="col-md-2">
-                                <input type="date" name="fecha_fin" class="form-control" 
-                                       value="{{ request.GET.fecha_fin|default:'' }}" placeholder="Fecha fin">
+                                <input type="date" name="fecha_fin" class="form-control date-restricted" 
+                                       value="{{ request.GET.fecha_fin|default:'' }}" 
+                                       placeholder="Fecha fin"
+                                       id="fecha_fin">
                             </div>
 
                             <div class="col-md-2">
@@ -109,7 +178,7 @@
                             <div class="input-group input-group-sm" style="max-width: 380px;">
                                 <span class="input-group-text"><i class="fas fa-search"></i></span>
                                 <input type="text" name="search" class="form-control" 
-                                       placeholder="Buscar por nombre, SKU o código..."
+                                       placeholder="Buscar por nombre, SKU, código o N°..."
                                        value="{{ request.GET.search|default:'' }}"
                                        id="globalSearch" />
                                 <button class="btn btn-outline-secondary" type="button" onclick="limpiarBusqueda()">
@@ -121,16 +190,15 @@
                 </div>
             </div>
 
+            <!-- Tabla de Productos -->
             <div class="table-container">
                 <div class="table-responsive">
                     <table class="table table-nowrap align-middle" id="tabla-products">
                         <thead class="table-light">
                             <tr>
-                                <th data-sort="id">ID</th>
-                                <th data-sort="sku">SKU</th>
+                                <th data-sort="item_number">N°</th>
                                 <th data-sort="name">Nombre del producto</th>
                                 <th data-sort="category">Categoría</th>
-                                <th data-sort="purchase_date">Fecha compra</th>
                                 <th data-sort="price">Precio</th>
                                 <th data-sort="stock">Stock</th>
                                 <th data-sort="supplier">Proveedor</th>
@@ -141,21 +209,21 @@
                         <tbody>
                             {% for product in products %}
                                 <tr class="{% if product.stock <= product.min_stock and product.stock > 0 %}table-warning{% endif %}">
-                                    <td>{{ product.id }}</td>
-                                    <td>{% if product.sku %}<code>{{ product.sku }}</code>{% else %}-{% endif %}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ product.item_number }}</span>
+                                    </td>
                                     <td>
                                         <strong>{{ product.name }}</strong>
-                                        {% if product.description %}
-                                            <br><small class="text-muted">{{ product.description|truncatechars:40 }}</small>
-                                        {% endif %}
                                     </td>
                                     <td>{% if product.category %}{{ product.category.name }}{% else %}-{% endif %}</td>
-                                    <td>{{ product.purchase_date|date:"d/m/Y" }}</td>
                                     <td class="text-success fw-bold">${{ product.price|floatformat:2 }}</td>
                                     <td>
-                                        <span class="badge {% if product.stock == 0 %}bg-danger{% elif product.stock <= product.min_stock %}bg-warning{% else %}bg-success{% endif %}">
+                                        <span class="badge {% if product.stock == 0 %}bg-danger{% elif product.stock <= product.min_stock %}bg-warning text-dark{% else %}bg-success{% endif %}">
                                             {{ product.stock }}
                                         </span>
+                                        {% if product.stock <= product.min_stock and product.stock > 0 %}
+                                            <br><small class="text-warning">Stock mínimo</small>
+                                        {% endif %}
                                     </td>
                                     <td>{{ product.supplier.name }}</td>
                                     <td>
@@ -168,25 +236,31 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-icon" 
-                                                onclick="editModal('{% url 'vexora:edit_product' product.id %}')">
-                                            <i class="ri-pencil-fill"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-icon" 
-                                                onclick="deleteProduct('{{ product.id }}', '{{ product.name|escapejs }}')">
-                                            <i class="ri-delete-bin-6-fill"></i>
-                                        </button>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-info btn-icon" 
+                                                    onclick="viewProduct('{{ product.id }}')" title="Ver">
+                                                <i class="ri-eye-fill"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-icon" 
+                                                    onclick="editModal('{% url 'vexora:edit_product' product.id %}')" title="Editar">
+                                                <i class="ri-pencil-fill"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger btn-icon" 
+                                                    onclick="deleteProduct('{{ product.id }}', '{{ product.name|escapejs }}', '{{ product.item_number }}')" title="Eliminar">
+                                                <i class="ri-delete-bin-6-fill"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="10" class="text-center py-5">
-                                        <i class="ri-inbox-line fa-3x text-muted mb-3 d-block"></i>
-                                        <p class="text-muted mb-0">No hay productos registrados</p>
+                                    <td colspan="11" class="text-center py-5">
+                                        <i class="ri-inbox-line" style="font-size: 3rem; color: #ccc;"></i>
+                                        <p class="text-muted mt-2">No hay productos registrados en esta compañía</p>
                                         {% if perms.vexora.add_product %}
-                                            <button type="button" class="btn btn-primary btn-sm mt-3"
+                                            <button type="button" class="btn btn-primary btn-sm mt-2"
                                                     onclick="editModal('{% url 'vexora:create_product' %}')">
-                                                <i class="ri-add-line me-1"></i> Agregar producto
+                                                <i class="ri-add-line me-1"></i> Crear el primer producto
                                             </button>
                                         {% endif %}
                                     </td>
@@ -200,6 +274,37 @@
     </div>
 </div>
 
+<!-- Modal de Ver Producto -->
+<div class="modal fade" id="viewProductModal" tabindex="-1" aria-labelledby="viewProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light p-3">
+                <h5 class="modal-title" id="viewProductModalLabel">
+                    <i class="ri-eye-fill me-2"></i>
+                    Detalle del Producto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="viewProductContent">
+                <!-- El contenido se cargará vía AJAX -->
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando información del producto...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dinámico para editar/crear -->
 <div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
 {% endblock %}
 
@@ -211,12 +316,41 @@
         });
     }
 
-    function deleteProduct(id, name) {
+    function viewProduct(productId) {
+        // Mostrar el modal
+        $('#viewProductModal').modal('show');
+        
+        // Cargar los datos del producto vía AJAX
+        $.ajax({
+            url: '/products/view/' + productId + '/',
+            method: 'GET',
+            success: function(data) {
+                $('#viewProductContent').html(data);
+            },
+            error: function() {
+                $('#viewProductContent').html(`
+                    <div class="alert alert-danger">
+                        <i class="ri-error-warning-line me-2"></i>
+                        Error al cargar los datos del producto.
+                    </div>
+                `);
+            }
+        });
+    }
+
+    function deleteProduct(id, name, itemNumber) {
+        const swalWithBootstrapButtons = Swal.mixin({
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-danger m-3'
+            },
+            buttonsStyling: false
+        });
+
         Swal.fire({
-            title: '¿Estás seguro?',
-            html: `<p class="text-muted">El producto <strong>"${name}"</strong> será eliminado permanentemente.<br>Esta acción no se puede deshacer.</p>`,
+            html: '<div class="mt-3"><lord-icon src="https://cdn.lordicon.com/wpyrrmcq.json" trigger="loop" delay="700" colors="primary:#c71f16" style="width:100px;height:100px"></lord-icon><div class="mt-4 pt-2 fs-15 mx-5"><h4>¿Estás seguro?</h4><p class="text-muted mx-4 mb-0">Estás a punto de eliminar el producto <strong>#' + itemNumber + ' - ' + name + '"</strong><br>Esta acción no se puede deshacer!</p></div></div>',
             showCancelButton: true,
-            confirmButtonText: 'Sí, eliminar',
+            confirmButtonText: 'Confirmar',
             cancelButtonText: 'Cancelar',
             reverseButtons: true
         }).then((result) => {
@@ -236,8 +370,62 @@
         }
     }
 
-    // Búsqueda en tabla
+    // Función para establecer la fecha máxima en los inputs de fecha
+    function setMaxDate() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const maxDate = `${year}-${month}-${day}`;
+        
+        const dateInputs = document.querySelectorAll('.date-restricted');
+        dateInputs.forEach(input => {
+            input.setAttribute('max', maxDate);
+        });
+    }
+
+    // Validar que fecha_inicio no sea mayor que fecha_fin
+    function validateDates() {
+        const fechaInicio = document.getElementById('fecha_inicio');
+        const fechaFin = document.getElementById('fecha_fin');
+        
+        if (fechaInicio && fechaFin) {
+            fechaInicio.addEventListener('change', function() {
+                if (fechaFin.value && this.value > fechaFin.value) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Fechas inválidas',
+                        text: 'La fecha de inicio no puede ser mayor que la fecha de fin.',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                    this.value = '';
+                }
+            });
+            
+            fechaFin.addEventListener('change', function() {
+                if (fechaInicio.value && this.value < fechaInicio.value) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Fechas inválidas',
+                        text: 'La fecha de fin no puede ser menor que la fecha de inicio.',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                    this.value = '';
+                }
+            });
+        }
+    }
+
+    // Búsqueda en tabla (fallback si no funciona el filtro del servidor)
     document.addEventListener('DOMContentLoaded', function () {
+        // Establecer fecha máxima
+        setMaxDate();
+        
+        // Validar fechas
+        validateDates();
+        
         const searchInput = document.getElementById('globalSearch');
         const table = document.getElementById('tabla-products');
         
@@ -251,6 +439,39 @@
                 });
             });
         }
+    });
+
+    // Ordenamiento de tabla
+    document.addEventListener('DOMContentLoaded', function () {
+        const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+        const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+
+        document.querySelectorAll('th[data-sort]').forEach((th) => {
+            if (!th.querySelector('i')) {
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-sort ms-1';
+                th.appendChild(icon);
+            }
+            
+            th.addEventListener('click', function () {
+                const table = this.closest('table');
+                const tbody = table.querySelector('tbody');
+                const index = Array.from(this.parentNode.children).indexOf(this);
+                const asc = this.getAttribute('data-sort-direction') === 'asc';
+                
+                table.querySelectorAll('th[data-sort]').forEach((header) => {
+                    header.removeAttribute('data-sort-direction');
+                    if (header.querySelector('i')) header.querySelector('i').className = 'fas fa-sort ms-1';
+                });
+                
+                this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc');
+                this.querySelector('i').className = asc ? 'fas fa-sort-down ms-1' : 'fas fa-sort-up ms-1';
+                
+                Array.from(tbody.querySelectorAll('tr'))
+                    .sort(comparer(index, asc))
+                    .forEach((tr) => tbody.appendChild(tr));
+            });
+        });
     });
 </script>
 {% endblock %}

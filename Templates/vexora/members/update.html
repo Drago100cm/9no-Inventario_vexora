@@ -1,0 +1,160 @@
+{% load static %}
+
+<div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+        <div class="modal-header bg-light p-3">
+            <h5 class="modal-title">
+                <i class="ri-user-edit-line me-2"></i> 
+                {{ title|default:"Actualizar Miembro" }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form method="POST" action="{% url 'vexora:edit_member' object.id %}" id="updateMemberForm">
+            {% csrf_token %}
+
+            <div class="modal-body">
+                <!-- Errores generales del formulario -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="ri-error-warning-line me-2"></i>
+                        <strong>Error:</strong>
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+
+                <!-- Errores por campo -->
+                {% if form.errors %}
+                    {% for field in form %}
+                        {% if field.errors %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>
+                                <strong>{{ field.label }}:</strong>
+                                {% for error in field.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Información de la compañía -->
+                <div class="alert alert-info mb-3">
+                    <div class="d-flex align-items-center">
+                        <i class="ri-building-4-line fs-4 me-2"></i>
+                        <div>
+                            <strong>Compañía:</strong> {{ user.company.name }}
+                            <br>
+                            <small class="text-muted">Actualizando miembro de esta empresa</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <!-- Campo: Company (hidden) -->
+                    {{ form.company.as_hidden }}
+
+                    <!-- Campo: Usuario - SÓLO LECTURA (mostrar como texto) -->
+                    <div class="col-12">
+                        <label class="form-label">
+                            <i class="ri-user-line me-1"></i>
+                            Usuario
+                        </label>
+                        <div class="form-control bg-light" style="cursor: not-allowed;">
+                            <strong>{{ object.user.get_full_name|default:object.user.username }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                <i class="ri-mail-line me-1"></i>{{ object.user.email }}
+                                {% if object.user.phone %}
+                                    <span class="ms-2"><i class="ri-phone-line me-1"></i>{{ object.user.phone }}</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                        <!-- Campo hidden para enviar el ID del usuario -->
+                        <input type="hidden" name="user" value="{{ object.user.id }}">
+                        <small class="text-muted d-block mt-1">
+                            <i class="ri-lock-line me-1"></i>
+                            El usuario no puede ser modificado
+                        </small>
+                    </div>
+
+                    <!-- Campo: Rol -->
+                    <div class="col-12">
+                        <label for="{{ form.role.id_for_label }}" class="form-label">
+                            <i class="ri-shield-user-line me-1"></i>
+                            Rol <span class="text-danger">*</span>
+                        </label>
+                        {{ form.role }}
+                        {% if form.role.help_text %}
+                            <small class="text-muted d-block mt-1">{{ form.role.help_text }}</small>
+                        {% endif %}
+                        {% if form.role.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.role.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Información adicional: fecha de unión -->
+                    <div class="col-12">
+                        <div class="border-top pt-2 mt-2">
+                            <small class="text-muted">
+                                <i class="ri-information-line me-1"></i>
+                                Miembro desde: {{ object.joined_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm" id="submitBtn">
+                    <i class="ri-save-line me-1"></i>
+                    Actualizar miembro
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Prevenir envío múltiple del formulario
+        const form = document.getElementById('updateMemberForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin me-1"></i> Actualizando...';
+            });
+        }
+
+        // Cerrar modal con tecla Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('ModalOptions');
+                if (modal && modal.classList.contains('show')) {
+                    const closeBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+                    if (closeBtn) closeBtn.click();
+                }
+            }
+        });
+
+        // Validación en tiempo real para el campo de rol
+        const roleField = document.getElementById('{{ form.role.id_for_label }}');
+        if (roleField) {
+            roleField.addEventListener('change', function() {
+                this.classList.remove('is-invalid');
+            });
+        }
+    });
+</script>

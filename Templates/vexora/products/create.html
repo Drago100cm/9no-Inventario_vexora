@@ -5,7 +5,7 @@
     <div class="modal-header bg-light p-3">
       <h5 class="modal-title">
         <i class="ri-add-circle-line me-2"></i>
-        Crear Producto
+        Crear Nuevo Producto
       </h5>
       <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
@@ -14,6 +14,28 @@
       {% csrf_token %}
 
       <div class="modal-body">
+        <!-- Mostrar errores del formulario -->
+        {% if form.errors %}
+          <div class="alert alert-danger">
+            <strong>Error:</strong> Por favor corrige los siguientes errores:
+            <ul>
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <li><strong>{{ field }}:</strong> {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <!-- Información de la compañía -->
+        <div class="alert alert-info mb-3">
+          <i class="ri-building-line me-2"></i>
+          <strong>Compañía:</strong> {{ user.company.name }}
+          <br>
+          <small class="text-muted">El producto será creado para esta compañía</small>
+        </div>
+
         <ul class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
           <li class="nav-item">
             <a class="nav-link active" data-bs-toggle="tab" href="#general_info" role="tab">
@@ -112,8 +134,9 @@
                 {% endif %}
               </div>
               <div class="col-md-6">
-                <label class="form-label">Stock actual</label>
+                <label class="form-label">Stock inicial</label>
                 {{ form.stock }}
+                <small class="text-muted">Cantidad de unidades disponibles al crear el producto</small>
                 {% if form.stock.errors %}
                   <div class="text-danger small mt-1">{{ form.stock.errors }}</div>
                 {% endif %}
@@ -141,6 +164,7 @@
               <div class="col-md-12">
                 <label class="form-label">Categoría</label>
                 {{ form.category }}
+                <small class="text-muted">Categoría a la que pertenece el producto</small>
                 {% if form.category.errors %}
                   <div class="text-danger small mt-1">{{ form.category.errors }}</div>
                 {% endif %}
@@ -173,6 +197,9 @@
             </div>
           </div>
         </div>
+
+        <!-- Campo oculto para company -->
+        {{ form.company.as_hidden }}
       </div>
 
       <div class="modal-footer">
@@ -213,5 +240,16 @@
         $('#imagePreviewContainer').hide();
       }
     });
+  });
+
+  // Cerrar modal con ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('ModalOptions');
+      if (modal && modal.classList.contains('show')) {
+        const closeBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+        if (closeBtn) closeBtn.click();
+      }
+    }
   });
 </script>

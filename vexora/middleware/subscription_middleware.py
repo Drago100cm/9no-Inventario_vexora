@@ -39,15 +39,21 @@ class SubscriptionMiddleware:
 
         company = request.user.company
 
+        #if company is None:
+        #    return JsonResponse(
+        #       {"error": "No perteneces a ninguna empresa."},
+        #        status=403
+        #    )
+
         if company is None:
             return redirect("vexora:company_list")
 
-        if not subscription_is_active(company):
-            return JsonResponse(
-                {
-                    "error": "La suscripción de tu empresa expiró o no está activa."
-                },
-                status=403
-            )
+        # if not subscription_is_active(company):
+        #    return JsonResponse(
+        #        {
+        #            "error": "La suscripción de tu empresa expiró o no está activa."
+        #        },
+        #        status=403
+        #    )
 
         return self.get_response(request)
