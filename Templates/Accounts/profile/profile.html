@@ -1,280 +1,911 @@
 {% extends 'partials/base.html' %}
 {% load static %}
 
-{% block title %}Perfil{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/profile.css' %}">
-{% endblock %}
+    {% block title %}
+    Usuarios
+    {% endblock %}
 
 {% block content %}
-<div class="profile-wrap">
+<div class="container mt-4">
+    <!-- Header de perfil con imagen de portada y avatar -->
+<div class="profile-header mb-5">
 
-  <!-- ── HEADER ── -->
-  <div class="profile-header">
-
-    <!-- Botón editar -->
-    {% if request.user.is_authenticated and request.user.pk == profile.pk %}
-    <div class="edit-btn-wrap">
-      <a onclick="editModal('{% url 'vexora:user_edit' profile.id|stringformat:'d' %}')"
-         class="btn-edit">
-        <i class="ri-edit-line"></i> Editar perfil
-      </a>
-    </div>
-    {% endif %}
-
-    <!-- Portada -->
-    <div class="cover-wrap">
-      {% if profile.cover %}
-        <img src="{{ profile.cover.url }}" alt="Portada" class="cover-img">
-      {% else %}
-        <div class="cover-placeholder">
-          <i class="ri-image-line"></i>
-          <small>Sin foto de portada</small>
-        </div>
-      {% endif %}
-
-      <!-- Avatar -->
-      <div class="avatar-wrap">
-        {% if profile.avatar %}
-          <img src="{{ profile.avatar.url }}" alt="Avatar" class="avatar-img">
-        {% else %}
-          <div class="avatar-placeholder">
-            <i class="ri-user-3-line"></i>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Info básica -->
-    <div class="profile-info">
-      <h2 class="profile-name">{{ profile.first_name }} {{ profile.last_name }}</h2>
-      <p class="profile-email"><i class="ri-mail-line"></i> {{ profile.email }}</p>
-      {% if profile.groups.all.0.name %}
-      <span class="profile-role">
-        <i class="ri-shield-user-line"></i>
-        {{ profile.groups.all.0.name|default:"Usuario" }}
-      </span>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- ── STATS ── -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon ic-blue"><i class="ri-shopping-bag-3-line"></i></div>
-      <div class="stat-val">{{ total_pedidos|default:"0" }}</div>
-      <div class="stat-label">Pedidos realizados</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon ic-green"><i class="ri-heart-line"></i></div>
-      <div class="stat-val" id="fav-count-profile">0</div>
-      <div class="stat-label">Favoritos guardados</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon ic-amber"><i class="ri-star-line"></i></div>
-      <div class="stat-val">{{ request.user.plan|default:"Estándar" }}</div>
-      <div class="stat-label">Plan activo</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon ic-purple"><i class="ri-building-2-line"></i></div>
-      <div class="stat-val">{{ request.user.company.name|default:"—" }}</div>
-      <div class="stat-label">Empresa</div>
-    </div>
-  </div>
-
-  <!-- ── GRID PRINCIPAL ── -->
-  <div class="profile-grid">
-
-    <!-- Información de cuenta -->
-    <div class="profile-card">
-      <div class="card-hdr">
-        <i class="ri-user-settings-line"></i> Información de cuenta
-      </div>
-      <div class="card-body-inner">
-        <div class="info-row">
-          <span class="info-label"><i class="ri-user-line"></i> Nombre</span>
-          <span class="info-val">{{ profile.first_name }} {{ profile.last_name }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label"><i class="ri-mail-line"></i> Correo</span>
-          <span class="info-val">{{ profile.email }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label"><i class="ri-user-2-line"></i> Usuario</span>
-          <span class="info-val">@{{ profile.username }}</span>
-        </div>
-        {% if profile.phone %}
-        <div class="info-row">
-          <span class="info-label"><i class="ri-phone-line"></i> Teléfono</span>
-          <span class="info-val">{{ profile.phone }}</span>
-        </div>
-        {% endif %}
-        <div class="info-row">
-          <span class="info-label"><i class="ri-calendar-line"></i> Miembro desde</span>
-          <span class="info-val">{{ profile.date_joined|date:"d/m/Y" }}</span>
-        </div>
-        <div class="info-row" style="border-bottom:none;">
-          <span class="info-label"><i class="ri-shield-user-line"></i> Rol</span>
-          <span class="info-val">{{ profile.groups.all.0.name|default:"Usuario" }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Últimos pedidos -->
-    <div class="profile-card">
-      <div class="card-hdr">
-        <i class="ri-shopping-bag-line"></i> Últimos pedidos
-        <a href="{% url 'vexora:list_sales' %}" class="card-hdr-link">Ver todos</a>
-      </div>
-      <div class="card-body-inner">
-        {% if ultimos_pedidos %}
-          {% for pedido in ultimos_pedidos %}
-          <div class="pedido-row">
-            <div>
-              <div class="pedido-num">#{{ pedido.id }}</div>
-              <div class="pedido-fecha">{{ pedido.date|date:"d/m/Y" }}</div>
-            </div>
-            <div class="text-right">
-              <div class="pedido-total">${{ pedido.total }}</div>
-              {% if pedido.status == 'completed' %}
-                <span class="pedido-badge b-ok">Completado</span>
-              {% elif pedido.status == 'pending' %}
-                <span class="pedido-badge b-pend">Pendiente</span>
-              {% else %}
-                <span class="pedido-badge b-other">{{ pedido.status }}</span>
-              {% endif %}
-            </div>
-          </div>
-          {% endfor %}
-        {% else %}
-          <div class="empty-state">
-            <i class="ri-shopping-bag-line"></i>
-            <p>Aún no tienes pedidos.</p>
-            <a href="{% url 'vexora:store_home' %}" class="btn-ir-tienda">
-              <i class="ri-store-line"></i> Ir a la tienda
+    {# FILA SUPERIOR: BOTÓN A LA DERECHA #}
+    <div class="d-flex justify-content-end mb-2">
+        {% if request.user.is_authenticated and request.user.pk == profile.pk %}
+            <a  onclick="editModal('{% url 'vexora:user_edit' profile.id|stringformat:'d' %}')"
+               class="btn btn-sm btn-primary">
+                <i class="ri-edit-line me-1"></i> Editar perfil
             </a>
-          </div>
         {% endif %}
-      </div>
     </div>
 
-    <!-- Favoritos -->
-    <div class="profile-card">
-      <div class="card-hdr">
-        <i class="ri-heart-line"></i> Mis favoritos
-        <a href="{% url 'vexora:store_home' %}?seccion=favoritos" class="card-hdr-link">Ver todos</a>
-      </div>
-      <div class="card-body-inner" id="favoritos-perfil">
-        <div class="empty-state">
-          <i class="ri-heart-line"></i>
-          <p>Cargando favoritos...</p>
+    {# PORTADA #}
+    <div class="cover-container position-relative rounded-3 shadow-sm overflow-hidden mb-4">
+        {% if profile.cover %}
+            <img src="{{ profile.cover.url }}" alt="Portada" class="img-fluid w-100"
+                 style="height: 250px; object-fit: cover;">
+        {% else %}
+            <div class="bg-gradient-primary w-100 d-flex align-items-center justify-content-center"
+                 style="height: 250px;">
+                <div class="text-center text-white">
+                    <i class="ri-image-line display-4 d-block"></i>
+                    <small>No tienes una foto de portada</small>
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Avatar de perfil -->
+        <div class="avatar-container position-absolute start-50 translate-middle" style="bottom: -75px;">
+            <div class="avatar-wrapper position-relative">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" alt="Foto de perfil" class="rounded-circle shadow"
+                         style="width: 150px; height: 150px; object-fit: cover; border: 5px solid #fff;">
+                {% else %}
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center shadow"
+                         style="width: 150px; height: 150px; border: 5px solid #fff;">
+                        <i class="ri-user-3-line text-light" style="font-size: 5rem;"></i>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-      </div>
+    </div>
+
+    <!-- Información del usuario -->
+    <div class="profile-info text-center mt-5 pt-4">
+        <h2 class="fw-bold text-primary mb-1">{{ profile.first_name }} {{ profile.last_name }}</h2>
+        <p class="text-muted mb-2">{{ profile.email }}</p>
+        
+        <div class="badge bg-info text-dark fs-6 mb-3 px-3 py-2">
+            <i class="ri-group-line me-1"></i>
+            {{ profile.groups.all.0.name|default:"Cliente" }}
+        </div>
+        
+        <p class="text-muted max-w-600 mx-auto">
+            <i class="ri-suitcase-3-fill me-1"></i>
+            Explora nuestros paquetes turísticos y reserva tu próxima aventura.
+        </p>
+    </div>
+</div>
+
+
+    <!-- Estadísticas y acciones rápidas -->
+    <div class="row mb-5">
+
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 60px; height: 60px;">
+                        <i class="ri-map-pin-2-line text-success fs-3"></i>
+                    </div>
+                    <h5 class="card-title">Destinos visitados</h5>
+                    <p class="card-text fs-2 fw-bold text-success">
+                        {{ destinos_visitados_count }}
+                    </p>
+                    <a href="#" class="btn btn-outline-success btn-sm">
+                        Explorar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 60px; height: 60px;">
+                        <i class="ri-star-smile-line text-warning fs-3"></i>
+                    </div>
+                    <h5 class="card-title">Puntos de fidelidad</h5>
+                    <p class="card-text fs-2 fw-bold text-warning">
+                        {{ puntos_fidelidad }}
+                    </p>
+                    <a href="#" class="btn btn-outline-warning btn-sm">Canjear</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Próximos viajes -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">
+                <i class="ri-flight-takeoff-line me-2"></i> Tus próximos viajes
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+     
+ 
+                    <p class="text-muted text-center mb-0">
+                        Aún no tienes reservas. Empieza a planear tu primer viaje ✈️
+                    </p>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="#" class="btn btn-outline-primary">
+                    <i class="ri-add-circle-line me-1"></i> Agregar nueva reserva
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- Acciones rápidas -->
-    <div class="profile-card">
-      <div class="card-hdr">
-        <i class="ri-flashlight-line"></i> Acciones rápidas
-      </div>
-      <div class="card-body-inner">
-        <div class="acciones-grid">
-          <a href="{% url 'vexora:store_home' %}" class="accion-btn">
-            <div class="accion-ico ic-blue"><i class="ri-store-line"></i></div>
-            <span>Tienda</span>
-          </a>
-          <a href="{% url 'vexora:store_cart' %}" class="accion-btn">
-            <div class="accion-ico ic-green"><i class="ri-shopping-cart-line"></i></div>
-            <span>Carrito</span>
-          </a>
-          <a href="{% url 'vexora:list_products' %}" class="accion-btn">
-            <div class="accion-ico ic-amber"><i class="ri-shirt-line"></i></div>
-            <span>Catálogo</span>
-          </a>
-          <a href="{% url 'vexora:store_home' %}?seccion=favoritos" class="accion-btn">
-            <div class="accion-ico ic-purple"><i class="ri-heart-line"></i></div>
-            <span>Favoritos</span>
-          </a>
-          <a onclick="editModal('{% url 'vexora:user_edit' profile.id|stringformat:'d' %}')" class="accion-btn">
-            <div class="accion-ico ic-teal"><i class="ri-edit-line"></i></div>
-            <span>Editar perfil</span>
-          </a>
-          <a href="{% url 'vexora:logout' %}" class="accion-btn">
-            <div class="accion-ico ic-red"><i class="ri-logout-box-line"></i></div>
-            <span>Cerrar sesión</span>
-          </a>
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">
+                <i class="ri-flashlight-line me-2"></i> Acciones rápidas
+            </h5>
         </div>
-      </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-6 col-md-2 mb-3">
+                    <a href="#" class="text-decoration-none">
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <i class="ri-box-3-line text-primary fs-4"></i>
+                        </div>
+                        <p class="mb-0 small">Paquetes</p>
+                    </a>
+                </div>
+                <div class="col-6 col-md-2 mb-3">
+                    <a href="#" class="text-decoration-none">
+                        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <i class="ri-map-pin-line text-success fs-4"></i>
+                        </div>
+                        <p class="mb-0 small">Destinos</p>
+                    </a>
+                </div>
+                <div class="col-6 col-md-2 mb-3">
+                    <a href="#" class="text-decoration-none">
+                        <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <i class="ri-calendar-event-line text-info fs-4"></i>
+                        </div>
+                        <p class="mb-0 small">Reservas</p>
+                    </a>
+                </div>
+                <div class="col-6 col-md-2 mb-3">
+                    <a href="#" class="text-decoration-none">
+                        <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <i class="ri-team-line text-warning fs-4"></i>
+                        </div>
+                        <p class="mb-0 small">Clientes</p>
+                    </a>
+                </div>
+                <div class="col-6 col-md-2 mb-3">
+                    <a href="#" class="text-decoration-none">
+                        <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <i class="ri-truck-line text-danger fs-4"></i>
+                        </div>
+                        <p class="mb-0 small">Proveedores</p>
+                    </a>
+                </div>
+                <div class="col-6 col-md-2 mb-3">
+                    <a href="#" class="text-decoration-none">
+                        <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 60px; height: 60px;">
+                            <i class="ri-question-line text-secondary fs-4"></i>
+                        </div>
+                        <p class="mb-0 small">Ayuda</p>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-
-  </div>
 </div>
-  <div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
 
+<style>
+  /* ============================================
+     PERFIL DE USUARIO - PREMIUM DESIGN
+     ============================================ */
+
+  /* Profile Header Container */
+  .profile-header {
+    position: relative;
+    animation: fadeInDown 0.6s ease;
+  }
+
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Cover Container Premium */
+  .cover-container {
+    background: linear-gradient(135deg, 
+      #0ea5e9 0%, 
+      #06b6d4 50%, 
+      #10b981 100%
+    );
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px !important;
+    box-shadow: 0 15px 40px rgba(14, 165, 233, 0.3);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Efecto de brillo en la portada */
+  .cover-container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.1), 
+      transparent
+    );
+    transform: rotate(45deg);
+    animation: coverShimmer 8s infinite;
+  }
+
+  @keyframes coverShimmer {
+    0%, 100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+  }
+
+  .cover-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(14, 165, 233, 0.4);
+  }
+
+  .cover-container img {
+    transition: transform 0.6s ease;
+  }
+
+  .cover-container:hover img {
+    transform: scale(1.05);
+  }
+
+  /* Avatar Container Premium */
+  .avatar-container {
+    z-index: 10;
+    animation: avatarFloat 3s ease-in-out infinite;
+  }
+
+  @keyframes avatarFloat {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-10px); }
+  }
+
+  .avatar-wrapper {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .avatar-wrapper:hover {
+    transform: scale(1.08) rotate(5deg);
+  }
+
+  .avatar-wrapper img,
+  .avatar-wrapper > div {
+    border: 5px solid #fff !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    transition: all 0.4s ease;
+    position: relative;
+  }
+
+  /* Efecto de anillo brillante alrededor del avatar */
+  .avatar-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0ea5e9, #10b981);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: -1;
+    animation: avatarRing 3s ease-in-out infinite;
+  }
+
+  @keyframes avatarRing {
+    0%, 100% { 
+      transform: scale(1);
+      opacity: 0;
+    }
+    50% { 
+      transform: scale(1.1);
+      opacity: 0.3;
+    }
+  }
+
+  .avatar-wrapper:hover::before {
+    opacity: 0.6;
+  }
+
+  .avatar-wrapper:hover img,
+  .avatar-wrapper:hover > div {
+    box-shadow: 0 15px 50px rgba(14, 165, 233, 0.4);
+  }
+
+  /* Profile Info Premium */
+  .profile-info {
+    animation: fadeInUp 0.8s ease 0.2s backwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .profile-info h2 {
+    background: linear-gradient(135deg, #0ea5e9, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    position: relative;
+    display: inline-block;
+  }
+
+  /* Badge mejorado */
+  .badge {
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .badge:hover::before {
+    left: 100%;
+  }
+
+  .badge.bg-info {
+    background: linear-gradient(135deg, #0ea5e9, #06b6d4) !important;
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+  }
+
+  .badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.5);
+  }
+
+  /* Cards Premium */
+  .card {
+    border: none !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.6s ease backwards;
+  }
+
+  /* Efecto de borde superior gradiente */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #0ea5e9, #10b981);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .card:hover::before {
+    transform: scaleX(1);
+  }
+
+  /* Efecto de brillo en el fondo del card */
+  .card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, 
+      rgba(14, 165, 233, 0.03) 0%, 
+      rgba(16, 185, 129, 0.03) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .card:hover::after {
+    opacity: 1;
+  }
+
+  .card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(14, 165, 233, 0.15);
+  }
+
+  /* Animación escalonada para cards */
+  .card:nth-child(1) { animation-delay: 0.1s; }
+  .card:nth-child(2) { animation-delay: 0.2s; }
+  .card:nth-child(3) { animation-delay: 0.3s; }
+
+  /* Card Header Premium */
+  .card-header {
+    background: linear-gradient(135deg, 
+      rgba(14, 165, 233, 0.05) 0%, 
+      rgba(16, 185, 129, 0.05) 100%
+    ) !important;
+    border-bottom: 2px solid rgba(14, 165, 233, 0.1) !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 1.25rem 1.5rem !important;
+  }
+
+  .card-header h5 {
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+  }
+
+  .card-header i {
+    background: linear-gradient(135deg, #0ea5e9, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Card Body Premium */
+  .card-body {
+    position: relative;
+    z-index: 1;
+    padding: 1.5rem;
+  }
+
+  /* Iconos circulares mejorados */
+  .rounded-circle {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Efecto de onda en iconos */
+  .rounded-circle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: translate(-50%, -50%);
+    transition: width 0.5s ease, height 0.5s ease;
+  }
+
+  .rounded-circle:hover::before {
+    width: 100px;
+    height: 100px;
+  }
+
+  .rounded-circle:hover {
+    transform: scale(1.1) rotate(10deg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Iconos con gradiente */
+  .bg-primary.bg-opacity-10 {
+    background: linear-gradient(135deg, 
+      rgba(14, 165, 233, 0.15) 0%, 
+      rgba(6, 182, 212, 0.1) 100%
+    ) !important;
+    border: 2px solid rgba(14, 165, 233, 0.2);
+  }
+
+  .bg-success.bg-opacity-10 {
+    background: linear-gradient(135deg, 
+      rgba(16, 185, 129, 0.15) 0%, 
+      rgba(5, 150, 105, 0.1) 100%
+    ) !important;
+    border: 2px solid rgba(16, 185, 129, 0.2);
+  }
+
+  .bg-warning.bg-opacity-10 {
+    background: linear-gradient(135deg, 
+      rgba(245, 158, 11, 0.15) 0%, 
+      rgba(217, 119, 6, 0.1) 100%
+    ) !important;
+    border: 2px solid rgba(245, 158, 11, 0.2);
+  }
+
+  .bg-info.bg-opacity-10 {
+    background: linear-gradient(135deg, 
+      rgba(14, 165, 233, 0.15) 0%, 
+      rgba(6, 182, 212, 0.1) 100%
+    ) !important;
+    border: 2px solid rgba(14, 165, 233, 0.2);
+  }
+
+  .bg-danger.bg-opacity-10 {
+    background: linear-gradient(135deg, 
+      rgba(239, 68, 68, 0.15) 0%, 
+      rgba(220, 38, 38, 0.1) 100%
+    ) !important;
+    border: 2px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .bg-secondary.bg-opacity-10 {
+    background: linear-gradient(135deg, 
+      rgba(100, 116, 139, 0.15) 0%, 
+      rgba(71, 85, 105, 0.1) 100%
+    ) !important;
+    border: 2px solid rgba(100, 116, 139, 0.2);
+  }
+
+  /* Botones Premium */
+  .btn {
+    border-radius: 12px;
+    font-weight: 600;
+    padding: 10px 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .btn:hover::before {
+    left: 100%;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #0ea5e9, #10b981) !important;
+    border: none !important;
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(14, 165, 233, 0.5);
+    background: linear-gradient(135deg, #10b981, #0ea5e9) !important;
+  }
+
+  .btn-outline-primary {
+    border: 2px solid #0ea5e9 !important;
+    color: #0ea5e9 !important;
+    background: rgba(14, 165, 233, 0.05);
+  }
+
+  .btn-outline-primary:hover {
+    background: linear-gradient(135deg, #0ea5e9, #10b981) !important;
+    color: white !important;
+    border-color: transparent !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+  }
+
+  .btn-outline-success {
+    border: 2px solid #10b981 !important;
+    color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.05);
+  }
+
+  .btn-outline-success:hover {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: white !important;
+    border-color: transparent !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+  }
+
+  .btn-outline-warning {
+    border: 2px solid #f59e0b !important;
+    color: #f59e0b !important;
+    background: rgba(245, 158, 11, 0.05);
+  }
+
+  .btn-outline-warning:hover {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: white !important;
+    border-color: transparent !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+  }
+
+  .btn-sm {
+    padding: 8px 20px;
+    font-size: 0.875rem;
+    border-radius: 10px;
+  }
+
+  /* Reservas items premium */
+  .border.rounded.p-3 {
+    border: 2px solid rgba(14, 165, 233, 0.1) !important;
+    border-radius: 16px !important;
+    background: linear-gradient(135deg, 
+      rgba(14, 165, 233, 0.03) 0%, 
+      rgba(16, 185, 129, 0.02) 100%
+    );
+    transition: all 0.3s ease;
+  }
+
+  .border.rounded.p-3:hover {
+    border-color: rgba(14, 165, 233, 0.3) !important;
+    transform: translateX(5px);
+    box-shadow: 0 5px 20px rgba(14, 165, 233, 0.1);
+  }
+
+  .border.rounded.p-3 img {
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+  }
+
+  .border.rounded.p-3:hover img {
+    transform: scale(1.05);
+  }
+
+  /* Badges de estado mejorados */
+  .badge.bg-info {
+    background: linear-gradient(135deg, #0ea5e9, #06b6d4) !important;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+  }
+
+  .badge.bg-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .badge.bg-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  }
+
+  .badge.bg-success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  /* Acciones rápidas - enlaces */
+  .text-decoration-none:hover {
+    transform: scale(1.05);
+  }
+
+  .text-decoration-none .rounded-circle {
+    transition: all 0.4s ease;
+  }
+
+  .text-decoration-none:hover .rounded-circle {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Utility classes */
+  .max-w-600 {
+    max-width: 600px;
+  }
+
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%) !important;
+  }
+
+  /* Estadísticas - números grandes */
+  .card-text.fs-2 {
+    font-weight: 800;
+    background: linear-gradient(135deg, currentColor, currentColor);
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Hover effects para acciones rápidas */
+  .col-6.col-md-2.mb-3 {
+    transition: transform 0.3s ease;
+  }
+
+  .col-6.col-md-2.mb-3:hover {
+    transform: translateY(-5px);
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 991.98px) {
+    .avatar-wrapper img,
+    .avatar-wrapper > div {
+      width: 120px !important;
+      height: 120px !important;
+    }
+
+    .avatar-container {
+      bottom: -60px !important;
+    }
+
+    .profile-info {
+      margin-top: 4rem !important;
+    }
+
+    .card {
+      border-radius: 16px !important;
+    }
+
+    .cover-container {
+      border-radius: 16px !important;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .avatar-wrapper img,
+    .avatar-wrapper > div {
+      width: 100px !important;
+      height: 100px !important;
+      border: 4px solid #fff !important;
+    }
+
+    .avatar-container {
+      bottom: -50px !important;
+    }
+
+    .profile-info h2 {
+      font-size: 1.5rem;
+    }
+
+    .badge {
+      font-size: 0.8rem;
+      padding: 6px 16px;
+    }
+
+    .btn {
+      padding: 8px 20px;
+      font-size: 0.875rem;
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    .rounded-circle {
+      width: 50px !important;
+      height: 50px !important;
+    }
+  }
+
+  /* Animación de carga inicial */
+  .container {
+    animation: containerFadeIn 0.8s ease;
+  }
+
+  @keyframes containerFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Sombras mejoradas para imágenes */
+  img {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Scroll suave */
+  html {
+    scroll-behavior: smooth;
+  }
+</style>
+
+
+    <div class="modal fade fadeInUp" id="ModalOptions" data-bs-backdrop="static"></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Cargar favoritos desde localStorage
-function cargarFavoritosPerfil() {
-  const favs = JSON.parse(localStorage.getItem('vexora_favoritos') || '[]');
-  const cont = document.getElementById('favoritos-perfil');
-  const favCount = document.getElementById('fav-count-profile');
-
-  if (favCount) favCount.textContent = favs.length;
-
-  if (!favs.length) {
-    cont.innerHTML = `
-      <div class="empty-state">
-        <i class="ri-heart-line"></i>
-        <p>No tienes favoritos guardados.</p>
-        <a href="{% url 'vexora:store_home' %}" class="btn-ir-tienda">
-          <i class="ri-store-line"></i> Explorar tienda
-        </a>
-      </div>`;
-    return;
-  }
-
-  let html = '<div class="favs-list">';
-  favs.slice(0, 4).forEach(f => {
-    html += `
-    <div class="fav-row">
-      <div class="fav-ico"><i class="ri-shirt-line"></i></div>
-      <div class="fav-info">
-        <div class="fav-name">${f.nombre}</div>
-        <div class="fav-price">$${f.precio}</div>
-      </div>
-      <button class="fav-remove" onclick="quitarFavorito(${f.id})">
-        <i class="ri-close-line"></i>
-      </button>
-    </div>`;
-  });
-  if (favs.length > 4) {
-    html += `<div style="text-align:center;padding:10px 0;font-size:12px;color:rgba(255,255,255,.4);">
-      +${favs.length - 4} más en favoritos
-    </div>`;
-  }
-  html += '</div>';
-  cont.innerHTML = html;
-}
-
-function quitarFavorito(id) {
-  let favs = JSON.parse(localStorage.getItem('vexora_favoritos') || '[]');
-  favs = favs.filter(f => f.id !== id);
-  localStorage.setItem('vexora_favoritos', JSON.stringify(favs));
-  cargarFavoritosPerfil();
-}
-
-cargarFavoritosPerfil();
-
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
-<script type="text/javascript">
-      function editModal(url) {
-      $('#ModalOptions').load(url, function () {
-        $(this).modal('show')
-      })
-    }
-</script>
+    <script type="text/javascript">
+        function creationModal(url) {
+        $('#ModalOptions').load(url, function () {
+            $(this).modal('show')
+        })
+        }
+        function editModal(url) {
+        $('#ModalOptions').load(url, function () {
+            $(this).modal('show')
+        })
+        }
+        
+        function deleteE(id) {
+        console.log('id recibidooooo es:', id)
+        const swalWithBootstrapButtons = Swal.mixin({
+            customClass: {
+            confirmButton: 'btn btn-success',
+            cancelButton: 'btn btn-danger m-3'
+            },
+            buttonsStyling: false
+        })
+        
+        Swal.fire({
+            html: '<div class="mt-3"><lord-icon src="https://cdn.lordicon.com/wpyrrmcq.json" trigger="loop" delay="700" colors="primary:#c71f16" style="width:100px;height:100px"></lord-icon><div class="mt-4 pt-2 fs-15 mx-5"><h4>¿Está seguro?</h4><p class="text-muted mx-4 mb-0">¡Este cambio no se puede deshacer!</p></div></div>',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+            window.location.href = "{% url 'vexora:user_delete' 0 %}".replace('0', id)
+            }
+        })
+        }
+    </script>
 
-{% endblock %}
+    <script>
+        // Funcionalidad de ordenamiento para la tabla
+        document.addEventListener('DOMContentLoaded', function () {
+        const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent
+        
+        const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx))
+        
+        document.querySelectorAll('th[data-sort]').forEach((th) => {
+            th.addEventListener('click', function () {
+            const table = this.closest('table')
+            const tbody = table.querySelector('tbody')
+            const index = Array.from(this.parentNode.children).indexOf(this)
+            const asc = this.getAttribute('data-sort-direction') === 'asc'
+        
+            // Reset all sort directions
+            table.querySelectorAll('th[data-sort]').forEach((header) => {
+                header.removeAttribute('data-sort-direction')
+                header.querySelector('i').className = 'fas fa-sort'
+            })
+        
+            // Set current sort direction
+            this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc')
+            this.querySelector('i').className = asc ? 'fas fa-sort-down' : 'fas fa-sort-up'
+        
+            // Sort the table
+            Array.from(tbody.querySelectorAll('tr'))
+                .sort(comparer(index, asc))
+                .forEach((tr) => tbody.appendChild(tr))
+            })
+        })
+        })
+    </script>
+    {% endblock %}
