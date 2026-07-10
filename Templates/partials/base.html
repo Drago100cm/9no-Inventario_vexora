@@ -105,16 +105,12 @@
             padding:20px;
         }
 
-        @media(min-width:992px){
-
-            .main-content{
-
-                margin-left:150px;
-
-                width:calc(100% - var(--sidebar-width));
-            }
-
-        }
+@media(min-width:992px){
+    .main-content{
+        margin-left:var(--sidebar-width);
+        width:calc(100% - var(--sidebar-width));
+    }
+}
 
         @media(max-width:991px){
 
@@ -424,11 +420,16 @@
     CHAT IA FLOTANTE
     ========================= -->
 
+    {% if 'store' in request.path %}
+    <a href="{% url 'vexora:store_cart' %}" class="cart-fab" id="cartFabGlobal">
+        <i class="fas fa-shopping-bag"></i>
+        <span class="cart-fab-badge" id="cartFabBadge">0</span>
+    </a>
+    {% endif %}
+
     <button class="chat-button"
             id="chatToggle">
-
         <i class="ri-chat-3-line"></i>
-
     </button>
 
     <div class="chat-box chat-hidden"
@@ -683,7 +684,17 @@
     </script>
 
     {% endif %}
-
+<script>
+{% if 'store' in request.path %}
+fetch("{% url 'vexora:cart_count' %}")
+  .then(r => r.json())
+  .then(data => {
+    const badge = document.getElementById('cartFabBadge');
+    if (badge) badge.textContent = data.total_items;
+  })
+  .catch(() => {});
+{% endif %}
+</script>
     {% block extra_js %}
     {% endblock %}
 

@@ -491,3 +491,68 @@ class SaleItem(models.Model):
     class Meta:
         ordering = ['-id']
         
+# ========== PRODUCT VARIANT (Tallas y colores) ==========
+class ProductVariant(models.Model):
+    SIZE_CHOICES = (
+        ('XS', 'XS'), ('S', 'S'), ('M', 'M'),
+        ('L', 'L'), ('XL', 'XL'), ('XXL', 'XXL'),
+    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
+    size = models.CharField(max_length=5, choices=SIZE_CHOICES)
+    color = models.CharField(max_length=30, verbose_name="Color")
+    color_hex = models.CharField(max_length=7, default='#000000', verbose_name="Color (hex)")
+    stock = models.PositiveIntegerField(default=0)
+    sku = models.CharField(max_length=60, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Product variant"
+        verbose_name_plural = "Product variants"
+        constraints = [
+            models.UniqueConstraint(fields=['product', 'size', 'color'], name='unique_variant_per_product')
+        ]
+
+    def __str__(self):
+        return f"{self.product.name} · {self.size} / {self.color}"
+    
+    # ========== CARRITO (Cart) ==========
+class Cart(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='carts')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='carts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('company', 'user')
+
+    def __str__(self):
+        return f"Carrito de {self.user.email} · {self.company.name}"
+
+    @property
+    def total(self):
+        return sum(item.subtotal for item in self.items.all())
+
+    @property
+    def total_items(self):
+        return sum(item.quantity for item in self.items.all())
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cart_items')
+    variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_items')
+    quantity = models.PositiveIntegerField(default=1)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('cart', 'product', 'variant')
+
+    def __str__(self):
+        return f"{self.product.name} x {self.quantity}"
+
+    @property
+    def unit_price(self):
+        return self.product.sale_price or self.product.price
+
+    @property
+    def subtotal(self):
+        return self.unit_price * self.quantity

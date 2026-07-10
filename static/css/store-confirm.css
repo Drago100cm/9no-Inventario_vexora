@@ -1,0 +1,46 @@
+.confirm-wrap { max-width: 600px; margin: 0 auto; }
+.confirm-card {
+  background: var(--card-bg); border: 1px solid var(--border-color);
+  border-radius: 20px; padding: 40px; text-align: center;
+}
+.check-ico {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  border: 2px solid var(--accent-color);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 22px; font-size: 34px; color: var(--accent-color);
+}
+.confirm-titulo { font-size: 26px; font-weight: 800; color: white; margin-bottom: 8px; }
+.confirm-sub { font-size: 14px; color: rgba(255,255,255,.5); line-height: 1.6; margin-bottom: 22px; }
+.num-pedido {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 20px; border-radius: 20px;
+  background: rgba(255,255,255,.08); border: 1px solid var(--border-color);
+  color: white; font-size: 15px; font-weight: 700; margin-bottom: 24px;
+}
+.sep { height: 1px; background: var(--border-color); margin: 18px 0; }
+.items-conf { text-align: left; }
+.item-conf-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 13px;
+}
+.item-conf-row:last-child { border-bottom: none; }
+.icr-nom { font-weight: 600; color: white; margin-bottom: 2px; }
+.icr-det { font-size: 11px; color: rgba(255,255,255,.4); }
+.icr-price { font-weight: 700; color: white; flex-shrink: 0; margin-left: 12px; }
+.total-conf { display: flex; justify-content: space-between; font-size: 17px; font-weight: 800; color: white; padding-top: 14px; }
+.btns-conf { display: flex; gap: 10px; margin-top: 24px; }
+.btn-cp {
+  flex: 1; padding: 12px; border-radius: 10px;
+  background: var(--primary-color); color: white; border: none;
+  font-size: 14px; font-weight: 700; text-decoration: none;
+  text-align: center; transition: .2s;
+}
+.btn-cp:hover { opacity: .88; color: white; }
+.btn-cs {
+  flex: 1; padding: 12px; border-radius: 10px;
+  background: rgba(255,255,255,.07); color: rgba(255,255,255,.7);
+  border: 1px solid var(--border-color); font-size: 14px; font-weight: 600;
+  text-decoration: none; text-align: center; transition: .2s;
+}
+.btn-cs:hover { background: rgba(255,255,255,.1); color: white; }

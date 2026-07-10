@@ -134,7 +134,7 @@ SIDEBAR.HTML
 
     <div class="menu-module">
 
-        <button class="module-btn" type="button">
+               <button class="module-btn" type="button">
             <i class="fas fa-cash-register"></i>
             <span>Ventas</span>
             <i class="fas fa-chevron-down arrow"></i>
@@ -148,6 +148,11 @@ SIDEBAR.HTML
                 <span>Ventas</span>
             </a>
 
+            <a href="{% url 'vexora:store_home' %}"
+               class="menu-item {% if url_name == 'store_home' or url_name == 'store_producto' or url_name == 'store_carrito' or url_name == 'store_checkout' %}active{% endif %}">
+                <i class="fas fa-store"></i>
+                <span>Store</span>
+            </a>
         </div>
 
     </div>
