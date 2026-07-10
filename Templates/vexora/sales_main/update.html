@@ -137,6 +137,50 @@
                             </div>
                         </div>
 
+
+<div class="card mt-3 d-none" id="quickCreatePanel">
+    <div class="card-body">
+        <h6 class="mb-3"><i class="ri-add-box-line me-1"></i> Nuevo producto</h6>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Nombre *</label>
+                <input type="text" class="form-control" id="qcName">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Categoría</label>
+                <select class="form-select" id="qcCategory">
+                    <option value="">Sin categoría</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 mb-3">
+                <label class="form-label">Precio *</label>
+                <input type="number" class="form-control" id="qcPrice" step="0.01" min="0" value="0.00">
+            </div>
+            <div class="col-md-2 mb-3">
+                <label class="form-label">Stock inicial</label>
+                <input type="number" class="form-control" id="qcStock" min="0" value="0">
+            </div>
+            <div class="col-md-1 mb-3 d-flex align-items-end">
+                <button type="button" class="btn btn-secondary w-100" id="qcCancelBtn">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Imagen</label>
+                <input type="file" class="form-control" id="qcImage" accept="image/*">
+            </div>
+            <div class="col-md-6 mb-3 d-flex align-items-end justify-content-end">
+                <button type="button" class="btn btn-success" id="qcSaveBtn">
+                    <i class="ri-save-3-line me-1"></i> Guardar y usar en esta venta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
                         <div class="row align-items-end">
 
                             <div class="col-md-4 mb-3">

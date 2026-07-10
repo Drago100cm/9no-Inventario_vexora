@@ -9,6 +9,8 @@ from .forms import *
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView,RedirectView, DetailView, TemplateView
 from vexora.models import *
 from django.contrib import messages
+from django.utils import timezone
+from django.http import JsonResponse
 from django.core.mail import send_mail
 import logging
 from django.template.loader import render_to_string
@@ -30,9 +32,9 @@ from .models import SiteConfiguration, SMTPConfiguration
 from .forms import SiteConfigurationForm, SMTPConfigurationForm
 from django.db.models import Q
 from datetime import datetime
+from django.views.decorators.http import require_POST
 
 # Create your views here.
-
 class HomeView(TemplateView):
     template_name = 'Home/home.html'
 #======Home de la empresa (con slug)======
@@ -43,8 +45,6 @@ def company_home(request, slug):
         'slug': slug
     }
     return render(request, 'vexora/companies/home.html', context)
-
-
 
 
 class AIChatView(LoginRequiredMixin, FormView):
@@ -1241,13 +1241,16 @@ def delete_product(request, pk):
     return redirect('vexora:list_products')
 
 
+
 # =====================================
 # SALES VIEWS (Ventas)
 # =====================================
 
+
+
 class SalesListView(LoginRequiredMixin, ListView):
     model = Sale
-    template_name = 'vexora/sales/list.html'
+    template_name = 'vexora/sales/store.html'
     context_object_name = 'sales'
 
     def get_queryset(self):
@@ -1399,6 +1402,345 @@ class SalesMainListView(LoginRequiredMixin, TemplateView):
 class SalesMainCreateView(LoginRequiredMixin, TemplateView):
     template_name = "vexora/sales_main/create.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.filter(company=self.request.user.company)
+        return context
 
+class ProductQuickCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        context = {
+            'categories': Category.objects.filter(company=request.user.company)
+        }
+        return render(request, 'vexora/products/quick_create_modal.html', context)
+
+    def post(self, request):
+        name  = request.POST.get('name', '').strip()
+        price = request.POST.get('price', '0')
+        stock = request.POST.get('stock', '0')
+        category_id = request.POST.get('category')
+        image = request.FILES.get('image')
+
+        if not name:
+            return JsonResponse({'ok': False, 'error': 'El nombre es obligatorio.'}, status=400)
+
+        try:
+            price = float(price)
+        except ValueError:
+            price = 0
+
+        try:
+            stock = int(stock)
+        except ValueError:
+            stock = 0
+
+        company = request.user.company
+
+        default_supplier, _ = Supplier.objects.get_or_create(
+            company=company,
+            name='Proveedor general',
+            defaults={'address': 'N/A'}
+        )
+
+        category = None
+        if category_id:
+            category = Category.objects.filter(pk=category_id, company=company).first()
+
+        product = Product.objects.create(
+            name=name,
+            company=company,
+            supplier=default_supplier,
+            category=category,
+            price=price,
+            sale_price=price,
+            stock=stock,
+            purchase_date=timezone.now().date(),
+            image=image,
+            is_active=True,
+        )
+
+        return JsonResponse({'ok': True, 'id': product.id, 'name': product.name})
 class SalesMainUpdateView(LoginRequiredMixin, TemplateView):
     template_name = "vexora/sales_main/update.html"
+
+# ============================================
+# STORE PÚBLICA
+# ============================================
+
+class StoreHomeView(LoginRequiredMixin, View):
+    template_name = 'vexora/sales/store.html'
+
+    def get(self, request):
+        productos = Product.objects.filter(
+            company=request.user.company,
+            is_active=True
+        ).select_related('category', 'supplier').prefetch_related('variants')
+
+        categoria_id = request.GET.get('categoria')
+        query        = request.GET.get('q', '')
+        talla        = request.GET.get('talla', '')
+        orden        = request.GET.get('orden', 'nuevo')
+        seccion      = request.GET.get('seccion', '')
+
+        if categoria_id:
+            productos = productos.filter(category_id=categoria_id)
+        if query:
+            productos = productos.filter(name__icontains=query)
+        if talla:
+            productos = productos.filter(variants__size=talla).distinct()
+        if seccion == 'rebajas':
+            productos = productos.filter(sale_price__isnull=False)
+        if orden == 'precio_asc':
+            productos = productos.order_by('sale_price')
+        elif orden == 'precio_desc':
+            productos = productos.order_by('-sale_price')
+        else:
+            productos = productos.order_by('-created_at')
+
+        categorias  = Category.objects.filter(company=request.user.company)
+        destacados  = Product.objects.filter(
+            company=request.user.company, is_active=True
+        ).order_by('-created_at')[:4]
+
+        context = {
+            'productos':       productos,
+            'categorias':      categorias,
+            'destacados':      destacados,
+            'categoria_activa':categoria_id,
+            'query':           query,
+            'talla_activa':    talla,
+            'orden':           orden,
+            'seccion':         seccion,
+            'tallas':          ['XS','S','M','L','XL','XXL'],
+        }
+        return render(request, self.template_name, context)
+
+
+class StoreProductoView(LoginRequiredMixin, View):
+    template_name = 'vexora/sales/store-detail.html'
+
+    def get(self, request, pk):
+        producto    = get_object_or_404(Product, pk=pk, is_active=True, company=request.user.company)
+        variantes   = producto.variants.all()
+        relacionados= Product.objects.filter(
+            category=producto.category,
+            is_active=True,
+            company=request.user.company
+        ).exclude(pk=pk)[:4]
+
+        context = {
+            'producto':     producto,
+            'variantes':    variantes,
+            'relacionados': relacionados,
+        }
+        return render(request, self.template_name, context)
+
+class StoreCarritoView(LoginRequiredMixin, View):
+    template_name = 'vexora/sales/store-cart.html'
+
+    def get(self, request):
+        cart = get_or_create_cart(request)
+        items = cart.items.select_related('product', 'variant').all()
+        return render(request, self.template_name, {'cart': cart, 'items': items})
+
+
+class StoreCheckoutView(LoginRequiredMixin, View):
+    template_name = 'vexora/sales/store-checkout.html'
+
+    def get(self, request):
+        return render(request, self.template_name)
+
+    def post(self, request):
+        import json
+        nombre    = request.POST.get('nombre', '')
+        email     = request.POST.get('email', '')
+        telefono  = request.POST.get('telefono', '')
+        direccion = request.POST.get('direccion', '')
+        notas     = request.POST.get('notas', '')
+
+        carrito_json = request.POST.get('carrito', '[]')
+        try:
+            carrito = json.loads(carrito_json)
+        except Exception:
+            carrito = []
+
+        if not carrito:
+            messages.error(request, 'Tu carrito está vacío.')
+            return redirect('vexora:store_cart')
+
+        company = request.user.company
+
+        sale = Sale.objects.create(
+            company=company,
+            customer_name=nombre,
+            customer_email=email,
+            customer_phone=telefono,
+            notes=f"Dirección: {direccion}\n{notas}",
+            status='pending',
+            user=request.user,
+        )
+
+        total = 0
+        for item in carrito:
+            try:
+                producto = Product.objects.get(pk=item['id'], is_active=True, company=company)
+                cantidad = int(item.get('cantidad', 1))
+                precio   = float(item.get('precio', producto.sale_price or producto.price))
+                subtotal = precio * cantidad
+
+                SaleItem.objects.create(
+                    sale=sale,
+                    product=producto,
+                    description=f"Talla: {item.get('talla','-')} | Color: {item.get('color','-')}",
+                    quantity=cantidad,
+                    unit_price=precio,
+                    total_price=subtotal,
+                )
+                total += subtotal
+            except Product.DoesNotExist:
+                continue
+
+        sale.subtotal = total
+        sale.total    = total
+        sale.save()
+
+        return redirect('vexora:store_confirmation', pk=sale.pk)
+
+    
+class CartUpdateView(LoginRequiredMixin, View):
+    def post(self, request, item_id):
+        cart = get_or_create_cart(request)
+        item = get_object_or_404(CartItem, pk=item_id, cart=cart)
+        delta = int(request.POST.get('delta', 0))
+        item.quantity = max(1, item.quantity + delta)
+        item.save()
+        return JsonResponse({
+            'ok': True,
+            'quantity': item.quantity,
+            'subtotal': float(item.subtotal),
+            'total': float(cart.total),
+            'total_items': cart.total_items,
+        })
+
+
+class CartRemoveView(LoginRequiredMixin, View):
+    def post(self, request, item_id):
+        cart = get_or_create_cart(request)
+        CartItem.objects.filter(pk=item_id, cart=cart).delete()
+        return JsonResponse({
+            'ok': True,
+            'total': float(cart.total),
+            'total_items': cart.total_items,
+        })
+
+class StoreConfirmacionView(LoginRequiredMixin, View):
+    template_name = 'vexora/sales/store-confirm.html'
+
+    def get(self, request, pk):
+        sale  = get_object_or_404(Sale, pk=pk, company=request.user.company)
+        items = sale.items.select_related('product').all()
+        return render(request, self.template_name, {'sale': sale, 'items': items})
+    
+    from django.utils import timezone
+from django.http import JsonResponse
+
+class ProductQuickCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        context = {
+            'categories': Category.objects.filter(company=request.user.company)
+        }
+        return render(request, 'vexora/products/quick_create_modal.html', context)
+
+    def post(self, request):
+        name  = request.POST.get('name', '').strip()
+        price = request.POST.get('price', '0')
+        stock = request.POST.get('stock', '0')
+        category_id = request.POST.get('category')
+        image = request.FILES.get('image')
+
+        if not name:
+            return JsonResponse({'ok': False, 'error': 'El nombre es obligatorio.'}, status=400)
+
+        try:
+            price = float(price)
+        except ValueError:
+            price = 0
+
+        try:
+            stock = int(stock)
+        except ValueError:
+            stock = 0
+
+        company = request.user.company
+
+        default_supplier, _ = Supplier.objects.get_or_create(
+            company=company,
+            name='Proveedor general',
+            defaults={'address': 'N/A'}
+        )
+
+        category = None
+        if category_id:
+            category = Category.objects.filter(pk=category_id, company=company).first()
+
+        product = Product.objects.create(
+            name=name,
+            company=company,
+            supplier=default_supplier,
+            category=category,
+            price=price,
+            sale_price=price,
+            stock=stock,
+            purchase_date=timezone.now().date(),
+            image=image,
+            is_active=True,
+        )
+
+        return JsonResponse({'ok': True, 'id': product.id, 'name': product.name})
+    
+
+def get_or_create_cart(request):
+    return Cart.objects.get_or_create(company=request.user.company, user=request.user)[0]
+
+class CartCountView(LoginRequiredMixin, View):
+    def get(self, request):
+        cart = get_or_create_cart(request)
+        return JsonResponse({'total_items': cart.total_items})
+@login_required
+@require_POST
+def cart_add(request):
+    product_id = request.POST.get("product_id")
+    variant_id = request.POST.get("variant_id") or None
+    quantity = int(request.POST.get("quantity", 1))
+
+    try:
+        product = Product.objects.get(pk=product_id, company=request.user.company, is_active=True)
+    except Product.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Producto no encontrado"}, status=404)
+
+    variant = None
+    if variant_id:
+        try:
+            variant = ProductVariant.objects.get(pk=variant_id, product=product)
+        except ProductVariant.DoesNotExist:
+            variant = None
+
+    cart = get_or_create_cart(request)
+
+    item, created = CartItem.objects.get_or_create(
+        cart=cart, product=product, variant=variant,
+        defaults={'quantity': quantity}
+    )
+    if not created:
+        item.quantity += quantity
+        item.save()
+
+    return JsonResponse({
+        "ok": True,
+        "nombre": product.name,
+        "cantidad": item.quantity,
+        "precio": float(product.sale_price or product.price),
+        "total_items": cart.total_items,
+    })
+    
+    

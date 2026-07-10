@@ -1,0 +1,240 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}- Store{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/store.css' %}">
+
+{% endblock %}
+
+{% block content %}
+<div class="store-wrap">
+
+  <!-- ── BARRA SUPERIOR STORE ── -->
+  <div class="store-topbar">
+    <div class="store-nav-links">
+      <a href="{% url 'vexora:store_home' %}"
+         class="store-nav-link {% if not seccion %}active{% endif %}">
+        <i class="fas fa-store"></i> Catálogo
+      </a>
+      <a href="?seccion=tendencias"
+         class="store-nav-link {% if seccion == 'tendencias' %}active{% endif %}">
+        <i class="fas fa-fire"></i> Tendencias
+      </a>
+      <a href="?seccion=rebajas"
+         class="store-nav-link {% if seccion == 'rebajas' %}active{% endif %}">
+        <i class="fas fa-tag"></i> Rebajas
+      </a>
+      <a href="?seccion=favoritos"
+         class="store-nav-link {% if seccion == 'favoritos' %}active{% endif %}">
+        <i class="fas fa-heart"></i> Favoritos
+        <span id="fav-count-link" style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:10px;font-size:10px;">0</span>
+      </a>
+    </div>
+
+    <form method="GET" class="store-search">
+      {% if categoria_activa %}<input type="hidden" name="categoria" value="{{ categoria_activa }}">{% endif %}
+      <input type="text" name="q" placeholder="Buscar producto..." value="{{ query }}">
+      <button type="submit"><i class="fas fa-search"></i></button>
+    </form>
+  </div>
+
+  <!-- ── HERO ── -->
+  {% if not query and not categoria_activa and not seccion %}
+  <div class="store-hero">
+    <div class="hero-badge"><i class="fas fa-bolt"></i> Nueva colección disponible</div>
+    <h1 class="hero-title">Bienvenido a<br><span>{{ request.user.company.name|default:"nuestra tienda" }}</span></h1>
+    <p class="hero-sub">Explora nuestro catálogo completo. Los mejores productos al mejor precio, directo para ti.</p>
+    <div class="hero-btns">
+      <a href="#productos" class="btn-hero-p">Ver catálogo completo</a>
+      <a href="?seccion=rebajas" class="btn-hero-s"><i class="fas fa-tag"></i> Ver rebajas</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── CATEGORÍAS ── -->
+  <div class="section-label">Categorías</div>
+  <div class="cats-row">
+    <a href="{% url 'vexora:store_home' %}"
+       class="cat-chip {% if not categoria_activa %}active{% endif %}">
+      <i class="fas fa-th-large"></i> Todos
+    </a>
+    {% for cat in categorias %}
+    <a href="?categoria={{ cat.id }}"
+       class="cat-chip {% if categoria_activa == cat.id|stringformat:'s' %}active{% endif %}">
+      <i class="fas fa-tag"></i> {{ cat.name }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ── FILTROS ── -->
+  <div class="filtros-row" id="productos">
+    <span class="filtros-label">Talla:</span>
+    <a href="{% url 'vexora:store_home' %}{% if categoria_activa %}?categoria={{ categoria_activa }}{% endif %}"
+       class="talla-btn {% if not talla_activa %}active{% endif %}">Todas</a>
+    {% for t in tallas %}
+    <a href="?{% if categoria_activa %}categoria={{ categoria_activa }}&{% endif %}talla={{ t }}"
+       class="talla-btn {% if talla_activa == t %}active{% endif %}">{{ t }}</a>
+    {% endfor %}
+
+    <form method="GET" style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      {% if categoria_activa %}<input type="hidden" name="categoria" value="{{ categoria_activa }}">{% endif %}
+      {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+      <select name="orden" class="orden-select" onchange="this.form.submit()">
+        <option value="nuevo"       {% if orden == 'nuevo'       %}selected{% endif %}>Más nuevos</option>
+        <option value="precio_asc"  {% if orden == 'precio_asc'  %}selected{% endif %}>Menor precio</option>
+        <option value="precio_desc" {% if orden == 'precio_desc' %}selected{% endif %}>Mayor precio</option>
+      </select>
+      <span class="results-count">{{ productos|length }} resultado{{ productos|length|pluralize }}</span>
+    </form>
+  </div>
+
+  <!-- ── GRID ── -->
+  <div class="prod-grid">
+    {% if productos %}
+      {% for p in productos %}
+      <div class="prod-card" data-id="{{ p.id }}" data-nombre="{{ p.name|escapejs }}" data-precio="{{ p.sale_price|default:p.price }}">
+
+        <div class="prod-img-wrap">
+          {% if p.image %}
+            <img src="{{ p.image.url }}" alt="{{ p.name }}">
+          {% else %}
+            <div class="no-img"><i class="fas fa-box-open"></i></div>
+          {% endif %}
+          <span class="badge-new">Nuevo</span>
+          {% if p.sale_price and p.sale_price != p.price %}
+            <span class="badge-oferta">Oferta</span>
+          {% endif %}
+          {% if p.stock <= p.min_stock %}
+            <span class="badge-agotando">¡Últimas piezas!</span>
+          {% endif %}
+        </div>
+
+        <div class="prod-body">
+          {% if p.category %}
+            <span class="prod-cat">{{ p.category.name }}</span>
+          {% endif %}
+          <a href="{% url 'vexora:store_product' p.pk %}" class="prod-name">{{ p.name }}</a>
+          {% if p.description %}
+            <div class="prod-desc">{{ p.description|truncatechars:55 }}</div>
+          {% endif %}
+
+          {% if p.variants.all %}
+          <div class="prod-variants">
+            {% for v in p.variants.all|slice:":5" %}
+              <span class="size-pill">{{ v.size }}</span>
+            {% endfor %}
+          </div>
+          <div class="prod-variants" style="margin-top:4px;">
+            {% for v in p.variants.all|slice:":6" %}
+              <span class="color-dot" style="background:{{ v.color_hex }}" title="{{ v.color }}"></span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="prod-price-row">
+            <span class="prod-price">${{ p.sale_price|default:p.price }}</span>
+            {% if p.sale_price and p.sale_price != p.price %}
+              <span class="prod-price-old">${{ p.price }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="prod-foot">
+          <a href="{% url 'vexora:store_product' p.pk %}" class="btn-ver">
+            <i class="fas fa-eye"></i> Ver detalle
+          </a>
+          <button class="btn-add"
+                  onclick="agregarRapido({{ p.id }}, '{{ p.name|escapejs }}', {{ p.sale_price|default:p.price }}, event)">
+            <i class="fas fa-plus"></i> Agregar
+          </button>
+        </div>
+
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="store-empty">
+        <i class="fas fa-box-open"></i>
+        <h3>No encontramos productos</h3>
+        <p>Intenta con otra categoría, talla o búsqueda.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="store-toast" id="tienda-toast">
+  <i class="fas fa-check-circle"></i>
+  <span id="toast-msg">Producto agregado</span>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+const CSRF_TOKEN = getCookie('csrftoken');
+
+// ── Contador real del carrito (desde la base de datos) ──
+function refreshCartCount(){
+  fetch("{% url 'vexora:cart_count' %}")
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('cart-count-top').textContent = data.total_items;
+    });
+}
+
+// ── Agregar producto rápido (a la base de datos) ──
+function agregarRapido(id, nombre, precio, e){
+  if(e) e.stopPropagation();
+
+  const body = new URLSearchParams({
+    product_id: id,
+    variant_id: '',
+    quantity: 1
+  });
+
+  fetch("{% url 'vexora:cart_add' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data.ok){
+      mostrarToast(`"${nombre}" agregado al carrito`);
+      refreshCartCount();
+      const fabBadge = document.getElementById('cartFabBadge');
+if(fabBadge) fabBadge.textContent = data.total_items;
+    } else {
+      mostrarToast('No se pudo agregar');
+    }
+  })
+  .catch(() => mostrarToast('Error al agregar al carrito'));
+}
+
+function mostrarToast(msg){
+  const t = document.getElementById('tienda-toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ── Favoritos localStorage (esto se queda igual) ──
+function getFavoritos(){ return JSON.parse(localStorage.getItem('vexora_favoritos')||'[]'); }
+function actualizarFavCount(){
+  const f = getFavoritos();
+  const el = document.getElementById('fav-count-link');
+  if(el) el.textContent = f.length;
+}
+
+// Init
+refreshCartCount();
+actualizarFavCount();
+</script>
+{% endblock %}
