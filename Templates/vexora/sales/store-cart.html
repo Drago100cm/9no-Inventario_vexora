@@ -1,0 +1,116 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}- Carrito{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/store.cart.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="carrito-layout">
+
+  <div>
+    <h1 class="carrito-title"><i class="fas fa-shopping-bag"></i> Tu carrito</h1>
+    <div id="cart-content">
+      {% if items %}
+      <div class="items-wrap">
+        {% for item in items %}
+        <div class="cart-item" data-item-id="{{ item.id }}">
+          <div class="ci-img">
+            {% if item.product.image %}
+              <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
+            {% else %}
+              <i class="fas fa-box-open"></i>
+            {% endif %}
+          </div>
+          <div class="ci-info">
+            <div class="ci-name">{{ item.product.name }}</div>
+            <div class="ci-var">
+              {% if item.variant %}Talla: {{ item.variant.size }} · Color: {{ item.variant.color }}{% endif %}
+            </div>
+            <div class="ci-price" id="ci-subtotal-{{ item.id }}">${{ item.subtotal }}</div>
+          </div>
+          <div class="ci-qty">
+            <button class="cq-btn" onclick="camQty({{ item.id }},-1)"><i class="fas fa-minus"></i></button>
+            <span class="cq-num" id="cq-num-{{ item.id }}">{{ item.quantity }}</span>
+            <button class="cq-btn" onclick="camQty({{ item.id }},1)"><i class="fas fa-plus"></i></button>
+          </div>
+          <button class="ci-del" onclick="elimItem({{ item.id }})"><i class="fas fa-trash"></i></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="carrito-vacio" id="empty-cart">
+        <i class="fas fa-shopping-bag"></i>
+        <h3>Tu carrito está vacío</h3>
+        <p>Agrega productos para comenzar.</p>
+        <a href="{% url 'vexora:store_home' %}" class="btn-seguir-comp">
+          <i class="fas fa-store"></i> Ir a la tienda
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="resumen-card">
+    <div class="res-titulo">Resumen</div>
+    <div class="res-fila"><span>Subtotal</span><span id="res-sub">${{ cart.total }}</span></div>
+    <div class="res-fila"><span>Envío</span><span style="color:var(--accent-color);">Gratis</span></div>
+    <div class="res-sep"></div>
+    <div class="res-total"><span>Total</span><span id="res-tot">${{ cart.total }}</span></div>
+    <a href="{% url 'vexora:store_checkout' %}" class="btn-checkout" id="btn-ir-checkout"
+       {% if not items %}style="pointer-events:none;opacity:.35;"{% endif %}>
+      <i class="fas fa-lock"></i> Finalizar pedido
+    </a>
+    <p class="res-nota"><i class="fas fa-shield-halved"></i> Compra 100% segura</p>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+const CSRF_TOKEN = getCookie('csrftoken');
+
+function camQty(itemId, delta){
+  fetch(`/store/cart/update/${itemId}/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `delta=${delta}`
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(!data.ok) return;
+    document.getElementById(`cq-num-${itemId}`).textContent = data.quantity;
+    document.getElementById(`ci-subtotal-${itemId}`).textContent = `$${data.subtotal.toFixed(2)}`;
+    document.getElementById('res-sub').textContent = `$${data.total.toFixed(2)}`;
+    document.getElementById('res-tot').textContent = `$${data.total.toFixed(2)}`;
+    const fabBadge = document.getElementById('cartFabBadge');
+    if(fabBadge) fabBadge.textContent = data.total_items;
+  });
+}
+
+function elimItem(itemId){
+  fetch(`/store/cart/remove/${itemId}/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF_TOKEN }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(!data.ok) return;
+    document.querySelector(`.cart-item[data-item-id="${itemId}"]`)?.remove();
+    document.getElementById('res-sub').textContent = `$${data.total.toFixed(2)}`;
+    document.getElementById('res-tot').textContent = `$${data.total.toFixed(2)}`;
+    const fabBadge = document.getElementById('cartFabBadge');
+    if(fabBadge) fabBadge.textContent = data.total_items;
+    if(data.total_items === 0){ location.reload(); }
+  });
+}
+</script>
+{% endblock %}

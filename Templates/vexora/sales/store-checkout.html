@@ -1,0 +1,88 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}- Finalizar pedido{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/store.checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+<form method="POST" action="{% url 'vexora:store_checkout' %}" id="checkout-form">
+{% csrf_token %}
+<input type="hidden" name="carrito" id="carrito-data">
+
+<div class="checkout-layout">
+  <div>
+    <h1 class="checkout-title"><i class="fas fa-lock"></i> Finalizar pedido</h1>
+
+    <div class="form-card">
+      <div class="form-sec">
+        <div class="form-sec-title"><i class="fas fa-user"></i> Datos de contacto</div>
+        <div class="field-2col">
+          <div class="field"><label>Nombre completo *</label><input name="nombre" placeholder="Tu nombre" required></div>
+          <div class="field"><label>Teléfono *</label><input name="telefono" type="tel" placeholder="10 dígitos" required></div>
+        </div>
+        <div class="field"><label>Email</label><input name="email" type="email" placeholder="correo@ejemplo.com"></div>
+      </div>
+
+      <div class="form-sec">
+        <div class="form-sec-title"><i class="fas fa-map-marker-alt"></i> Dirección de entrega</div>
+        <div class="field"><label>Calle y número *</label><input name="direccion" placeholder="Ej: Av. Juárez 123, Col. Centro" required></div>
+        <div class="field-2col">
+          <div class="field"><label>Ciudad</label><input name="ciudad" placeholder="Ciudad"></div>
+          <div class="field"><label>Código postal</label><input name="cp" placeholder="00000"></div>
+        </div>
+        <div class="field"><label>Estado</label><input name="estado" placeholder="Estado"></div>
+      </div>
+
+      <div class="form-sec">
+        <div class="form-sec-title"><i class="fas fa-comment-dots"></i> Notas (opcional)</div>
+        <div class="field"><label>Instrucciones especiales</label><textarea name="notas" placeholder="Ej: timbre roto, entregar en recepción..."></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="res-card">
+    <div class="res-titulo">Tu pedido</div>
+    <div class="res-items" id="res-items"><p style="font-size:12px;color:rgba(255,255,255,.3);">Cargando...</p></div>
+    <div class="sep"></div>
+    <div class="res-fila"><span>Envío</span><span style="color:var(--accent-color);">Gratis</span></div>
+    <div class="res-total"><span>Total</span><span id="res-tot">$0.00</span></div>
+    <button type="submit" class="btn-confirmar">
+      <i class="fas fa-check"></i> Confirmar pedido
+    </button>
+    <p class="res-nota"><i class="fas fa-shield-halved"></i> Compra segura y protegida</p>
+  </div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCarrito(){ return JSON.parse(localStorage.getItem('vexora_carrito')||'[]'); }
+
+function renderResumen(){
+  const c = getCarrito();
+  if(!c.length){ window.location.href="{% url 'vexora:store_cart' %}"; return; }
+  document.getElementById('carrito-data').value = JSON.stringify(c);
+  let html='', total=0;
+  c.forEach(it=>{
+    const sub=it.precio*it.cantidad; total+=sub;
+    html+=`<div class="ri-row">
+      <div><div class="ri-nom">${it.nombre}</div>
+      <div class="ri-det">${it.talla?'Talla: '+it.talla:''}${it.color?' · '+it.color:''} × ${it.cantidad}</div></div>
+      <span class="ri-precio">$${sub.toFixed(2)}</span>
+    </div>`;
+  });
+  document.getElementById('res-items').innerHTML=html;
+  document.getElementById('res-tot').textContent='$'+total.toFixed(2);
+}
+
+document.getElementById('checkout-form').addEventListener('submit',function(){
+  document.getElementById('carrito-data').value=JSON.stringify(getCarrito());
+});
+
+renderResumen();
+</script>
+{% endblock %}

@@ -1,0 +1,88 @@
+<div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h5 class="modal-title mb-0">
+                <i class="ri-add-box-line me-2"></i>
+                Nuevo producto
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" class="form-control" id="qcName">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Categoría</label>
+                    <select class="form-select" id="qcCategory">
+                        <option value="">Sin categoría</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Precio *</label>
+                    <input type="number" class="form-control" id="qcPrice" step="0.01" min="0" value="0.00">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Stock inicial</label>
+                    <input type="number" class="form-control" id="qcStock" min="0" value="0">
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Imagen</label>
+                    <input type="file" class="form-control" id="qcImage" accept="image/*">
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="qcSaveBtn">
+                <i class="ri-save-3-line me-1"></i> Guardar producto
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.getElementById('qcSaveBtn').addEventListener('click', function () {
+    const name  = document.getElementById('qcName').value.trim();
+    const price = document.getElementById('qcPrice').value;
+    const stock = document.getElementById('qcStock').value;
+    const categoryId = document.getElementById('qcCategory').value;
+    const imageFile = document.getElementById('qcImage').files[0];
+
+    if (!name) {
+        Swal.fire({ icon: 'warning', title: 'Falta el nombre' });
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('price', price);
+    formData.append('stock', stock);
+    formData.append('category', categoryId);
+    if (imageFile) formData.append('image', imageFile);
+
+    fetch("{% url 'vexora:product_quick_create' %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.ok) {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'No se pudo crear.' });
+            return;
+        }
+        $('#ModalOptions').modal('hide');
+        Swal.fire({ icon: 'success', title: `"${data.name}" creado`, timer: 1800, showConfirmButton: false });
+    })
+    .catch(() => Swal.fire({ icon: 'error', title: 'Error de conexión' }));
+});
+</script>

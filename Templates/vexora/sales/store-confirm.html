@@ -1,0 +1,60 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}- Pedido confirmado{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vexora/css/store-confirm.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="confirm-wrap">
+  <div class="confirm-card">
+    <div class="check-ico"><i class="fas fa-check"></i></div>
+    <h1 class="confirm-titulo">¡Pedido confirmado!</h1>
+    <p class="confirm-sub">
+      Gracias{% if sale.customer_name %}, <strong style="color:white;">{{ sale.customer_name }}</strong>{% endif %}.
+      Tu pedido ha sido recibido y nos pondremos en contacto contigo pronto.
+    </p>
+    <div class="num-pedido">
+      <i class="fas fa-receipt"></i> Pedido #{{ sale.pk }}
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="items-conf">
+      {% for item in items %}
+      <div class="item-conf-row">
+        <div>
+          <div class="icr-nom">{{ item.product.name|default:item.description }}</div>
+          <div class="icr-det">{{ item.description }} × {{ item.quantity }}</div>
+        </div>
+        <span class="icr-price">${{ item.total_price }}</span>
+      </div>
+      {% endfor %}
+      <div class="total-conf"><span>Total</span><span>${{ sale.total }}</span></div>
+    </div>
+
+    <div class="sep"></div>
+
+    <p style="font-size:13px;color:rgba(255,255,255,.4);">
+      {% if sale.customer_email %}
+        Enviaremos detalles a <strong style="color:white;">{{ sale.customer_email }}</strong>
+      {% elif sale.customer_phone %}
+        Te contactaremos al <strong style="color:white;">{{ sale.customer_phone }}</strong>
+      {% endif %}
+    </p>
+
+    <div class="btns-conf">
+      <a href="{% url 'vexora:store_home' %}" class="btn-cp">Seguir comprando</a>
+      <a href="{% url 'vexora:list_sales' %}" class="btn-cs">Ver mis pedidos</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+localStorage.removeItem('vexora_carrito');
+</script>
+{% endblock %}

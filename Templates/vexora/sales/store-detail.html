@@ -1,0 +1,231 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}- {{ producto.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/store-detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="detalle-wrap">
+
+  <div class="breadcrumb-store">
+    <a href="{% url 'vexora:store_home' %}"><i class="fas fa-store"></i> Tienda</a>
+    <i class="fas fa-chevron-right"></i>
+    {% if producto.category %}
+      <a href="{% url 'vexora:store_home' %}?categoria={{ producto.category.id }}">{{ producto.category.name }}</a>
+      <i class="fas fa-chevron-right"></i>
+    {% endif %}
+    <span style="color:white;">{{ producto.name }}</span>
+  </div>
+
+  <div class="detalle-grid">
+
+    <!-- Imagen -->
+    <div class="img-principal">
+      {% if producto.image %}
+        <img src="{{ producto.image.url }}" alt="{{ producto.name }}">
+      {% else %}
+        <i class="fas fa-box-open"></i>
+      {% endif %}
+    </div>
+
+    <!-- Info -->
+    <div class="info-panel">
+      {% if producto.category %}
+        <span class="cat-badge"><i class="fas fa-tag"></i> {{ producto.category.name }}</span>
+      {% endif %}
+
+      <h1 class="prod-titulo">{{ producto.name }}</h1>
+      {% if producto.sku %}<p class="prod-sku-txt">SKU: {{ producto.sku }}</p>{% endif %}
+
+      <div class="precio-bloque">
+        <span class="precio-grande">${{ producto.sale_price|default:producto.price }}</span>
+        {% if producto.sale_price and producto.sale_price != producto.price %}
+          <span class="precio-tachado">${{ producto.price }}</span>
+          <span class="badge-oferta">¡Oferta!</span>
+        {% endif %}
+      </div>
+
+      <div class="sep"></div>
+
+      {% if variantes %}
+      <!-- Talla -->
+      <div>
+        <div class="selector-titulo">Talla: <span id="talla-sel">— elige una</span></div>
+        <div class="tallas-grid">
+          {% for v in variantes %}
+          <button class="talla-btn {% if v.stock == 0 %}sin-stock{% endif %}"
+                  data-talla="{{ v.size }}"
+                  data-color="{{ v.color }}"
+                  data-color-hex="{{ v.color_hex }}"
+                  onclick="selTalla(this)">
+            {{ v.size }}
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Color -->
+      <div>
+        <div class="selector-titulo">Color: <span id="color-sel">— elige uno</span></div>
+        <div class="colores-grid">
+          {% for v in variantes %}
+          <div class="color-btn-wrap">
+            <div class="color-btn"
+                 style="background:{{ v.color_hex }}"
+                 data-color="{{ v.color }}"
+                 onclick="selColor(this)"
+                 title="{{ v.color }}">
+            </div>
+            <span class="color-lbl">{{ v.color }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Cantidad -->
+      <div>
+        <div class="selector-titulo">Cantidad:</div>
+        <div class="qty-row">
+          <button class="qty-btn" onclick="camQty(-1)"><i class="fas fa-minus"></i></button>
+          <span class="qty-num" id="qty-val">1</span>
+          <button class="qty-btn" onclick="camQty(1)"><i class="fas fa-plus"></i></button>
+          <span class="stock-txt">
+            {% if producto.stock > 0 %}{{ producto.stock }} disponibles
+            {% else %}Sin stock{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <button class="btn-agregar-grande" onclick="agregarDetalle()">
+        <i class="fas fa-cart-plus"></i> Agregar al carrito
+      </button>
+
+      <div class="garantias-row">
+        <div class="garantia-item"><i class="fas fa-truck"></i> Envío a todo México</div>
+        <div class="garantia-item"><i class="fas fa-rotate-left"></i> Devoluciones</div>
+        <div class="garantia-item"><i class="fas fa-shield-halved"></i> Pago seguro</div>
+      </div>
+
+      {% if producto.description %}
+      <div class="sep"></div>
+      <div>
+        <div class="selector-titulo" style="margin-bottom:6px;">Descripción</div>
+        <p class="desc-txt">{{ producto.description }}</p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <!-- Relacionados -->
+  {% if relacionados %}
+  <div class="rel-section">
+    <div class="section-title-lg">También te puede gustar</div>
+    <div class="rel-grid">
+      {% for r in relacionados %}
+      <a href="{% url 'vexora:store_product' r.pk %}" class="rel-card">
+        <div class="rel-img">
+          {% if r.image %}<img src="{{ r.image.url }}" alt="{{ r.name }}">
+          {% else %}<i class="fas fa-box-open"></i>{% endif %}
+        </div>
+        <div class="rel-body">
+          <div class="rel-name">{{ r.name }}</div>
+          <div class="rel-price">${{ r.sale_price|default:r.price }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<div class="store-toast" id="tienda-toast">
+  <i class="fas fa-check-circle"></i>
+  <span id="toast-msg">Agregado al carrito</span>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PID = {{ producto.pk }};
+let tallaS = '', colorS = '', qty = 1;
+
+const VARIANTES = [
+  {% for v in variantes %}
+  {id: {{ v.id }}, size: "{{ v.size|escapejs }}", color: "{{ v.color|escapejs }}"},
+  {% endfor %}
+];
+
+function selTalla(btn){
+  if(btn.classList.contains('sin-stock')) return;
+  document.querySelectorAll('.talla-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  tallaS = btn.dataset.talla;
+  document.getElementById('talla-sel').textContent = tallaS;
+}
+function selColor(el){
+  document.querySelectorAll('.color-btn').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  colorS = el.dataset.color;
+  document.getElementById('color-sel').textContent = colorS;
+}
+function camQty(d){ qty=Math.max(1,qty+d); document.getElementById('qty-val').textContent=qty; }
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+const CSRF_TOKEN = getCookie('csrftoken');
+
+function agregarDetalle(){
+  {% if variantes %}
+  if(!tallaS || !colorS){ mostrarToast('Selecciona talla y color primero'); return; }
+  {% endif %}
+
+  let variantId = '';
+  {% if variantes %}
+  const match = VARIANTES.find(v => v.size === tallaS && v.color === colorS);
+  if(!match){ mostrarToast('Esa combinación no existe'); return; }
+  variantId = match.id;
+  {% endif %}
+
+  const body = new URLSearchParams({
+    product_id: PID,
+    variant_id: variantId,
+    quantity: qty
+  });
+
+  fetch("{% url 'vexora:cart_add' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data.ok){
+      mostrarToast(`"${data.nombre}" agregado al carrito`);
+      const fabBadge = document.getElementById('cartFabBadge');
+if(fabBadge && data.total_items !== undefined) fabBadge.textContent = data.total_items;
+    } else {
+      mostrarToast('No se pudo agregar');
+    }
+  })
+  .catch(() => mostrarToast('Error al agregar al carrito'));
+}
+
+function mostrarToast(msg){
+  const t=document.getElementById('tienda-toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+{% endblock %}

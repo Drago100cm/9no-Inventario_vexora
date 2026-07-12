@@ -6,6 +6,12 @@ from .views import SubscriptionPlanListView, SubscriptionChooseView, Subscriptio
 app_name = 'vexora'
 urlpatterns = [
     
+    
+    path(
+    "store/cart/add/",
+    views.cart_add,
+    name="cart_add",
+),
     #----------------------Home----------------------
     path('', HomeView.as_view(), name='home'),
 
@@ -74,6 +80,11 @@ urlpatterns = [
     path('products/update/<int:id>/', views.ProductUpdateView.as_view(), name='edit_product'),
     path('products/view/<int:pk>/', views.view_product, name='view_product'),    
     path('products/delete/<int:id>/', views.delete_product, name='delete_product'), 
+
+    path('products/quick-create/', views.ProductQuickCreateView.as_view(), name='product_quick_create'),
+    
+    
+
     # =================================
     # Members URLs (Miembros)
     # =================================
@@ -83,7 +94,6 @@ urlpatterns = [
     path('members/update/<int:id>/', views.MemberUpdateView.as_view(), name='edit_member'),
     path('members/delete/<int:id>/', views.delete_member, name='delete_member'),
 
-
     # ============================================
     # SALES URLs (Ventas )
     # ============================================
@@ -92,31 +102,40 @@ urlpatterns = [
     path('sales/update/<int:id>/', views.SalesUpdateView.as_view(), name='edit_sale'),
 
     # ============================================
-  # SALES MAIN URLs (Ventas Frontend)
+    # SALES MAIN URLs (Ventas Frontend)
     # ============================================
     path('sales-main/', views.SalesMainListView.as_view(), name='sales_main_list'),
     path('sales-main/create/', views.SalesMainCreateView.as_view(), name='sales_main_create'),
     path('sales-main/update/', views.SalesMainUpdateView.as_view(), name='sales_main_update'),
     
-    
+    # ============================================
+    # STORE URLs (Tienda pública)
+    # ============================================
+    # ============================================
+    # STORE URLs (Tienda pública)
+    # ============================================
+    path('store/cart/update/<int:item_id>/', views.CartUpdateView.as_view(), name='cart_update'),
+path('store/cart/remove/<int:item_id>/', views.CartRemoveView.as_view(), name='cart_remove'),
+    path('store/', views.StoreHomeView.as_view(), name='store_home'),
+    path('store/product/<int:pk>/', views.StoreProductoView.as_view(), name='store_product'),
+    path('store/cart/', views.StoreCarritoView.as_view(), name='store_cart'),
+    path('store/checkout/', views.StoreCheckoutView.as_view(), name='store_checkout'),
+    path('store/confirmation/<int:pk>/', views.StoreConfirmacionView.as_view(), name='store_confirmation'),
+    path('store/cart/count/', views.CartCountView.as_view(), name='cart_count'),
+
     # API endpoints
     path('api/register/', api_register, name='api_register'),
     path('api/login/', api_login, name='api_login'),
-    path('api/list_productos/',api_productos, name='api_productos'),
+    path('api/list_productos/', api_productos, name='api_productos'),
     path('api/list_proveedores/', api_proveedores, name='api_proveedores'),
     path('api/crear_producto/', api_crear_producto, name='api_crear_producto'),
     path('api/editar_producto/<int:id>/', api_product_update, name='api_product_update'),
     path('api/crear_proveedor/', api_crear_proveedor, name='api_crear_proveedor'),
     path('api/editar_proveedor/<int:id>/', api_supplier_update, name='api_supplier_update'),
 
-    
-    
-    
-    
     # ============================================home empresas=============
     
     path('<slug:slug>/',views.company_home,name='company_home'),
     path('<slug:slug>/register/',views.RegisterView.as_view(),name='company_register'),
-
     path('<slug:slug>/login/',views.CustomLoginView.as_view(),name='company_login'),
 ]
