@@ -53,3 +53,6 @@ dist/
 *.tmp
 *.bak
 *.swp
+#NO subir la carpeta de settings
+*.settings.py
+#No subir la carpeta de migrations
