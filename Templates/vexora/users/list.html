@@ -80,8 +80,7 @@
                 <th data-sort="questions">Primer apellido</th>
                 <th data-sort="status">Segundo apellido</th>
                 <th data-sort="status">Telefono</th>
-                <th data-sort="status">Es admin?</th>
-                <th data-sort="status">Grupos</th>
+                <th data-sort="status">¿Es admin?</th>
 
                 <th data-sort="status">Acciones</th>
               </tr>
@@ -95,14 +94,10 @@
                   <td>{{ user.first_name }}</td>
                   <td>{{ user.phone|default:'sin telefono' }}</td>
                   <td>{{ user.is_superuser|yesno:'Sí,No' }}</td>
+   
                   <td>
-                    {% for group in user.groups.all %}
-                      <span class="badge bg-primary">{{ group.name }}</span>
-                    {% endfor %}
-                  </td>
-                  <td>
-                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:user_edit' user.id|stringformat:'d' %}')" style="width: 75px;"><i class="ri-pencil-fill me-1 align-bottom"></i> Editar</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light" onclick="deleteE('{{ user.id }}')" style="width: 85px;"><i class="ri-delete-bin-6-fill me-1 align-bottom"></i> Eliminar</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon waves-effect waves-light" onclick="editModal('{% url 'vexora:user_edit' user.id|stringformat:'d' %}')" style="width: auto;"><i class="ri-pencil-fill me-1 align-bottom"></i> Editar</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon waves-effect waves-light" onclick="deleteE('{{ user.id }}')" style="width: auto;"><i class="ri-delete-bin-6-fill me-1 align-bottom"></i> Eliminar</button>
                   </td>
                 </tr>
               {% endfor %}

@@ -10,7 +10,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <form method="POST" action="{% url 'vexora:create_member' %}" id="createMemberForm">
+        <form method="POST"        onsubmit="return validarRequeridos(this)" novalidate action="{% url 'vexora:create_member' %}" id="createMemberForm">
             {% csrf_token %}
 
             <div class="modal-body">
@@ -189,76 +189,33 @@
         </form>
     </div>
 </div>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Prevenir envío múltiple del formulario
-        const form = document.getElementById('createMemberForm');
-        const submitBtn = document.getElementById('submitBtn');
+  // Si usas SweetAlert2
+function validarRequeridos(form) {
+    const requeridos = form.querySelectorAll('[required]');
+    let errores = [];
+    
+    requeridos.forEach(campo => {
+        const label = campo.closest('.col-md-4, .col-md-12, .col-md-6')?.querySelector('label');
+        const nombre = label ? label.textContent.trim().replace('*', '').trim() : campo.name;
         
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin me-1"></i> Creando...';
-            });
+        if (!campo.value || campo.value.trim() === '') {
+            errores.push(nombre);
+            campo.classList.add('is-invalid');
+        } else {
+            campo.classList.remove('is-invalid');
         }
-
-        // Cerrar modal con tecla Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const modal = document.getElementById('ModalOptions');
-                if (modal && modal.classList.contains('show')) {
-                    const closeBtn = modal.querySelector('[data-bs-dismiss="modal"]');
-                    if (closeBtn) closeBtn.click();
-                }
-            }
-        });
-
-        // Validación en tiempo real de contraseñas
-        const passwordField = document.getElementById('{{ form.password.id_for_label }}');
-        const passwordConfirmField = document.getElementById('{{ form.password_confirm.id_for_label }}');
-        
-        if (passwordField && passwordConfirmField) {
-            passwordConfirmField.addEventListener('input', function() {
-                if (passwordField.value !== this.value) {
-                    this.classList.add('is-invalid');
-                    this.classList.remove('is-valid');
-                } else {
-                    this.classList.remove('is-invalid');
-                    this.classList.add('is-valid');
-                }
-            });
-            
-            passwordField.addEventListener('input', function() {
-                if (passwordConfirmField.value && this.value !== passwordConfirmField.value) {
-                    passwordConfirmField.classList.add('is-invalid');
-                    passwordConfirmField.classList.remove('is-valid');
-                } else if (passwordConfirmField.value) {
-                    passwordConfirmField.classList.remove('is-invalid');
-                    passwordConfirmField.classList.add('is-valid');
-                }
-            });
-        }
-
-        // Validación en tiempo real para otros campos (versión corregida)
-        const usernameField = document.getElementById('{{ form.username.id_for_label }}');
-        const emailField = document.getElementById('{{ form.email.id_for_label }}');
-        const firstNameField = document.getElementById('{{ form.first_name.id_for_label }}');
-        const lastNameField = document.getElementById('{{ form.last_name.id_for_label }}');
-        const phoneField = document.getElementById('{{ form.phone.id_for_label }}');
-        const roleField = document.getElementById('{{ form.role.id_for_label }}');
-        
-        // Función para eliminar clases de error
-        function removeErrorClass(e) {
-            this.classList.remove('is-invalid');
-        }
-        
-        // Aplicar a cada campo
-        if (usernameField) usernameField.addEventListener('input', removeErrorClass);
-        if (emailField) emailField.addEventListener('input', removeErrorClass);
-        if (firstNameField) firstNameField.addEventListener('input', removeErrorClass);
-        if (lastNameField) lastNameField.addEventListener('input', removeErrorClass);
-        if (phoneField) phoneField.addEventListener('input', removeErrorClass);
-        if (roleField) roleField.addEventListener('change', removeErrorClass);
     });
+    
+    if (errores.length > 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Los campos marcados con * son obligatorios',
+            text: errores.join(', '),
+            confirmButtonText: 'OK'
+        });
+        return false;
+    }
+    return true;
+}
 </script>

@@ -40,17 +40,17 @@
         <ul class="nav nav-tabs mb-3" id="permissionsTab" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
-              👥 Usuarios
+              <i class="fas fa-admin"></i> Administración
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="company-tab" data-bs-toggle="tab" data-bs-target="#company" type="button" role="tab">
-              🏢 Compañías
+              Inventario
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="plans-tab" data-bs-toggle="tab" data-bs-target="#plans" type="button" role="tab">
-              📊 Planes
+              📊 Ventas
             </button>
           </li>
           <li class="nav-item" role="presentation">
@@ -58,16 +58,16 @@
               💰 Suscripciones
             </button>
           </li>
-          <li class="nav-item" role="presentation">
+          <!--<li class="nav-item" role="presentation">
             <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
               💳 Pagos
             </button>
-          </li>
-          <li class="nav-item" role="presentation">
+          </li>-->
+          <!--<li class="nav-item" role="presentation">
             <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab">
               ⚙️ Features
             </button>
-          </li>
+          </li>-->
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button" role="tab">
               ⚙️ Configuración
@@ -114,7 +114,73 @@
             </div>
             <div class="card">
               <div class="card-header bg-light">
-                <strong>👥 Gestión de Roles</strong>
+                <strong>🏢 Gestión de Compañías</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_company" id="add_company" class="form-check-input" {% if 'add_company' in group_permissions %}checked{% endif %}>
+                      <label for="add_company" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_company" id="change_company" class="form-check-input" {% if 'change_company' in group_permissions %}checked{% endif %}>
+                      <label for="change_company" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_company" id="delete_company" class="form-check-input" {% if 'delete_company' in group_permissions %}checked{% endif %}>
+                      <label for="delete_company" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_company" id="view_company" class="form-check-input" {% if 'view_company' in group_permissions %}checked{% endif %}>
+                      <label for="view_company" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong><i class="fas fa-users"></i> Gestión de Miembros</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_companymember" id="add_companymember" class="form-check-input" {% if 'add_companymember' in group_permissions %}checked{% endif %}>
+                      <label for="add_companymember" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_companymember" id="change_companymember" class="form-check-input" {% if 'change_companymember' in group_permissions %}checked{% endif %}>
+                      <label for="change_companymember" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_companymember" id="delete_companymember" class="form-check-input" {% if 'delete_companymember' in group_permissions %}checked{% endif %}>
+                      <label for="delete_companymember" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_companymember" id="view_companymember" class="form-check-input" {% if 'view_companymember' in group_permissions %}checked{% endif %}>
+                      <label for="view_companymember" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong> Gestión de Roles</strong>
               </div>
               <div class="card-body">
                 <div class="row">
@@ -151,32 +217,65 @@
           <div class="tab-pane fade" id="company" role="tabpanel">
             <div class="card">
               <div class="card-header bg-light">
-                <strong>🏢 Gestión de Compañías</strong>
+                <strong><i class="fas fa-users"></i> Gestión de productos </strong>
               </div>
               <div class="card-body">
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_company" id="add_company" class="form-check-input" {% if 'add_company' in group_permissions %}checked{% endif %}>
-                      <label for="add_company" class="form-check-label">Crear</label>
+                      <input type="checkbox" name="permissions" value="add_product" id="add_product" class="form-check-input" {% if 'add_product' in group_permissions %}checked{% endif %}>
+                      <label for="add_product" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_company" id="change_company" class="form-check-input" {% if 'change_company' in group_permissions %}checked{% endif %}>
-                      <label for="change_company" class="form-check-label">Editar</label>
+                      <input type="checkbox" name="permissions" value="change_product" id="change_product" class="form-check-input" {% if 'change_product' in group_permissions %}checked{% endif %}>
+                      <label for="change_product" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_company" id="delete_company" class="form-check-input" {% if 'delete_company' in group_permissions %}checked{% endif %}>
-                      <label for="delete_company" class="form-check-label">Eliminar</label>
+                      <input type="checkbox" name="permissions" value="delete_product" id="delete_product" class="form-check-input" {% if 'delete_product' in group_permissions %}checked{% endif %}>
+                      <label for="delete_product" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_company" id="view_company" class="form-check-input" {% if 'view_company' in group_permissions %}checked{% endif %}>
-                      <label for="view_company" class="form-check-label">Ver</label>
+                      <input type="checkbox" name="permissions" value="view_product" id="view_product" class="form-check-input" {% if 'view_product' in group_permissions %}checked{% endif %}>
+                      <label for="view_product" class="form-check-label">Ver</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong><i class="fas fa-truck-field"></i> Gestión de Proveedores</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="add_supplier" id="add_supplier" class="form-check-input" {% if 'add_supplier' in group_permissions %}checked{% endif %}>
+                      <label for="add_supplier" class="form-check-label">Crear</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="change_supplier" id="change_supplier" class="form-check-input" {% if 'change_supplier' in group_permissions %}checked{% endif %}>
+                      <label for="change_supplier" class="form-check-label">Editar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="delete_supplier" id="delete_supplier" class="form-check-input" {% if 'delete_supplier' in group_permissions %}checked{% endif %}>
+                      <label for="delete_supplier" class="form-check-label">Eliminar</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input type="checkbox" name="permissions" value="view_supplier" id="view_supplier" class="form-check-input" {% if 'view_supplier' in group_permissions %}checked{% endif %}>
+                      <label for="view_supplier" class="form-check-label">Ver</label>
                     </div>
                   </div>
                 </div>
@@ -188,61 +287,32 @@
           <div class="tab-pane fade" id="plans" role="tabpanel">
             <div class="card">
               <div class="card-header bg-light">
-                <strong>📊 Gestión de Planes</strong>
+                <strong>📊 Gestión de Ventas</strong>
               </div>
               <div class="card-body">
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_plan" id="add_plan" class="form-check-input" {% if 'add_plan' in group_permissions %}checked{% endif %}>
-                      <label for="add_plan" class="form-check-label">Crear</label>
+                      <input type="checkbox" name="permissions" value="add_sale" id="add_sale" class="form-check-input" {% if 'add_sale' in group_permissions %}checked{% endif %}>
+                      <label for="add_sale" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_plan" id="change_plan" class="form-check-input" {% if 'change_plan' in group_permissions %}checked{% endif %}>
-                      <label for="change_plan" class="form-check-label">Editar</label>
+                      <input type="checkbox" name="permissions" value="change_sale" id="change_sale" class="form-check-input" {% if 'change_sale' in group_permissions %}checked{% endif %}>
+                      <label for="change_sale" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_plan" id="delete_plan" class="form-check-input" {% if 'delete_plan' in group_permissions %}checked{% endif %}>
-                      <label for="delete_plan" class="form-check-label">Eliminar</label>
+                      <input type="checkbox" name="permissions" value="delete_sale" id="delete_sale" class="form-check-input" {% if 'delete_sale' in group_permissions %}checked{% endif %}>
+                      <label for="delete_sale" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_plan" id="view_plan" class="form-check-input" {% if 'view_plan' in group_permissions %}checked{% endif %}>
-                      <label for="view_plan" class="form-check-label">Ver</label>
-                    </div>
-                  </div>
-                </div>
-                
-                <hr>
-                <strong>🔗 Plan Features</strong>
-                <div class="row mt-2">
-                  <div class="col-md-3">
-                    <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_planfeature" id="add_planfeature" class="form-check-input" {% if 'add_planfeature' in group_permissions %}checked{% endif %}>
-                      <label for="add_planfeature" class="form-check-label">Crear</label>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_planfeature" id="change_planfeature" class="form-check-input" {% if 'change_planfeature' in group_permissions %}checked{% endif %}>
-                      <label for="change_planfeature" class="form-check-label">Editar</label>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_planfeature" id="delete_planfeature" class="form-check-input" {% if 'delete_planfeature' in group_permissions %}checked{% endif %}>
-                      <label for="delete_planfeature" class="form-check-label">Eliminar</label>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_planfeature" id="view_planfeature" class="form-check-input" {% if 'view_planfeature' in group_permissions %}checked{% endif %}>
-                      <label for="view_planfeature" class="form-check-label">Ver</label>
+                      <input type="checkbox" name="permissions" value="view_sale" id="view_sale" class="form-check-input" {% if 'view_sale' in group_permissions %}checked{% endif %}>
+                      <label for="view_sale" class="form-check-label">Ver</label>
                     </div>
                   </div>
                 </div>
@@ -283,35 +353,41 @@
                     </div>
                   </div>
                 </div>
-                
-                <hr>
-                <strong>📝 Logs de Suscripción</strong>
-                <div class="row mt-2">
+              
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <strong>💰 Gestión de planes</strong>
+              </div>
+              <div class="card-body">
+                <div class="row">
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_subscriptionlog" id="add_subscriptionlog" class="form-check-input" {% if 'add_subscriptionlog' in group_permissions %}checked{% endif %}>
-                      <label for="add_subscriptionlog" class="form-check-label">Crear</label>
+                      <input type="checkbox" name="permissions" value="add_plan" id="add_plan" class="form-check-input" {% if 'add_plan' in group_permissions %}checked{% endif %}>
+                      <label for="add_plan" class="form-check-label">Crear</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_subscriptionlog" id="change_subscriptionlog" class="form-check-input" {% if 'change_subscriptionlog' in group_permissions %}checked{% endif %}>
-                      <label for="change_subscriptionlog" class="form-check-label">Editar</label>
+                      <input type="checkbox" name="permissions" value="change_plan" id="change_plan" class="form-check-input" {% if 'change_plan' in group_permissions %}checked{% endif %}>
+                      <label for="change_plan" class="form-check-label">Editar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_subscriptionlog" id="delete_subscriptionlog" class="form-check-input" {% if 'delete_subscriptionlog' in group_permissions %}checked{% endif %}>
-                      <label for="delete_subscriptionlog" class="form-check-label">Eliminar</label>
+                      <input type="checkbox" name="permissions" value="delete_plan" id="delete_plan" class="form-check-input" {% if 'delete_plan' in group_permissions %}checked{% endif %}>
+                      <label for="delete_plan" class="form-check-label">Eliminar</label>
                     </div>
                   </div>
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_subscriptionlog" id="view_subscriptionlog" class="form-check-input" {% if 'view_subscriptionlog' in group_permissions %}checked{% endif %}>
-                      <label for="view_subscriptionlog" class="form-check-label">Ver</label>
+                      <input type="checkbox" name="permissions" value="view_plan" id="view_plan" class="form-check-input" {% if 'view_plan' in group_permissions %}checked{% endif %}>
+                      <label for="view_plan" class="form-check-label">Ver</label>
                     </div>
                   </div>
                 </div>
+              
               </div>
             </div>
           </div>
@@ -353,7 +429,7 @@
             </div>
           </div>
 
-          <!-- Pestaña 6: Features -->
+          <!-- Pestaña 6: Features 
           <div class="tab-pane fade" id="features" role="tabpanel">
             <div class="card">
               <div class="card-header bg-light">
@@ -388,7 +464,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </div>-->
 
           <!-- Pestaña 7: Configuración -->
           <div class="tab-pane fade" id="config" role="tabpanel">
@@ -427,40 +503,7 @@
               </div>
             </div>
 
-            <!-- Configuración SMTP -->
-            <div class="card mb-3">
-              <div class="card-header bg-light">
-                <strong>📧 Configuración SMTP</strong>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-3">
-                    <div class="form-check">
-                      <input type="checkbox" name="permissions" value="add_smtpconfiguration" id="add_smtp" class="form-check-input" {% if 'add_smtpconfiguration' in group_permissions %}checked{% endif %}>
-                      <label for="add_smtp" class="form-check-label">Crear</label>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-check">
-                      <input type="checkbox" name="permissions" value="change_smtpconfiguration" id="change_smtp" class="form-check-input" {% if 'change_smtpconfiguration' in group_permissions %}checked{% endif %}>
-                      <label for="change_smtp" class="form-check-label">Editar</label>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-check">
-                      <input type="checkbox" name="permissions" value="delete_smtpconfiguration" id="delete_smtp" class="form-check-input" {% if 'delete_smtpconfiguration' in group_permissions %}checked{% endif %}>
-                      <label for="delete_smtp" class="form-check-label">Eliminar</label>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-check">
-                      <input type="checkbox" name="permissions" value="view_smtpconfiguration" id="view_smtp" class="form-check-input" {% if 'view_smtpconfiguration' in group_permissions %}checked{% endif %}>
-                      <label for="view_smtp" class="form-check-label">Ver</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+
 
             <!-- Configuración del Sitio -->
             <div class="card">

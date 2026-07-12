@@ -53,18 +53,15 @@ SIDEBAR.HTML
 
     <div class="menu-module">
 
-    <!-- Grupos -->
-    <a href="{% url 'vexora:group_list' %}"
-       class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
-        <i class="fas fa-user-group"></i>
-        <span>Roles</span>
-    </a>
 
+        {% if request.user.is_superuser or "vexora.view_company" in request.user.get_all_permissions or "vexora.view_companymember" in request.user.get_all_permissions or "vexora.view_role" in request.user.get_all_permissions %}
         <button class="module-btn" type="button">
             <i class="fas fa-shield-alt"></i>
             <span>Administración</span>
             <i class="fas fa-chevron-down arrow"></i>
         </button>
+        
+        {% endif %}
 
 
         <div class="module-content">
@@ -97,36 +94,9 @@ SIDEBAR.HTML
                 <span>Roles</span>
             </a>
             {% endif %}
-
-
-        <!-- Categorías -->
-        <a href="{% url 'vexora:list_categories' %}"
-        class="menu-item {% if url_name == 'list_categories' %}active{% endif %}">
-            <i class="fas fa-tags"></i>
-            <span>Categorías</span>
-        </a>
-
-        <!-- Proveedores -->
-        <a href="{% url 'vexora:list_suppliers' %}"
-        class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
-            <i class="fas fa-truck"></i>
-            <span>Proveedores</span>
-        </a>
-
-
-
-        <!-- Miembros -->
-        <a href="{% url 'vexora:list_members' %}"
-           class="menu-item {% if url_name == 'list_members' or url_name == 'create_member' %}active{% endif %}">
-            <i class="fas fa-users"></i>
-            <span>Miembros</span>
-        </a>
-
-        <!-- Suscripción -->
-        <a href="{% url 'vexora:subscription_list' %}"
-           class="menu-item {% if url_name == 'subscription_list' or url_name == 'subscription_detail' %}active{% endif %}">
-
         </div>
+
+
 
     </div>
 
@@ -136,26 +106,30 @@ SIDEBAR.HTML
     <!-- ===================== -->
 
     <div class="menu-module">
-
+        {% if "vexora.view_product" in request.user.get_all_permissions or "vexora.view_supplier" in request.user.get_all_permissions %}
         <button class="module-btn" type="button">
             <i class="fas fa-boxes"></i>
             <span>Inventario</span>
             <i class="fas fa-chevron-down arrow"></i>
         </button>
+        
+        {% endif %}
 
         <div class="module-content">
-
+            {% if "vexora.view_product" in request.user.get_all_permissions %}
             <a href="{% url 'vexora:list_products' %}"
                class="menu-item {% if url_name == 'list_products' %}active{% endif %}">
                 <i class="fas fa-box-open"></i>
                 <span>Productos</span>
             </a>
-
+            {% endif %}
+            {% if "vexora.view_supplier" in request.user.get_all_permissions %}
             <a href="{% url 'vexora:list_suppliers' %}"
                class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
                 <i class="fas fa-truck-field"></i>
                 <span>Proveedores</span>
             </a>
+            {% endif %}
 
         </div>
 
@@ -167,20 +141,22 @@ SIDEBAR.HTML
     <!-- ===================== -->
 
     <div class="menu-module">
-
+        {% if "vexora.view_sale" in request.user.get_all_permissions %}
         <button class="module-btn" type="button">
             <i class="fas fa-cash-register"></i>
             <span>Ventas</span>
             <i class="fas fa-chevron-down arrow"></i>
         </button>
+        {% endif %}
 
         <div class="module-content">
-
+            {% if "vexora.view_sale" in request.user.get_all_permissions %}
             <a href="{% url 'vexora:sales_main_list' %}"
                class="menu-item {% if url_name == 'sales_main_list' or url_name == 'sales_main_create' or url_name == 'sales_main_update' %}active{% endif %}">
                 <i class="fas fa-receipt"></i>
                 <span>Ventas</span>
             </a>
+            {% endif %}
 
         </div>
 
@@ -192,7 +168,6 @@ SIDEBAR.HTML
     <!-- ===================== -->
 
     <div class="menu-module">
-
         <button class="module-btn" type="button">
             <i class="fas fa-crown"></i>
             <span>Suscripción</span>
