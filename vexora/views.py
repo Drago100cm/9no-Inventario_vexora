@@ -1671,7 +1671,6 @@ class StoreConfirmacionView(LoginRequiredMixin, View):
         items = sale.items.select_related('product').all()
         return render(request, self.template_name, {'sale': sale, 'items': items})
     
-    from django.utils import timezone
 from django.http import JsonResponse
 
 class ProductQuickCreateView(LoginRequiredMixin, View):
@@ -1772,5 +1771,77 @@ def cart_add(request):
         "precio": float(product.sale_price or product.price),
         "total_items": cart.total_items,
     })
-    
-    
+
+#===============================esta por verse si funciona bien========================================
+from django.db.models import Count, Sum, Q
+from django.core.cache import cache
+
+
+class DashboardView(LoginRequiredMixin, TemplateView):
+    template_name = "partials/dashboard.html"
+
+    def get_company(self):
+        return self.request.user.company
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        company = self.get_company()
+
+        if not company:
+            messages.warning(
+                self.request,
+                "Debes crear una empresa o aceptar una invitación."
+            )
+            return context
+
+        try:
+            subscription = company.subscription
+        except Subscription.DoesNotExist:
+            messages.warning(
+                self.request,
+                "Tu empresa no tiene una suscripción activa."
+            )
+            return context
+
+        today = timezone.now().date()
+
+        context["company"] = company
+        context["subscription"] = subscription
+        context["subscription_expired"] = (
+            subscription.status != "active"
+            or subscription.end_date < today
+        )
+
+        context["products"] = Product.objects.filter(company=company)
+        context["categories"] = Category.objects.filter(company=company)
+        context["suppliers"] = Supplier.objects.filter(company=company)
+        context["members"] = CompanyMember.objects.filter(company=company)
+        context["sales"] = Sale.objects.filter(company=company)
+
+        context["products_count"] = context["products"].count()
+        context["categories_count"] = context["categories"].count()
+        context["suppliers_count"] = context["suppliers"].count()
+        context["members_count"] = context["members"].count()
+
+        completed_sales = context["sales"].filter(status="completed")
+
+        context["sales_count"] = completed_sales.count()
+
+        context["sales_total"] = (
+            completed_sales.aggregate(total=Sum("total"))["total"] or 0
+        )
+
+        context["low_stock"] = Product.objects.filter(
+            company=company,
+            stock__lte=models.F("min_stock"),
+            is_active=True,
+        ).count()
+
+        context["recent_sales"] = completed_sales.order_by("-date")[:5]
+
+        context["recent_products"] = Product.objects.filter(
+            company=company
+        ).order_by("-created_at")[:5]
+
+        return context
