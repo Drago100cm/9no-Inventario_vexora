@@ -111,14 +111,25 @@
                                 </a>
                             </div>
 
-                            {% if perms.vexora.add_product %}
-                                <button type="button"
-                                        class="btn btn-outline-secondary btn-sm d-flex align-items-center"
-                                        onclick="editModal('{% url 'vexora:create_product' %}')">
-                                    <i class="ri-add-line me-1 align-bottom"></i>
-                                    <span>Agregar Producto</span>
-                                </button>
-                            {% endif %}
+                            <div class="d-flex gap-2">
+                                {% if perms.vexora.add_product %}
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                                            onclick="editModal('{% url 'vexora:create_product' %}')">
+                                        <i class="ri-add-line me-1 align-bottom"></i>
+                                        <span>Agregar Producto</span>
+                                    </button>
+                                {% endif %}
+                                
+                                <!-- ✅ BOTÓN PARA EXPORTAR REPORTE DE PRODUCTOS A PDF -->
+                                <a href="{% url 'vexora:product_reports' %}" 
+                                class="btn btn-danger btn-sm d-flex align-items-center"
+                                target="_blank"
+                                title="Exportar reporte de productos a PDF">
+                                    <i class="fas fa-file-pdf me-1"></i>
+                                    <span>Reporte y PDF</span>
+                                </a>
+                            </div>
                         </div>
 
                         <!-- FILTROS AVANZADOS -->

@@ -81,7 +81,6 @@ urlpatterns = [
     path('products/update/<int:id>/', views.ProductUpdateView.as_view(), name='edit_product'),
     path('products/view/<int:pk>/', views.view_product, name='view_product'),    
     path('products/delete/<int:id>/', views.delete_product, name='delete_product'), 
-
     path('products/quick-create/', views.ProductQuickCreateView.as_view(), name='product_quick_create'),
     
     
@@ -94,6 +93,47 @@ urlpatterns = [
     path('members/create/', views.MembersCreateView.as_view(), name='create_member'),
     path('members/update/<int:id>/', views.MemberUpdateView.as_view(), name='edit_member'),
     path('members/delete/<int:id>/', views.delete_member, name='delete_member'),
+    
+    # ============================================
+    # REPORTES URLs
+    # ============================================
+    path('reports/', views.ReportsDashboardView.as_view(), name='reports_dashboard'),
+    path('reports/products/', views.ProductReportsView.as_view(), name='product_reports'),
+    path('reports/sales/', views.SalesReportsView.as_view(), name='sales_reports'),
+    path('reports/financial/', views.FinancialReportsView.as_view(), name='financial_reports'),
+    
+    # ============================================
+    # EXPORTAR REPORTES A PDF
+    # ============================================
+    path('reports/export/dashboard/', views.ExportDashboardPDFView.as_view(), name='export_dashboard_pdf'),
+    path('reports/export/products/', views.ExportProductsPDFView.as_view(), name='export_products_pdf'),
+    path('reports/export/sales/', views.ExportSalesPDFView.as_view(), name='export_sales_pdf'),
+    path('reports/export/financial/', views.ExportFinancialPDFView.as_view(), name='export_financial_pdf'),
+    # ============================================
+    # EXPORTAR REPORTES A PDF POR SECCIÓN
+    # ============================================
+
+    # Reportes de Productos - Secciones
+    path('reports/export/products/category/', views.ExportProductsCategoryPDFView.as_view(), name='export_products_category_pdf'),
+    path('reports/export/products/supplier/', views.ExportProductsSupplierPDFView.as_view(), name='export_products_supplier_pdf'),
+    path('reports/export/products/best-sellers/', views.ExportProductsBestSellersPDFView.as_view(), name='export_products_best_sellers_pdf'),
+    path('reports/export/products/worst-sellers/', views.ExportProductsWorstSellersPDFView.as_view(), name='export_products_worst_sellers_pdf'),
+    path('reports/export/products/out-of-stock/', views.ExportProductsOutOfStockPDFView.as_view(), name='export_products_out_of_stock_pdf'),
+
+    # Reportes de Ventas - Secciones
+    path('reports/export/sales/daily/', views.ExportSalesDailyPDFView.as_view(), name='export_sales_daily_pdf'),
+    path('reports/export/sales/weekly/', views.ExportSalesWeeklyPDFView.as_view(), name='export_sales_weekly_pdf'),
+    path('reports/export/sales/monthly/', views.ExportSalesMonthlyPDFView.as_view(), name='export_sales_monthly_pdf'),
+    path('reports/export/sales/yearly/', views.ExportSalesYearlyPDFView.as_view(), name='export_sales_yearly_pdf'),
+    path('reports/export/sales/by-seller/', views.ExportSalesBySellerPDFView.as_view(), name='export_sales_by_seller_pdf'),
+    path('reports/export/sales/by-client/', views.ExportSalesByClientPDFView.as_view(), name='export_sales_by_client_pdf'),
+
+    # Reportes Financieros - Secciones
+    path('reports/export/financial/weekly/', views.ExportFinancialWeeklyPDFView.as_view(), name='export_financial_weekly_pdf'),
+    path('reports/export/financial/monthly/', views.ExportFinancialMonthlyPDFView.as_view(), name='export_financial_monthly_pdf'),
+    path('reports/export/financial/yearly/', views.ExportFinancialYearlyPDFView.as_view(), name='export_financial_yearly_pdf'),
+    path('reports/export/financial/profitability/', views.ExportFinancialProfitabilityPDFView.as_view(), name='export_financial_profitability_pdf'),
+    path('reports/export/financial/cancelled/', views.ExportFinancialCancelledPDFView.as_view(), name='export_financial_cancelled_pdf'),
 
     # ============================================
     # SALES URLs (Ventas )
@@ -112,11 +152,8 @@ urlpatterns = [
     # ============================================
     # STORE URLs (Tienda pública)
     # ============================================
-    # ============================================
-    # STORE URLs (Tienda pública)
-    # ============================================
     path('store/cart/update/<int:item_id>/', views.CartUpdateView.as_view(), name='cart_update'),
-path('store/cart/remove/<int:item_id>/', views.CartRemoveView.as_view(), name='cart_remove'),
+    path('store/cart/remove/<int:item_id>/', views.CartRemoveView.as_view(), name='cart_remove'),
     path('store/', views.StoreHomeView.as_view(), name='store_home'),
     path('store/product/<int:pk>/', views.StoreProductoView.as_view(), name='store_product'),
     path('store/cart/', views.StoreCarritoView.as_view(), name='store_cart'),

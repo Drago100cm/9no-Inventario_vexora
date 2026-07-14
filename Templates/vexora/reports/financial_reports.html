@@ -1,0 +1,412 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %} | Reportes Financieros{% endblock %}
+
+{% block extra_css %}
+<style>
+    .border-left-primary { border-left: 4px solid #4e73df !important; }
+    .border-left-success { border-left: 4px solid #1cc88a !important; }
+    .border-left-danger { border-left: 4px solid #e74a3b !important; }
+    .border-left-info { border-left: 4px solid #36b9cc !important; }
+    
+    .badge {
+        padding: 0.5rem 0.75rem;
+        font-weight: 500;
+    }
+    
+    .badge.bg-success { background-color: #1cc88a !important; }
+    .badge.bg-warning { background-color: #f6c23e !important; color: #000; }
+    .badge.bg-danger { background-color: #e74a3b !important; }
+    
+    .progress {
+        height: 20px;
+        border-radius: 10px;
+        background-color: #eaecf4;
+    }
+    
+    .progress-bar {
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 20px;
+    }
+    
+    .report-card {
+        height: 100%;
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .report-card .card-body {
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .report-card .card-body::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .report-card .card-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .card-header .btn {
+        white-space: nowrap;
+    }
+    
+    .summary-card {
+        text-align: center;
+        padding: 15px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    @media (max-width: 768px) {
+        .card-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .card-header .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0" style="color: var(--text-color) !important;">💵 Reportes Financieros</h1>
+        <div>
+            <a href="{% url 'vexora:export_financial_pdf' %}" class="btn btn-sm btn-danger shadow-sm" target="_blank">
+                <i class="fas fa-file-pdf"></i> Exportar Todo
+            </a>
+            <a href="{% url 'vexora:reports_dashboard' %}" class="btn btn-sm btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+            <button class="btn btn-sm btn-primary shadow-sm" onclick="window.location.reload()">
+                <i class="fas fa-sync fa-sm"></i> Actualizar
+            </button>
+        </div>
+    </div>
+    
+    {% if error %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> {{ error }}
+    </div>
+    {% else %}
+    
+    <!-- Cards de resumen - 4 columnas iguales -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Ingresos (30 días)</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                ${{ monthly_financial.revenue|floatformat:2|default:"0.00" }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-arrow-up fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Costos (30 días)</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                ${{ monthly_financial.cost|floatformat:2|default:"0.00" }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-arrow-down fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Ganancia (30 días)</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                ${{ monthly_financial.profit|floatformat:2|default:"0.00" }}
+                            </div>
+                            <small style="color: var(--text-color) !important; opacity: 0.7;">
+                                Margen: {{ monthly_financial.profit_margin|floatformat:1|default:"0" }}%
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Inventario Valorizado</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                ${{ inventory_value.total_value|floatformat:2|default:"0.00" }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resumen financiero por período - 3 columnas iguales -->
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100 report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">📊 Resumen Semanal</h6>
+                    <a href="{% url 'vexora:export_financial_weekly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="summary-card mb-2">
+                        <h6 style="color: var(--text-color) !important;">Ingresos</h6>
+                        <h3 class="text-success">${{ weekly_financial.revenue|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div class="summary-card mb-2">
+                        <h6 style="color: var(--text-color) !important;">Costos</h6>
+                        <h3 class="text-danger">${{ weekly_financial.cost|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div class="summary-card mb-2" style="background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.2);">
+                        <h6 style="color: var(--text-color) !important;">Ganancia</h6>
+                        <h3 class="text-primary">${{ weekly_financial.profit|floatformat:2|default:"0.00" }}</h3>
+                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                            Margen: {{ weekly_financial.profit_margin|floatformat:1|default:"0" }}%
+                        </small>
+                    </div>
+                    <hr style="border-color: rgba(255,255,255,0.1);">
+                    <div class="text-center">
+                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                            Ventas: {{ weekly_financial.sales_count|default:"0" }} | Items: {{ weekly_financial.items_sold|default:"0" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100 report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">📊 Resumen Mensual</h6>
+                    <a href="{% url 'vexora:export_financial_monthly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="summary-card mb-2">
+                        <h6 style="color: var(--text-color) !important;">Ingresos</h6>
+                        <h3 class="text-success">${{ monthly_financial.revenue|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div class="summary-card mb-2">
+                        <h6 style="color: var(--text-color) !important;">Costos</h6>
+                        <h3 class="text-danger">${{ monthly_financial.cost|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div class="summary-card mb-2" style="background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.2);">
+                        <h6 style="color: var(--text-color) !important;">Ganancia</h6>
+                        <h3 class="text-primary">${{ monthly_financial.profit|floatformat:2|default:"0.00" }}</h3>
+                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                            Margen: {{ monthly_financial.profit_margin|floatformat:1|default:"0" }}%
+                        </small>
+                    </div>
+                    <hr style="border-color: rgba(255,255,255,0.1);">
+                    <div class="text-center">
+                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                            Ventas: {{ monthly_financial.sales_count|default:"0" }} | Items: {{ monthly_financial.items_sold|default:"0" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100 report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">📊 Resumen Anual</h6>
+                    <a href="{% url 'vexora:export_financial_yearly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="summary-card mb-2">
+                        <h6 style="color: var(--text-color) !important;">Ingresos</h6>
+                        <h3 class="text-success">${{ yearly_financial.revenue|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div class="summary-card mb-2">
+                        <h6 style="color: var(--text-color) !important;">Costos</h6>
+                        <h3 class="text-danger">${{ yearly_financial.cost|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div class="summary-card mb-2" style="background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.2);">
+                        <h6 style="color: var(--text-color) !important;">Ganancia</h6>
+                        <h3 class="text-primary">${{ yearly_financial.profit|floatformat:2|default:"0.00" }}</h3>
+                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                            Margen: {{ yearly_financial.profit_margin|floatformat:1|default:"0" }}%
+                        </small>
+                    </div>
+                    <hr style="border-color: rgba(255,255,255,0.1);">
+                    <div class="text-center">
+                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                            Ventas: {{ yearly_financial.sales_count|default:"0" }} | Items: {{ yearly_financial.items_sold|default:"0" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rentabilidad de productos - Tabla completa -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">🏷️ Rentabilidad por Producto</h6>
+                    <a href="{% url 'vexora:export_financial_profitability_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                    <th>Costo</th>
+                                    <th>Margen/Unidad</th>
+                                    <th>Margen %</th>
+                                    <th>Unidades Vendidas</th>
+                                    <th>Ingresos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in product_profitability %}
+                                <tr>
+                                    <td>{{ product.product_name|default:"-"|truncatechars:20 }}</td>
+                                    <td>{{ product.category|default:"-"|truncatechars:15 }}</td>
+                                    <td>${{ product.sale_price|floatformat:2|default:"0.00" }}</td>
+                                    <td>${{ product.price|floatformat:2|default:"0.00" }}</td>
+                                    <td>
+                                        {% if product.margin_per_unit > 0 %}
+                                            <span class="text-success">+${{ product.margin_per_unit|floatformat:2 }}</span>
+                                        {% else %}
+                                            <span class="text-danger">${{ product.margin_per_unit|floatformat:2 }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if product.margin_percentage > 50 %}bg-success{% elif product.margin_percentage > 25 %}bg-info{% else %}bg-warning{% endif %}" 
+                                                 role="progressbar" 
+                                                 style="width: {{ product.margin_percentage|floatformat:0 }}%;" 
+                                                 aria-valuenow="{{ product.margin_percentage|floatformat:0 }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ product.margin_percentage|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ product.total_sold|default:"0" }}</td>
+                                    <td>${{ product.total_revenue|floatformat:2|default:"0.00" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle"></i> No hay datos disponibles
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ventas canceladas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">❌ Ventas Canceladas</h6>
+                    <a href="{% url 'vexora:export_financial_cancelled_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Cliente</th>
+                                    <th>Total</th>
+                                    <th>Vendedor</th>
+                                    <th>Fecha</th>
+                                    <th>Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in cancelled_sales %}
+                                <tr>
+                                    <td>#{{ sale.id }}</td>
+                                    <td>{{ sale.customer_name|default:"-"|truncatechars:20 }}</td>
+                                    <td class="text-danger">${{ sale.total|floatformat:2|default:"0.00" }}</td>
+                                    <td>{{ sale.user__username|default:"-" }}</td>
+                                    <td>{{ sale.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ sale.notes|truncatechars:30|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-success py-3">
+                                        <i class="fas fa-check-circle"></i> No hay ventas canceladas
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% endif %}
+</div>
+{% endblock %}

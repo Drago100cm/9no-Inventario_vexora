@@ -5,43 +5,24 @@ SIDEBAR.HTML
 {% load static %}
 
 <div class="sidebar-container" id="sidebarContainer">
-
     <aside class="sidebar">
 
         <!-- =========================
         HEADER
         ========================= -->
-
         <div class="sidebar-header">
-
             {% if site_config.logo %}
-
-            <img src="{{ site_config.logo.url }}" class="sidebar-logo">
-
+                <img src="{{ site_config.logo.url }}" class="sidebar-logo" alt="Logo">
             {% else %}
-
-            <img src="{% static 'images/default-logo.png' %}" class="sidebar-logo">
-
+                <img src="{% static 'images/default-logo.png' %}" class="sidebar-logo" alt="Logo">
             {% endif %}
-
-            <h2 class="sidebar-title">
-
-                {{ site_config.company.name|default:"Vexora" }}
-
-            </h2>
-
-            <p class="sidebar-subtitle">
-
-                SaaS Platform
-
-            </p>
-
+            <h2 class="sidebar-title">{{ site_config.company.name|default:"Vexora" }}</h2>
+            <p class="sidebar-subtitle">SaaS Platform</p>
         </div>
 
-        <!-- ===================== -->
-        <!-- Menu -->
-        <!-- ===================== -->
-
+        <!-- =========================
+        MENU
+        ========================= -->
         {% with url_name=request.resolver_match.url_name %}
         <!-- ===========dashboard========== -->
          <a href="{% url 'vexora:dashboard' %}" class="menu-item {% if url_name == 'dashboard' %}active{% endif %}">
@@ -50,13 +31,14 @@ SIDEBAR.HTML
         </a>
         <nav class="sidebar-menu">
 
-            
             <!-- Administración -->
             
             {% if request.user.is_superuser or "vexora.view_company" in request.user.get_all_permissions or "vexora.view_companymember" in request.user.get_all_permissions or "vexora.view_role" in request.user.get_all_permissions %}
             <div class="menu-module">
 
 
+            <div class="menu-module">
+                {% if request.user.is_superuser or "vexora.view_company" in request.user.get_all_permissions or "vexora.view_companymember" in request.user.get_all_permissions or "vexora.view_role" in request.user.get_all_permissions %}
                 <button class="module-btn" type="button">
                     <i class="fas fa-shield-alt"></i>
                     <span>Administración</span>
@@ -64,35 +46,32 @@ SIDEBAR.HTML
                 </button>
                 
 
-                <div class="module-content">
+                {% endif %}
 
+                <div class="module-content">
                     {% if request.user.is_superuser %}
-                    <a href="{% url 'vexora:user_list' %}"
-                        class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
-                        <i class="fas fa-users"></i>
-                        <span>Usuarios</span>
-                    </a>
+                        <a href="{% url 'vexora:user_list' %}" class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
+                            <i class="fas fa-users"></i>
+                            <span>Usuarios</span>
+                        </a>
                     {% endif %}
                     {% if "vexora.view_company" in request.user.get_all_permissions %}
-                    <a href="{% url 'vexora:company_list' %}"
-                        class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
-                        <i class="fas fa-building"></i>
-                        <span>Empresas</span>
-                    </a>
+                        <a href="{% url 'vexora:company_list' %}" class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
+                            <i class="fas fa-building"></i>
+                            <span>Empresas</span>
+                        </a>
                     {% endif %}
                     {% if "vexora.view_companymember" in request.user.get_all_permissions %}
-                    <a href="{% url 'vexora:member_list' %}"
-                        class="menu-item {% if url_name == 'member_list' %}active{% endif %}">
-                        <i class="fas fa-user-friends"></i>
-                        <span>Miembros</span>
-                    </a>
+                        <a href="{% url 'vexora:member_list' %}" class="menu-item {% if url_name == 'member_list' %}active{% endif %}">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Miembros</span>
+                        </a>
                     {% endif %}
                     {% if "vexora.view_role" in request.user.get_all_permissions %}
-                    <a href="{% url 'vexora:group_list' %}"
-                        class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
-                        <i class="fas fa-user-group"></i>
-                        <span>Roles</span>
-                    </a>
+                        <a href="{% url 'vexora:group_list' %}" class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
+                            <i class="fas fa-user-group"></i>
+                            <span>Roles</span>
+                        </a>
                     {% endif %}
                 </div>
             </div>
@@ -102,13 +81,13 @@ SIDEBAR.HTML
             <!-- Inventario -->
             <!-- ===================== -->
             {% if "vexora.view_product" in request.user.get_all_permissions or "vexora.view_supplier" in request.user.get_all_permissions %}
+            <!-- Inventario -->
             <div class="menu-module">
                 <button class="module-btn" type="button">
                     <i class="fas fa-boxes"></i>
                     <span>Inventario</span>
                     <i class="fas fa-chevron-down arrow"></i>
                 </button>
-
                 <div class="module-content">
                     {% if "vexora.view_product" in request.user.get_all_permissions %}
                     <a href="{% url 'vexora:list_products' %}"
@@ -126,22 +105,60 @@ SIDEBAR.HTML
                     </a>
                     {% endif %}
 
+                    <a href="{% url 'vexora:list_products' %}" class="menu-item {% if url_name == 'list_products' %}active{% endif %}">
+                        <i class="fas fa-box-open"></i>
+                        <span>Productos</span>
+                    </a>
+                    <a href="{% url 'vexora:list_suppliers' %}" class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
+                        <i class="fas fa-truck-field"></i>
+                        <span>Proveedores</span>
+                    </a>
                 </div>
-
             </div>
+
             {% endif %}
 
             <!-- ===================== -->
-            <!-- Ventas -->
+            <!-- Reportes -->
             <!-- ===================== -->
             {% if "vexora.view_sale" in request.user.get_all_permissions or "vexora.view_category" in request.user.get_all_permissions %}
+            <div class="menu-module">
+                <button class="module-btn" type="button">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reportes</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </button>
+                <div class="module-content">
+                    <a href="{% url 'vexora:reports_dashboard' %}" 
+                    class="menu-item {% if url_name == 'reports_dashboard' %}active{% endif %}">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{% url 'vexora:product_reports' %}" 
+                    class="menu-item {% if url_name == 'product_reports' %}active{% endif %}">
+                        <i class="fas fa-boxes"></i>
+                        <span>Productos</span>
+                    </a>
+                    <a href="{% url 'vexora:sales_reports' %}" 
+                    class="menu-item {% if url_name == 'sales_reports' %}active{% endif %}">
+                        <i class="fas fa-cash-register"></i>
+                        <span>Ventas</span>
+                    </a>
+                    <a href="{% url 'vexora:financial_reports' %}" 
+                    class="menu-item {% if url_name == 'financial_reports' %}active{% endif %}">
+                        <i class="fas fa-coins"></i>
+                        <span>Financieros</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Ventas -->
             <div class="menu-module">
                 <button class="module-btn" type="button">
                     <i class="fas fa-cash-register"></i>
                     <span>Ventas</span>
                     <i class="fas fa-chevron-down arrow"></i>
                 </button>
-
                 <div class="module-content">
                     {% if "vexora.view_sale" in request.user.get_all_permissions %}
                     <a href="{% url 'vexora:sales_main_list' %}"
@@ -158,8 +175,16 @@ SIDEBAR.HTML
                         <span>Categorías</span>
                     </a>
                     {% endif %}
-                </div>
 
+                    <a href="{% url 'vexora:sales_main_list' %}" class="menu-item {% if url_name == 'sales_main_list' or url_name == 'sales_main_create' or url_name == 'sales_main_update' %}active{% endif %}">
+                        <i class="fas fa-receipt"></i>
+                        <span>Ventas</span>
+                    </a>
+                    <a href="{% url 'vexora:list_categories' %}" class="menu-item {% if url_name == 'list_categories' %}active{% endif %}">
+                        <i class="fas fa-tags"></i>
+                        <span>Categorías</span>
+                    </a>
+                </div>
             </div>
 
             {% endif %}
@@ -167,6 +192,7 @@ SIDEBAR.HTML
             <!-- Suscripción -->
             <!-- ===================== -->
             {% if request.user.is_superuser or "vexora.view_subscription" in request.user.get_all_permissions or "vexora.view_plan" in request.user.get_all_permissions %}
+            <!-- Suscripción -->
             <div class="menu-module">
                 <button class="module-btn" type="button">
                     <i class="fas fa-crown"></i>
@@ -193,48 +219,98 @@ SIDEBAR.HTML
             {% endif %}
 
             <!-- ===================== -->
+                    <a href="{% url 'vexora:subscription_list' %}" class="menu-item {% if url_name == 'subscription_list' or url_name == 'subscription_detail' %}active{% endif %}">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Mi suscripción</span>
+                    </a>
+                    <a href="{% url 'vexora:plan_list' %}" class="menu-item {% if url_name == 'plan_list' %}active{% endif %}">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Planes</span>
+                    </a>
+                </div>
+            </div>
+
             <!-- Configuración -->
-            <!-- ===================== -->
-
             {% if request.user.company %}
-
             <div class="menu-module">
-
                 <button class="module-btn" type="button">
                     <i class="fas fa-gear"></i>
                     <span>Configuración</span>
                     <i class="fas fa-chevron-down arrow"></i>
                 </button>
-
                 <div class="module-content">
-
-                    <a href="{% url 'vexora:site_configuration' %}"
-                        class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}">
+                    <a href="{% url 'vexora:site_configuration' %}" class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}">
                         <i class="fas fa-sliders"></i>
                         <span>General</span>
                     </a>
-
                 </div>
-
             </div>
-
             {% endif %}
 
 
+        </nav>
+
 
         </nav>
+
         {% endwith %}
 
     </aside>
-
 </div>
 
 <!-- =========================
 STYLES
 ========================= -->
-
 <style>
+    .sidebar-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: var(--sidebar-width);
+        height: 100vh;
+        background: linear-gradient(180deg, var(--secondary-color), var(--background-color));
+        border-right: 1px solid var(--border-color);
+        z-index: 1055;
+        transition: .3s ease;
+    }
+
+    .sidebar {
+        height: 100%;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .sidebar-logo {
+        width: 90px;
+        height: 90px;
+        border-radius: 20px;
+        object-fit: cover;
+        border: 3px solid rgba(255, 255, 255, .08);
+        margin-bottom: 15px;
+    }
+
+    .sidebar-title {
+        color: white;
+        font-weight: 800;
+        font-size: 24px;
+        margin-bottom: 5px;
+    }
+
+    .sidebar-subtitle {
+        color: rgba(255, 255, 255, .5);
+        font-size: 14px;
+    }
+
     .sidebar-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
         overflow-y: auto;
         overflow-x: hidden;
         flex: 1;
@@ -266,6 +342,7 @@ STYLES
         border-radius: 14px;
         cursor: pointer;
         font-weight: 600;
+        transition: .3s;
     }
 
     .module-btn:hover {
@@ -289,163 +366,51 @@ STYLES
         transform: rotate(180deg);
     }
 
-    .sidebar-container {
-
-        position: fixed;
-
-        top: 0;
-
-        left: 0;
-
-        width: var(--sidebar-width);
-
-        height: 100vh;
-
-        background: linear-gradient(180deg,
-                var(--secondary-color),
-                var(--background-color));
-
-        border-right: 1px solid var(--border-color);
-
-        z-index: 1055;
-
-        transition: .3s ease;
-    }
-
-    .sidebar {
-
-        height: 100%;
-
-        padding: 20px;
-
-        display: flex;
-
-        flex-direction: column;
-    }
-
-    .sidebar-header {
-
-        text-align: center;
-
-        margin-bottom: 40px;
-    }
-
-    .sidebar-logo {
-
-        width: 90px;
-
-        height: 90px;
-
-        border-radius: 20px;
-
-        object-fit: cover;
-
-        border: 3px solid rgba(255, 255, 255, .08);
-
-        margin-bottom: 15px;
-    }
-
-    .sidebar-title {
-
-        color: white;
-
-        font-weight: 800;
-
-        font-size: 24px;
-
-        margin-bottom: 5px;
-    }
-
-    .sidebar-subtitle {
-
-        color: rgba(255, 255, 255, .5);
-
-        font-size: 14px;
-    }
-
-    .sidebar-menu {
-
-        display: flex;
-
-        flex-direction: column;
-
-        gap: 10px;
-    }
-
     .menu-item {
-
         display: flex;
-
         align-items: center;
-
         gap: 14px;
-
         padding: 14px 18px;
-
         text-decoration: none;
-
         color: rgba(255, 255, 255, .8);
-
         border-radius: 16px;
-
         transition: .3s ease;
-
         font-weight: 500;
     }
 
     .menu-item:hover {
-
         background: rgba(255, 255, 255, .06);
-
         color: white;
-
         transform: translateX(4px);
     }
 
     .menu-item.active {
-
-        background: linear-gradient(135deg,
-                var(--primary-color),
-                var(--accent-color));
-
+        background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
         color: white;
-
         box-shadow: 0 8px 20px rgba(0, 0, 0, .25);
     }
 
     .menu-item i {
-
         font-size: 18px;
-
         width: 22px;
-
         text-align: center;
     }
 
     @media(max-width:991px) {
-
         .sidebar-container {
-
             transform: translateX(-100%);
         }
 
         body.sidebar-open .sidebar-container {
-
             transform: translateX(0);
         }
-
     }
 </style>
+
 <script>
-
     document.querySelectorAll(".module-btn").forEach(btn => {
-
-        btn.addEventListener("click", function () {
-
+        btn.addEventListener("click", function() {
             this.parentElement.classList.toggle("active");
-
         });
-
     });
-
 </script>

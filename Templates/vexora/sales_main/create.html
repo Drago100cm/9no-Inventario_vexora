@@ -1,6 +1,65 @@
 <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
 
+        <!-- ===== DATOS DE PRODUCTOS DESDE DJANGO (oculto) ===== -->
+        <div style="display: none;" id="productsDataContainer">
+            {% for product in products %}
+            <div class="product-data" 
+                 data-id="{{ product.id }}"
+                 data-name="{{ product.name|escape }}"
+                 data-sku="{{ product.sku|default:'Sin SKU'|escape }}"
+                 data-stock="{{ product.stock }}"
+                 data-price="{{ product.sale_price|default:product.price }}"
+                 data-category="{{ product.category.name|default:'Sin categoría'|escape }}">
+            </div>
+            {% empty %}
+            <div class="product-data-empty">No hay productos disponibles</div>
+            {% endfor %}
+        </div>
+
+        <!-- ===== ESTILOS PARA EL SELECT ===== -->
+        <style>
+            /* Forzar color negro en el select y sus opciones */
+            .bootstrap-select .dropdown-toggle .filter-option,
+            .bootstrap-select .dropdown-toggle .filter-option-inner-inner,
+            .bootstrap-select .dropdown-menu .dropdown-item,
+            .bootstrap-select .dropdown-menu .dropdown-item span,
+            .bootstrap-select .dropdown-menu .dropdown-item .text,
+            .bootstrap-select .dropdown-menu .dropdown-item .filter-option,
+            #productSelect + .bootstrap-select .dropdown-toggle .filter-option {
+                color: #000000 !important;
+            }
+            
+            /* Color negro para el placeholder */
+            .bootstrap-select .dropdown-toggle .filter-option-inner-inner {
+                color: #000000 !important;
+            }
+            
+            /* Color negro en el menú desplegable */
+            .dropdown-menu .dropdown-item {
+                color: #000000 !important;
+            }
+            
+            .dropdown-menu .dropdown-item:hover {
+                color: #000000 !important;
+                background-color: #f0f0f0 !important;
+            }
+            
+            /* Color negro para el texto seleccionado */
+            .filter-option-inner-inner {
+                color: #000000 !important;
+            }
+            
+            /* Forzar en el input de búsqueda */
+            .bs-searchbox input.form-control {
+                color: #000000 !important;
+            }
+            
+            .bs-searchbox input.form-control::placeholder {
+                color: #6c757d !important;
+            }
+        </style>
+
         <div class="modal-header">
             <div>
                 <h5 class="modal-title mb-0">
@@ -19,7 +78,8 @@
         </div>
 
         <form id="saleForm">
-
+            {% csrf_token %}
+            
             <div class="modal-body">
 
                 <div class="card mb-4">
@@ -146,12 +206,13 @@
                                         id="productSelect"
                                         data-live-search="true"
                                         data-width="100%"
-                                        title="Seleccione un producto">
+                                        title="Seleccione un producto"
+                                        data-style="btn-light">
                                 </select>
 
                                 <button type="button" class="btn btn-sm btn-link p-0 mt-1" id="quickCreateProductBtn">
-        <i class="ri-add-circle-line me-1"></i>¿No está en la lista? Crear producto nuevo
-    </button>
+                                    <i class="ri-add-circle-line me-1"></i>¿No está en la lista? Crear producto nuevo
+                                </button>
 
                                 <small class="text-muted">
                                     Se llenará con productos activos del inventario.
@@ -352,8 +413,97 @@
 
 <script>
     let saleItems = [];
-
+    let productsData = [];
     const taxRate = 0;
+
+    // ===== FUNCIÓN PARA CARGAR PRODUCTOS DESDE DJANGO =====
+    function loadProductsFromDjango() {
+        console.log('Cargando productos desde Django...');
+        
+        const productElements = document.querySelectorAll('.product-data');
+        console.log('Elementos de producto encontrados:', productElements.length);
+        
+        productsData = [];
+        
+        productElements.forEach(element => {
+            const product = {
+                id: parseInt(element.dataset.id),
+                name: element.dataset.name,
+                sku: element.dataset.sku,
+                stock: parseInt(element.dataset.stock),
+                price: parseFloat(element.dataset.price),
+                category: element.dataset.category
+            };
+            console.log('Producto cargado:', product);
+            productsData.push(product);
+        });
+        
+        if (productsData.length === 0) {
+            console.warn('⚠️ No se encontraron productos. Verifica que la vista esté pasando products al contexto.');
+            
+            const select = document.getElementById('productSelect');
+            if (select) {
+                select.innerHTML = '<option value="" disabled selected>No hay productos disponibles</option>';
+                if ($('#productSelect').data('selectpicker')) {
+                    $('#productSelect').selectpicker('refresh');
+                }
+            }
+            return;
+        }
+        
+        populateProductSelect(productsData);
+    }
+
+    function populateProductSelect(products) {
+        console.log('Poblando select con', products.length, 'productos');
+        
+        const select = document.getElementById('productSelect');
+        if (!select) {
+            console.error('❌ No se encontró el elemento #productSelect');
+            return;
+        }
+        
+        // Limpiar opciones existentes
+        select.innerHTML = '';
+        
+        // Agregar placeholder
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Seleccione un producto';
+        placeholder.selected = true;
+        placeholder.disabled = true;
+        select.appendChild(placeholder);
+        
+        // Agregar productos
+        products.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.id;
+            option.textContent = `${product.name} ${product.sku ? '(SKU: ' + product.sku + ')' : ''}`;
+            option.setAttribute('data-sku', product.sku || '');
+            option.setAttribute('data-stock', product.stock || 0);
+            option.setAttribute('data-price', product.price || 0);
+            option.setAttribute('data-category', product.category || 'Sin categoría');
+            select.appendChild(option);
+        });
+        
+        // Reinicializar selectpicker
+        try {
+            if ($('#productSelect').data('selectpicker')) {
+                $('#productSelect').selectpicker('refresh');
+                console.log('✅ Selectpicker actualizado');
+            } else {
+                $('.selectpicker').selectpicker({
+                    liveSearch: true,
+                    liveSearchPlaceholder: 'Buscar producto...',
+                    size: 10,
+                    style: 'btn-light'
+                });
+                console.log('✅ Selectpicker inicializado');
+            }
+        } catch (error) {
+            console.error('❌ Error al inicializar selectpicker:', error);
+        }
+    }
 
     function formatCurrency(value) {
         return '$' + Number(value || 0).toFixed(2);
@@ -361,14 +511,11 @@
 
     function setTodayDate() {
         const dateInput = document.getElementById('saleDate');
-
         if (!dateInput) return;
-
         const today = new Date();
         const year = today.getFullYear();
         const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');
-
         dateInput.value = `${year}-${month}-${day}`;
     }
 
@@ -397,14 +544,12 @@
 
     function renderItemsTable() {
         const tbody = document.querySelector('#saleItemsTable tbody');
-
         tbody.innerHTML = '';
 
         if (saleItems.length === 0) {
             tbody.innerHTML = `
                 <tr id="emptyItemsRow">
-                    <td colspan="6"
-                        class="text-center py-4 text-muted">
+                    <td colspan="6" class="text-center py-4 text-muted">
                         No hay productos agregados.
                     </td>
                 </tr>
@@ -454,23 +599,15 @@
         document.getElementById('productPrice').value = '0.00';
         document.getElementById('productQuantity').value = 1;
         document.getElementById('productDiscount').value = '0.00';
-
         $('#productSelect').selectpicker('val', '');
     }
 
+    // ===== AGREGAR PRODUCTO A LA VENTA =====
     document.getElementById('addProductBtn').addEventListener('click', function () {
         const productSelect = document.getElementById('productSelect');
         const selectedOption = productSelect.options[productSelect.selectedIndex];
 
-        const productId = productSelect.value;
-        const productName = selectedOption ? selectedOption.text : '';
-        const sku = selectedOption ? selectedOption.getAttribute('data-sku') : '';
-        const stock = Number(selectedOption ? selectedOption.getAttribute('data-stock') || 0 : 0);
-        const quantity = Number(document.getElementById('productQuantity').value || 0);
-        const unitPrice = Number(document.getElementById('productPrice').value || 0);
-        const discount = Number(document.getElementById('productDiscount').value || 0);
-
-        if (!productId) {
+        if (!selectedOption || !selectedOption.value) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Selecciona un producto',
@@ -479,6 +616,25 @@
             return;
         }
 
+        const productId = parseInt(selectedOption.value);
+        const productName = selectedOption.text.replace(/\s*\(SKU:.*\)/, '').trim();
+        const sku = selectedOption.getAttribute('data-sku') || '';
+        const stock = parseInt(selectedOption.getAttribute('data-stock') || 0);
+        const unitPrice = parseFloat(selectedOption.getAttribute('data-price') || 0);
+        const quantity = parseInt(document.getElementById('productQuantity').value || 0);
+        const discount = parseFloat(document.getElementById('productDiscount').value || 0);
+
+        console.log('Agregando producto:', {
+            productId,
+            productName,
+            sku,
+            stock,
+            unitPrice,
+            quantity,
+            discount
+        });
+
+        // Validaciones
         if (quantity <= 0) {
             Swal.fire({
                 icon: 'warning',
@@ -492,29 +648,79 @@
             Swal.fire({
                 icon: 'warning',
                 title: 'Stock insuficiente',
-                text: 'La cantidad no puede ser mayor al stock disponible.'
+                text: `Stock disponible: ${stock}. No puedes vender más de lo que hay.`
             });
             return;
         }
 
+        // Verificar si el producto ya está en la lista
+        const existingItemIndex = saleItems.findIndex(item => item.productId === productId);
+        
+        if (existingItemIndex !== -1) {
+            const existingItem = saleItems[existingItemIndex];
+            const newQuantity = existingItem.quantity + quantity;
+            
+            if (stock > 0 && newQuantity > stock) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Stock insuficiente',
+                    text: `La cantidad total (${newQuantity}) excede el stock disponible (${stock}).`
+                });
+                return;
+            }
+            
+            existingItem.quantity = newQuantity;
+            if (discount > existingItem.discount) {
+                existingItem.discount = discount;
+            }
+            
+            renderItemsTable();
+            clearProductFields();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Producto actualizado',
+                text: `Se actualizó la cantidad de ${productName} a ${newQuantity}.`,
+                timer: 1500,
+                showConfirmButton: false
+            });
+            return;
+        }
+
+        // Agregar nuevo producto
         saleItems.push({
-            productId,
-            productName,
-            sku,
-            stock,
-            quantity,
-            unitPrice,
-            discount
+            productId: productId,
+            productName: productName,
+            sku: sku,
+            stock: stock,
+            quantity: quantity,
+            unitPrice: unitPrice,
+            discount: discount
         });
+
+        console.log('Lista de items actual:', saleItems);
 
         clearProductFields();
         renderItemsTable();
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Producto agregado',
+            text: `${productName} agregado a la venta.`,
+            timer: 1000,
+            showConfirmButton: false
+        });
     });
 
+    // ===== SELECCIONAR PRODUCTO - ACTUALIZAR CAMPOS =====
     $('#productSelect').on('changed.bs.select', function () {
         const selectedOption = this.options[this.selectedIndex];
-
-        if (!selectedOption) return;
+        if (!selectedOption || !selectedOption.value) {
+            document.getElementById('productSku').value = '';
+            document.getElementById('productStock').value = '0';
+            document.getElementById('productPrice').value = '0.00';
+            return;
+        }
 
         const sku = selectedOption.getAttribute('data-sku') || '';
         const stock = selectedOption.getAttribute('data-stock') || '0';
@@ -522,9 +728,106 @@
 
         document.getElementById('productSku').value = sku;
         document.getElementById('productStock').value = stock;
-        document.getElementById('productPrice').value = Number(price).toFixed(2);
+        document.getElementById('productPrice').value = parseFloat(price).toFixed(2);
+        document.getElementById('productQuantity').value = 1;
+        document.getElementById('productDiscount').value = '0.00';
     });
 
+    // ===== CREAR PRODUCTO RÁPIDO =====
+    document.getElementById('quickCreateProductBtn').addEventListener('click', function() {
+        Swal.fire({
+            title: 'Crear producto rápido',
+            html: `
+                <div class="text-start">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del producto <span class="text-danger">*</span></label>
+                        <input type="text" id="quickProductName" class="form-control" placeholder="Nombre del producto">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Precio</label>
+                        <input type="number" id="quickProductPrice" class="form-control" step="0.01" placeholder="0.00" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stock</label>
+                        <input type="number" id="quickProductStock" class="form-control" placeholder="0" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Categoría</label>
+                        <select id="quickProductCategory" class="form-select">
+                            <option value="">Sin categoría</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Crear producto',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                const name = document.getElementById('quickProductName').value.trim();
+                const price = document.getElementById('quickProductPrice').value;
+                const stock = document.getElementById('quickProductStock').value;
+                const category = document.getElementById('quickProductCategory').value;
+
+                if (!name) {
+                    Swal.showValidationMessage('El nombre del producto es obligatorio');
+                    return false;
+                }
+
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('price', price || '0');
+                formData.append('stock', stock || '0');
+                formData.append('category', category);
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                return fetch('/products/quick-create/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.ok) {
+                        throw new Error(data.error || 'Error al crear el producto');
+                    }
+                    return data;
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(error.message);
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                const newProduct = result.value;
+                
+                // Agregar el nuevo producto a la lista
+                productsData.push({
+                    id: newProduct.id,
+                    name: newProduct.name,
+                    sku: 'Sin SKU',
+                    stock: parseInt(document.getElementById('quickProductStock').value || 0),
+                    price: parseFloat(document.getElementById('quickProductPrice').value || 0),
+                    category: 'Nuevo'
+                });
+                
+                populateProductSelect(productsData);
+                
+                // Seleccionar el nuevo producto
+                $('#productSelect').selectpicker('val', newProduct.id);
+                $('#productSelect').trigger('changed.bs.select');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Producto creado',
+                    text: `El producto "${newProduct.name}" fue creado exitosamente.`
+                });
+            }
+        });
+    });
+
+    // ===== ENVIAR FORMULARIO =====
     document.getElementById('saleForm').addEventListener('submit', function (event) {
         event.preventDefault();
 
@@ -537,13 +840,101 @@
             return;
         }
 
-        Swal.fire({
-            icon: 'info',
-            title: 'Frontend listo',
-            text: 'El formulario ya está preparado para conectarse al backend de ventas.'
+        // Construir datos de la venta
+        const saleData = {
+            customer_name: document.querySelector('[name="customer_name"]').value,
+            customer_email: document.querySelector('[name="customer_email"]').value,
+            customer_phone: document.querySelector('[name="customer_phone"]').value,
+            date: document.getElementById('saleDate').value,
+            status: document.querySelector('[name="status"]').value,
+            notes: document.querySelector('[name="notes"]').value,
+            subtotal: document.getElementById('subtotalInput').value,
+            tax: document.getElementById('taxInput').value,
+            discount: document.getElementById('discountInput').value,
+            total: document.getElementById('totalInput').value,
+            items: saleItems.map(item => ({
+                product_id: item.productId,
+                quantity: item.quantity,
+                unit_price: item.unitPrice,
+                discount: item.discount
+            }))
+        };
+
+        console.log('📦 Datos de la venta a guardar:', JSON.stringify(saleData, null, 2));
+        console.log('Items:', saleData.items);
+        console.log('Cantidad de items:', saleData.items.length);
+
+        // Verificar que los items tengan los campos correctos
+        saleData.items.forEach((item, index) => {
+            console.log(`Item ${index}:`, item);
+            if (!item.product_id) {
+                console.error(`❌ Item ${index} no tiene product_id`);
+            }
+            if (!item.quantity || item.quantity <= 0) {
+                console.error(`❌ Item ${index} tiene cantidad inválida:`, item.quantity);
+            }
+        });
+
+        // Enviar al backend
+        fetch('/sales-main/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(saleData)
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '✅ Venta registrada',
+                    text: 'La venta fue registrada exitosamente.'
+                }).then(() => {
+                    // Cerrar modal y recargar
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('createSaleModal'));
+                    if (modal) modal.hide();
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Error',
+                    text: data.error || 'No se pudo registrar la venta.'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error en fetch:', error);
+            Swal.fire({
+                icon: 'error',
+                title: '❌ Error',
+                text: 'Ocurrió un error al guardar la venta.'
+            });
         });
     });
 
-    setTodayDate();
-    $('.selectpicker').selectpicker();
+    // ===== INICIALIZACIÓN =====
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 DOM cargado, inicializando...');
+        setTodayDate();
+        
+        // Esperar un momento para asegurar que los elementos estén listos
+        setTimeout(function() {
+            loadProductsFromDjango();
+        }, 100);
+        
+        console.log('✅ Inicialización completada');
+    });
+
+    // También ejecutar cuando el modal se abre
+    document.addEventListener('shown.bs.modal', function () {
+        console.log('📂 Modal mostrado, recargando productos...');
+        loadProductsFromDjango();
+    });
 </script>
