@@ -442,8 +442,34 @@ class CustomLoginView(FormView):
 
     def form_valid(self, form):
         user = form.get_user()
-        print("👤 Usuario autenticado:", user)  # debug
         login(self.request, user)
+
+        company = None
+
+        # Si es propietario de una empresa
+        if getattr(user, "company", None):
+            company = user.company
+
+        # Si es miembro de una empresa
+        else:
+            member = CompanyMember.objects.select_related("company").filter(user=user).first()
+            if member:
+                company = member.company
+
+        # Guardar la empresa en la sesión
+        if company:
+            self.request.session["company_id"] = company.id
+
+            messages.success(
+                self.request,
+                f"👋 ¡Bienvenido {user.first_name or user.username} a {company.name}!"
+            )
+        else:
+            messages.warning(
+                self.request,
+                "⚠️ Tu cuenta no pertenece a ninguna empresa."
+            )
+
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -738,24 +764,24 @@ class UserListView(LoginRequiredMixin, ListView):
 #=================================================================
 #=================================================================
 #--------------------Crear usuario -------------------
-class UserCreateView(LoginRequiredMixin,CreateView):
+class UserCreateView(LoginRequiredMixin, CreateView):
     model = CustomUser
     form_class = CustomUserCreationForm
-    template_name = "vexora/users/create.html"   # 👈 plantilla para crear usuarios
+    template_name = "vexora/users/create.html"
     success_url = reverse_lazy("vexora:user_list")
-    
+
     def get_form_kwargs(self):
-        kwargs = super(UserCreateView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
+        kwargs["company"] = self.request.user.company
         return kwargs
 
-    def post(self, request, *args, **kwargs):
-        form = CustomUserCreationForm(request.POST or None, request.FILES or None)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "✅ ¡Usuario creado correctamente!")
-        else:
-            messages.error(request, "❌ Error al crear el usuario. Verifica los datos.")
-        return redirect("vexora:user_list")
+    def form_valid(self, form):
+        messages.success(self.request, "✅ ¡Usuario creado correctamente!")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, "❌ Error al crear el usuario. Verifica los datos.")
+        return super().form_invalid(form)
 #--------------------Actualizar Usuario -------------------
 class UserUpdateView(LoginRequiredMixin,UpdateView):
     model = CustomUser
@@ -764,7 +790,9 @@ class UserUpdateView(LoginRequiredMixin,UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["current_user"] = self.request.user   # 👈 se lo pasamos al form
+        kwargs["user"] = self.request.user   # 👈 se lo pasamos al form
+        kwargs["company"] = self.request.user.company   # 👈 se lo pasamos al form
+        
         return kwargs
     
     def form_valid(self, form):
@@ -1343,13 +1371,15 @@ class MembersCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         if self.request.user.company:
             form.instance.company = self.request.user.company
+            
             response = super().form_valid(form)
             member_user = form.instance.user
             member_name = f"{member_user.first_name} {member_user.last_name}".strip() or member_user.username
+            full_name = f"{member_user.first_name} {member_user.last_name}".strip()
 
             messages.success(
-                self.request, 
-                f"✅ Miembro '{member_user.get_full_name() or member_user.username}' creado correctamente!"
+                self.request,
+                f"✅ Miembro '{full_name or member_user.username}' creado correctamente!"
             )
             return response
         else:

@@ -153,15 +153,28 @@ class CustomAuthenticationForm(forms.Form):
         return self.user
 #--------------------Crear usuario -------------------
 class CustomUserCreationForm(UserCreationForm):
+    role = forms.ModelChoiceField(
+        queryset=Role.objects.none(),
+        required=True
+    )
     def __init__(self, *args, **kwargs):
+        company = kwargs.pop("company", None)
         super().__init__(*args, **kwargs)
+
+        if company:
+            self.fields["role"].queryset = Role.objects.filter(
+                company=company,
+                active=True
+            )
+
+        self.fields["role"].widget.attrs.update({
+            "class": "form-select ",
+            "data-live-search": "true",
+        })
         self.fields['avatar'].widget.attrs.update({
             'class': 'form-control'
         })
-        self.fields['groups'].widget.attrs.update({
-            'class': 'form-control selectpicker',
-            'data-live-search': 'true',
-        })
+
         self.fields['email'].widget.attrs.update({
             'class': 'form-control'
         })
@@ -185,7 +198,7 @@ class CustomUserCreationForm(UserCreationForm):
         })
     class Meta:
         model = CustomUser
-        fields = ["avatar","email", "username", "first_name", "last_name", "phone", "password1", "password2", "is_staff", "is_active","groups"]
+        fields = ["avatar","email", "username", "first_name", "last_name", "phone", "password1", "password2", "is_staff", "is_active", "role"]
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
@@ -195,17 +208,30 @@ class CustomUserCreationForm(UserCreationForm):
     
 #--------------------Actualizar Usuario -------------------
 class CustomUserUpdateForm(forms.ModelForm):   # 👈 Cambié a ModelForm
+    role = forms.ModelChoiceField(
+        queryset=Role.objects.none(),
+        required=True
+    )
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop("current_user", None)
+        company = kwargs.pop("company", None)
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+        print("ROLES:", Role.objects.filter(company=company, active=True) if company else "SIN EMPRESA")
 
+        if company:
+            self.fields["role"].queryset = Role.objects.filter(
+                company=company,
+                active=True
+            )
+
+        self.fields["role"].widget.attrs.update({
+            "class": "form-select ",
+            "data-live-search": "true",
+        })
         self.fields['email'].widget.attrs.update({
             'class': 'form-control'
         })
-        self.fields['groups'].widget.attrs.update({
-            'class': 'form-control selectpicker',
-            'data-live-search': 'true',
-        })
+
         self.fields['username'].widget.attrs.update({
             'class': 'form-control'
         })
@@ -237,7 +263,7 @@ class CustomUserUpdateForm(forms.ModelForm):   # 👈 Cambié a ModelForm
         
     class Meta:
         model = CustomUser
-        fields = ("email", "username", "first_name", "last_name", "phone", "is_staff", "is_active","cover","avatar", "groups")
+        fields = ("email", "username", "first_name", "last_name", "phone", "is_staff", "is_active","cover","avatar", "role")
         
 #--------------------Formulario de empresas-------------------
 class CompanyForm(forms.ModelForm):
@@ -264,7 +290,6 @@ class CompanyForm(forms.ModelForm):
         })
         self.fields['slug'].widget.attrs.update({
             'class': 'form-control',
-            'required': True,
 
         })
         
@@ -578,8 +603,8 @@ class PlanesForm(forms.ModelForm):
 # MEMBERS FORMS
 # ============================================
 class MemberCreateForm(forms.ModelForm):
+
     username = forms.CharField(
-        max_length=50,
         required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
@@ -647,6 +672,14 @@ class MemberCreateForm(forms.ModelForm):
         self.fields['role'].widget.attrs.update({
             'class': 'form-select'
         })
+            
+        if user and user.company:
+            self.fields['role'].queryset = Role.objects.filter(
+                company=user.company,
+                active=True
+            )
+        else:
+            self.fields['role'].queryset = Role.objects.none()
 
     class Meta:
         model = CompanyMember
@@ -703,6 +736,7 @@ class MemberForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # Obtener el usuario de los kwargs
         user = kwargs.pop('user', None)
+        company = kwargs.pop('company', None)
         super().__init__(*args, **kwargs)
         
         self.fields['company'].widget.attrs.update({
@@ -714,7 +748,13 @@ class MemberForm(forms.ModelForm):
         self.fields['role'].widget.attrs.update({
             'class': 'form-select'
         })
-        
+        if user and user.company:
+            self.fields['role'].queryset = Role.objects.filter(
+                company=user.company,
+                active=True
+            )
+        else:
+            self.fields['role'].queryset = Role.objects.none()
         # Si hay un usuario, filtrar los usuarios disponibles
         if user:
             company = user.company
@@ -769,6 +809,8 @@ class MemberForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             self.fields['user'].widget.attrs['disabled'] = 'disabled'
             self.fields['user'].help_text = "El usuario no puede ser modificado"
+            
+
 
     class Meta:
         model = CompanyMember

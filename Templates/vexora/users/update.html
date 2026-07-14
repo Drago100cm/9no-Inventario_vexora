@@ -130,10 +130,9 @@
               {{ form.last_name }}
             </div>
             <div class="mb-3">
-              <label for="{{ form.groups.id_for_label }}" class="form-label">
                 Grupos
               </label>
-              {{ form.groups }}
+              {{ form.role }}
             </div>
             {% if request.user.is_superuser %}
               <div class="form-check mt-4">

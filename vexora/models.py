@@ -117,7 +117,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     address = models.CharField(max_length=255, null=True, blank=True)
     cover = models.ImageField(upload_to='vexora/user/profile/', null=True, blank=True)
     avatar = models.ImageField(upload_to='vexora/user/avatar/', null=True, blank=True)
-    roles = models.ManyToManyField('Role',through='CompanyMember',related_name='users',blank=True)
     
     # Evitar conflictos con auth.User
     user_permissions = models.ManyToManyField(Permission,related_name="customuser_set",blank=True,help_text="Specific permissions for this user.",verbose_name="user permissions",)
@@ -132,11 +131,20 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         """Retorna el nombre corto del usuario"""
         return self.first_name or self.username or self.email
+    companies = models.ManyToManyField(Company,related_name="members",blank=True)
     @property
     def company(self):
-        """Return a primary company for the user if one exists."""
-        return self.owned_companies.first() or self.companies.first()
+        # Si es propietario
+        company = self.owned_companies.first()
+        if company:
+            return company
 
+        # Si es miembro
+        membership = self.memberships.select_related("company").first()
+        if membership:
+            return membership.company
+
+        return None
     objects = CustomUserManager()
 
     def get_role_permissions(self):
@@ -193,7 +201,7 @@ class Role(models.Model):
         unique_together = ("company", "name")
 
     def __str__(self):
-        return f"{self.company.name} - {self.name}"
+        return f"{self.name}"
     
 class CompanyMember(models.Model):
 
