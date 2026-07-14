@@ -122,6 +122,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     # Evitar conflictos con auth.User
     user_permissions = models.ManyToManyField(Permission,related_name="customuser_set",blank=True,help_text="Specific permissions for this user.",verbose_name="user permissions",)
     companies = models.ManyToManyField(Company,related_name="members",null=True,blank=True)
+    # ✅ AGREGAR ESTOS MÉTODOS PARA GENERAR LOS PDFs
+    def get_full_name(self):
+        """Retorna el nombre completo del usuario"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.first_name or self.last_name or self.username or self.email
+    
+    def get_short_name(self):
+        """Retorna el nombre corto del usuario"""
+        return self.first_name or self.username or self.email
     @property
     def company(self):
         """Return a primary company for the user if one exists."""

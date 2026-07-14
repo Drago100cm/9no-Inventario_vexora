@@ -44,7 +44,6 @@
 
                                 </button>
                             </div>
-
                         </div>
 
                         <div class="row">
@@ -62,6 +61,7 @@
                                         id="searchInput">
                                 </div>
                             </div>
+                            
 
                         </div>
 
@@ -95,19 +95,64 @@
 
                             <tbody>
 
-                                <tr>
-
-                                    <td colspan="6" class="text-center py-5">
-
-                                        <i class="ri-inbox-line display-6 text-muted"></i>
-
-                                        <p class="mt-3 text-muted mb-0">
-                                            No hay ventas registradas.
-                                        </p>
-
-                                    </td>
-
-                                </tr>
+                                {% if sales %}
+                                    {% for sale in sales %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ sale.invoice_number|default:'Sin factura' }}</strong>
+                                        </td>
+                                        <td>
+                                            {{ sale.customer_name|default:'Cliente general' }}
+                                            {% if sale.customer_email %}
+                                            <br>
+                                            <small class="text-muted">{{ sale.customer_email }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ sale.date|date:"d/m/Y H:i" }}
+                                        </td>
+                                        <td>
+                                            {% if sale.status == 'draft' %}
+                                                <span class="badge bg-secondary">Borrador</span>
+                                            {% elif sale.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pendiente</span>
+                                            {% elif sale.status == 'completed' %}
+                                                <span class="badge bg-success">Completada</span>
+                                            {% elif sale.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>${{ sale.total|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        onclick="editModal('{% url 'vexora:sales_main_update' %}?id={{ sale.id }}')"
+                                                        title="Editar">
+                                                    <i class="ri-edit-2-line"></i>
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="deleteSale('{{ sale.id }}')"
+                                                        title="Eliminar">
+                                                    <i class="ri-delete-bin-6-line"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5">
+                                            <i class="ri-inbox-line display-6 text-muted"></i>
+                                            <p class="mt-3 text-muted mb-0">
+                                                No hay ventas registradas.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                {% endif %}
 
                             </tbody>
 
@@ -136,13 +181,9 @@
 <script>
 
 function editModal(url){
-
-    $('#ModalOptions').load(url,function(){
-
+    $('#ModalOptions').load(url, function(){
         $(this).modal('show');
-
     });
-
 }
 
 function confirmarNuevoProducto(){
@@ -160,21 +201,63 @@ function confirmarNuevoProducto(){
     });
 }
 
+function deleteSale(saleId) {
+    Swal.fire({
+        title: '¿Eliminar venta?',
+        text: 'Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Aquí iría la lógica para eliminar la venta
+            fetch(`/sales-main/delete/${saleId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Eliminada',
+                        text: 'La venta fue eliminada exitosamente.'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'No se pudo eliminar la venta.'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al eliminar la venta.'
+                });
+            });
+        }
+    });
+}
+
 document.getElementById("searchInput").addEventListener("keyup", function(){
-
     let value = this.value.toLowerCase();
-
     let rows = document.querySelectorAll("#salesTable tbody tr");
-
     rows.forEach(function(row){
-
         row.style.display =
             row.innerText.toLowerCase().includes(value)
             ? ""
             : "none";
-
     });
-
 });
 
 </script>

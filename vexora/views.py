@@ -33,6 +33,18 @@ from .forms import SiteConfigurationForm, SMTPConfigurationForm
 from django.db.models import Q
 from datetime import datetime
 from django.views.decorators.http import require_POST
+from .services.report_service import ReportService
+from django.http import HttpResponse
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch, cm
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.pdfgen import canvas
+from io import BytesIO
+import json
+from decimal import Decimal
 
 # Create your views here.
 class HomeView(TemplateView):
@@ -1397,15 +1409,105 @@ def delete_member(request, pk):
 
 class SalesMainListView(LoginRequiredMixin, TemplateView):
     template_name = "vexora/sales_main/list.html"
-
-
-class SalesMainCreateView(LoginRequiredMixin, TemplateView):
-    template_name = "vexora/sales_main/create.html"
-
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.filter(company=self.request.user.company)
+        # Obtener todas las ventas de la empresa del usuario
+        context['sales'] = Sale.objects.filter(
+            company=self.request.user.company
+        ).order_by('-created_at')  # Ordenar por fecha de creación descendente
         return context
+
+class SalesMainCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        context = {
+            'categories': Category.objects.filter(company=request.user.company),
+            'products': Product.objects.filter(
+                company=request.user.company,
+                is_active=True
+            ).select_related('category')
+        }
+        return render(request, 'vexora/sales_main/create.html', context)
+    
+    def post(self, request):
+        try:
+            # Log para depuración
+            print("=== POST /sales-main/create/ ===")
+            print("Request body:", request.body)
+            
+            data = json.loads(request.body)
+            print("Datos parseados:", data)
+            
+            # Validar que haya items
+            if not data.get('items'):
+                return JsonResponse({'success': False, 'error': 'No hay productos en la venta'}, status=400)
+            
+            # Validar que items sea una lista
+            if not isinstance(data['items'], list):
+                return JsonResponse({'success': False, 'error': 'Formato de items inválido'}, status=400)
+            
+            if len(data['items']) == 0:
+                return JsonResponse({'success': False, 'error': 'La lista de productos está vacía'}, status=400)
+            
+            # Validar cada item
+            for idx, item_data in enumerate(data['items']):
+                if not item_data.get('product_id'):
+                    return JsonResponse({'success': False, 'error': f'Item {idx}: product_id faltante'}, status=400)
+                if not item_data.get('quantity') or int(item_data.get('quantity', 0)) <= 0:
+                    return JsonResponse({'success': False, 'error': f'Item {idx}: cantidad inválida'}, status=400)
+            
+            # Crear la venta
+            sale = Sale.objects.create(
+                company=request.user.company,
+                customer_name=data.get('customer_name', ''),
+                customer_email=data.get('customer_email', ''),
+                customer_phone=data.get('customer_phone', ''),
+                user=request.user,
+                date=data.get('date', timezone.now()),
+                status=data.get('status', 'draft'),
+                subtotal=Decimal(str(data.get('subtotal', 0))),
+                tax=Decimal(str(data.get('tax', 0))),
+                discount=Decimal(str(data.get('discount', 0))),
+                total=Decimal(str(data.get('total', 0))),
+                notes=data.get('notes', '')
+            )
+            
+            # Crear los items de la venta
+            for idx, item_data in enumerate(data['items']):
+                print(f"Procesando item {idx}:", item_data)
+                
+                try:
+                    product = Product.objects.get(id=item_data['product_id'], company=request.user.company)
+                except Product.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': f'Producto {item_data["product_id"]} no encontrado'}, status=400)
+                
+                quantity = int(item_data.get('quantity', 0))
+                unit_price = Decimal(str(item_data.get('unit_price', 0)))
+                discount = Decimal(str(item_data.get('discount', 0)))
+                
+                SaleItem.objects.create(
+                    sale=sale,
+                    product=product,
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    discount=discount
+                )
+                
+                # Actualizar stock del producto
+                if product.stock is not None:
+                    product.stock -= quantity
+                    product.save()
+            
+            return JsonResponse({'success': True, 'sale_id': sale.id, 'invoice_number': sale.invoice_number})
+            
+        except json.JSONDecodeError as e:
+            print("Error JSON:", e)
+            return JsonResponse({'success': False, 'error': f'Error en formato JSON: {str(e)}'}, status=400)
+        except Exception as e:
+            print("Error general:", e)
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 class ProductQuickCreateView(LoginRequiredMixin, View):
     def get(self, request):
@@ -1460,9 +1562,96 @@ class ProductQuickCreateView(LoginRequiredMixin, View):
         )
 
         return JsonResponse({'ok': True, 'id': product.id, 'name': product.name})
-class SalesMainUpdateView(LoginRequiredMixin, TemplateView):
-    template_name = "vexora/sales_main/update.html"
-
+class SalesMainUpdateView(LoginRequiredMixin, View):
+    def get(self, request):
+        sale_id = request.GET.get('id')
+        if not sale_id:
+            return JsonResponse({'success': False, 'error': 'ID de venta no proporcionado'}, status=400)
+        
+        try:
+            sale = Sale.objects.get(id=sale_id, company=request.user.company)
+        except Sale.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Venta no encontrada'}, status=404)
+        
+        # Obtener los items de la venta con los productos
+        sale_items = sale.items.all().select_related('product')
+        
+        # Preparar datos para JSON
+        sale_items_data = []
+        for item in sale_items:
+            sale_items_data.append({
+                'product_id': item.product.id,
+                'product_name': item.product.name,
+                'sku': item.product.sku or 'Sin SKU',
+                'stock': item.product.stock or 0,
+                'quantity': item.quantity,
+                'unit_price': float(item.unit_price),
+                'discount': float(item.discount),
+                'subtotal': float(item.total_price)
+            })
+        
+        # Obtener todos los productos activos
+        products = Product.objects.filter(
+            company=request.user.company,
+            is_active=True
+        ).select_related('category')
+        
+        context = {
+            'sale': sale,
+            'sale_items': sale_items,
+            'sale_items_json': json.dumps(sale_items_data),
+            'categories': Category.objects.filter(company=request.user.company),
+            'products': products,  # ← Asegurar que esto está pasando
+        }
+        return render(request, 'vexora/sales_main/update.html', context)
+    
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            sale_id = data.get('sale_id')
+            
+            if not sale_id:
+                return JsonResponse({'success': False, 'error': 'ID de venta no proporcionado'}, status=400)
+            
+            try:
+                sale = Sale.objects.get(id=sale_id, company=request.user.company)
+            except Sale.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Venta no encontrada'}, status=404)
+            
+            # Actualizar datos de la venta
+            sale.customer_name = data.get('customer_name', '')
+            sale.customer_email = data.get('customer_email', '')
+            sale.customer_phone = data.get('customer_phone', '')
+            sale.status = data.get('status', 'draft')
+            sale.notes = data.get('notes', '')
+            sale.subtotal = Decimal(str(data.get('subtotal', 0)))
+            sale.tax = Decimal(str(data.get('tax', 0)))
+            sale.discount = Decimal(str(data.get('discount', 0)))
+            sale.total = Decimal(str(data.get('total', 0)))
+            sale.save()
+            
+            # Eliminar items existentes
+            sale.items.all().delete()
+            
+            # Crear nuevos items
+            for item_data in data.get('items', []):
+                product = Product.objects.get(id=item_data['product_id'], company=request.user.company)
+                quantity = int(item_data['quantity'])
+                unit_price = Decimal(str(item_data['unit_price']))
+                discount = Decimal(str(item_data.get('discount', 0)))
+                
+                SaleItem.objects.create(
+                    sale=sale,
+                    product=product,
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    discount=discount
+                )
+            
+            return JsonResponse({'success': True, 'sale_id': sale.id})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
 # ============================================
 # STORE PÚBLICA
 # ============================================
@@ -1743,4 +1932,977 @@ def cart_add(request):
         "total_items": cart.total_items,
     })
     
+
+# ============================================
+# REPORTES VIEWS
+# ============================================
+
+class ReportsDashboardView(LoginRequiredMixin, TemplateView):
+    template_name = 'vexora/reports/reports.html'
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        company = self.request.user.company
+        
+        if not company:
+            context['error'] = 'No tienes una empresa asociada'
+            return context
+        
+        try:
+            service = ReportService(company)
+            
+            context.update({
+                'total_products': service.get_total_products(),
+                'products_status': service.get_products_by_status(),
+                'inventory_value': service.get_inventory_value(),
+                'total_revenue': service.get_total_revenue(days=30),
+                'daily_average': service.get_daily_average_sales(),
+                'best_sellers': service.get_best_selling_products(limit=5),
+                'low_stock': service.get_low_stock_products(threshold=5)[:5],
+                'out_of_stock': service.get_out_of_stock_products()[:5],
+                'profit_summary': service.get_profit_summary(days=30),
+                'sales_by_status': service.get_sales_by_status(),
+                'page_title': 'Dashboard de Reportes',
+            })
+        except Exception as e:
+            context['error'] = f'Error al generar reportes: {str(e)}'
+        
+        return context
+
+class ProductReportsView(LoginRequiredMixin, TemplateView):
+    template_name = 'vexora/reports/product_reports.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        company = self.request.user.company
+        
+        if not company:
+            context['error'] = 'No tienes una empresa asociada'
+            return context
+        
+        try:
+            service = ReportService(company)
+            
+            context.update({
+                'total_products': service.get_total_products(),
+                'products_by_status': service.get_products_by_status(),
+                'products_by_category': service.get_products_by_category(),
+                'low_stock': service.get_low_stock_products(),
+                'out_of_stock': service.get_out_of_stock_products(),
+                'best_sellers': service.get_best_selling_products(),
+                'worst_sellers': service.get_worst_selling_products(),
+                'inventory_value': service.get_inventory_value(),
+                'products_by_supplier': service.get_products_by_supplier(),
+                'suppliers_summary': service.get_suppliers_summary(),
+                'page_title': 'Reportes de Productos',
+            })
+        except Exception as e:
+            context['error'] = f'Error al generar reportes: {str(e)}'
+        
+        return context
+
+class SalesReportsView(LoginRequiredMixin, TemplateView):
+    template_name = 'vexora/reports/sales_reports.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        company = self.request.user.company
+        
+        if not company:
+            context['error'] = 'No tienes una empresa asociada'
+            return context
+        
+        try:
+            service = ReportService(company)
+            
+            context.update({
+                'daily_sales': service.get_sales_by_period('day'),
+                'weekly_sales': service.get_sales_by_period('week'),
+                'monthly_sales': service.get_sales_by_period('month'),
+                'yearly_sales': service.get_sales_by_period('year'),
+                'total_revenue': service.get_total_revenue(),
+                'daily_average': service.get_daily_average_sales(),
+                'sales_by_seller': service.get_sales_by_seller(),
+                'sales_by_client': service.get_sales_by_client(),
+                'sales_by_status': service.get_sales_by_status(),
+                'cancelled_sales': service.get_cancelled_sales(),
+                'profit_summary': service.get_profit_summary(),
+                'page_title': 'Reportes de Ventas',
+            })
+        except Exception as e:
+            context['error'] = f'Error al generar reportes: {str(e)}'
+        
+        return context
+
+class FinancialReportsView(LoginRequiredMixin, TemplateView):
+    template_name = 'vexora/reports/financial_reports.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        company = self.request.user.company
+        
+        if not company:
+            context['error'] = 'No tienes una empresa asociada'
+            return context
+        
+        try:
+            service = ReportService(company)
+            
+            context.update({
+                'monthly_financial': service.get_financial_by_period('month'),
+                'weekly_financial': service.get_financial_by_period('week'),
+                'yearly_financial': service.get_financial_by_period('year'),
+                'product_profitability': service.get_product_profitability(),
+                'profit_summary': service.get_profit_summary(),
+                'cancelled_sales': service.get_cancelled_sales(),
+                'inventory_value': service.get_inventory_value(),
+                'page_title': 'Reportes Financieros',
+            })
+        except Exception as e:
+            context['error'] = f'Error al generar reportes: {str(e)}'
+        
+        return context
+    
+# ============================================
+# EXPORTAR REPORTES A PDF CON REPORTLAB
+# ============================================
+
+class ExportReportsPDFView(LoginRequiredMixin, View):
+    """Vista base para exportar reportes a PDF usando ReportLab"""
+    
+    def get_filename(self):
+        return f"reporte_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    
+    def get_data(self):
+        raise NotImplementedError("Debes implementar get_data")
+    
+    def get_title(self):
+        raise NotImplementedError("Debes implementar get_title")
+    
+    def create_pdf(self, data, title, company, user):
+        """Crear el PDF usando ReportLab"""
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=72,
+            leftMargin=72,
+            topMargin=72,
+            bottomMargin=72,
+        )
+        
+        styles = getSampleStyleSheet()
+        
+        # Estilos personalizados
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=22,
+            textColor=colors.HexColor('#2563EB'),
+            alignment=TA_CENTER,
+            spaceAfter=20
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'Subtitle',
+            parent=styles['Normal'],
+            fontSize=11,
+            textColor=colors.HexColor('#666666'),
+            alignment=TA_CENTER,
+            spaceAfter=10
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor=colors.HexColor('#1E293B'),
+            spaceAfter=10,
+            spaceBefore=15
+        )
+        
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.HexColor('#999999'),
+            alignment=TA_CENTER
+        )
+        
+        elements = []
+        
+        # Header
+        elements.append(Paragraph(title, title_style))
+        elements.append(Paragraph(f"{company.name}", subtitle_style))
+        elements.append(Paragraph(f"Generado: {timezone.now().strftime('%d/%m/%Y %H:%M')}", subtitle_style))
+        elements.append(Paragraph(f"Usuario: {user.get_full_name() or user.email}", subtitle_style))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Resumen (cards)
+        if 'summary' in data and data['summary']:
+            elements.append(Paragraph("📊 Resumen General", heading_style))
+            
+            summary_items = list(data['summary'].items())
+            rows = []
+            for i in range(0, len(summary_items), 2):
+                row = []
+                for j in range(2):
+                    if i + j < len(summary_items):
+                        key, value = summary_items[i + j]
+                        label = key.replace('_', ' ').title()
+                        if isinstance(value, float) or isinstance(value, int):
+                            if any(word in label.lower() for word in ['ingresos', 'ganancia', 'total', 'costo', 'valor']):
+                                row.append(f"{label}: ${value:,.2f}")
+                            else:
+                                row.append(f"{label}: {value}")
+                        else:
+                            row.append(f"{label}: {value}")
+                    else:
+                        row.append("")
+                rows.append(row)
+            
+            summary_table = Table(rows, colWidths=[3.5*inch, 3.5*inch])
+            summary_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F8F9FA')),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E5E7EB')),
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('PADDING', (0, 0), (-1, -1), 6),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ROWBACKGROUNDS', (0, 0), (-1, -1), [colors.white, colors.HexColor('#F5F7FA')]),
+            ]))
+            elements.append(summary_table)
+            elements.append(Spacer(1, 0.3*inch))
+        
+        # Tablas de datos
+        for table_name, table_data in data.items():
+            if table_name == 'summary':
+                continue
+                
+            if table_data and len(table_data) > 0:
+                # Título de la tabla
+                elements.append(Paragraph(table_name.replace('_', ' ').title(), heading_style))
+                
+                # Preparar datos para la tabla
+                headers = list(table_data[0].keys())
+                table_rows = []
+                
+                # Agregar encabezados
+                header_row = []
+                for h in headers:
+                    header_row.append(h.replace('_', ' ').title())
+                table_rows.append(header_row)
+                
+                # Agregar datos
+                for row in table_data:
+                    row_data = []
+                    for header in headers:
+                        value = row.get(header, '')
+                        if value is None:
+                            row_data.append('-')
+                        elif isinstance(value, float):
+                            if any(word in header.lower() for word in ['total', 'ingreso', 'ganancia', 'costo', 'valor', 'precio', 'revenue']):
+                                row_data.append(f'${value:,.2f}')
+                            else:
+                                row_data.append(f'{value:,.2f}')
+                        elif isinstance(value, int):
+                            row_data.append(str(value))
+                        else:
+                            row_data.append(str(value))
+                    table_rows.append(row_data)
+                
+                # Crear tabla
+                table = Table(table_rows, repeatRows=1)
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563EB')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 9),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                    ('TOPPADDING', (0, 0), (-1, 0), 8),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E5E7EB')),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 8),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F7FA')]),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('PADDING', (0, 0), (-1, -1), 4),
+                ]))
+                elements.append(table)
+                elements.append(Spacer(1, 0.2*inch))
+        
+        # Footer
+        elements.append(Spacer(1, 0.5*inch))
+        elements.append(Paragraph(
+            f"Reporte generado automáticamente por Vexora - {timezone.now().strftime('%d/%m/%Y %H:%M:%S')}",
+            footer_style
+        ))
+        elements.append(Paragraph(
+            f"© {timezone.now().strftime('%Y')} {company.name}. Todos los derechos reservados.",
+            footer_style
+        ))
+        
+        doc.build(elements)
+        pdf = buffer.getvalue()
+        buffer.close()
+        return pdf
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            company = request.user.company
+            if not company:
+                messages.error(request, "No tienes una empresa asociada")
+                return redirect('vexora:reports_dashboard')
+            
+            data, title = self.get_data()
+            
+            pdf = self.create_pdf(data, title, company, request.user)
+            
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{self.get_filename()}"'
+            return response
+            
+        except Exception as e:
+            messages.error(request, f"Error al generar PDF: {str(e)}")
+            return redirect('vexora:reports_dashboard')
+
+
+class ExportDashboardPDFView(ExportReportsPDFView):
+    """Exportar Dashboard a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        data = {
+            'summary': {
+                'Total Productos': service.get_total_products(),
+                'Productos Activos': service.get_products_by_status()['active'],
+                'Productos Inactivos': service.get_products_by_status()['inactive'],
+                'Ingresos (30 días)': service.get_total_revenue(days=30),
+                'Ganancia Neta': service.get_profit_summary(days=30)['gross_profit'],
+                'Margen': f"{service.get_profit_summary(days=30)['profit_margin']:.1f}%",
+                'Sin Stock': len(service.get_out_of_stock_products()),
+                'Valor Inventario': service.get_inventory_value()['total_value'],
+            },
+            'Productos Más Vendidos': list(service.get_best_selling_products(limit=10)),
+            'Productos con Bajo Stock': list(service.get_low_stock_products(threshold=5)[:10]),
+            'Ventas por Estado': list(service.get_sales_by_status()),
+        }
+        return data, "Dashboard de Reportes"
+    
+    def get_filename(self):
+        return f"dashboard_reportes_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportProductsPDFView(ExportReportsPDFView):
+    """Exportar Reportes de Productos a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        products_by_category = service.get_products_by_category()
+        category_data = []
+        for cat in products_by_category:
+            category_data.append({
+                'Categoría': cat['category'],
+                'Cantidad': cat['count'],
+                'Porcentaje': f"{cat['percentage']:.1f}%"
+            })
+        
+        data = {
+            'summary': {
+                'Total Productos': service.get_total_products(),
+                'Activos': service.get_products_by_status()['active'],
+                'Inactivos': service.get_products_by_status()['inactive'],
+                'Sin Stock': len(service.get_out_of_stock_products()),
+                'Valor Inventario': service.get_inventory_value()['total_value'],
+            },
+            'Productos por Categoría': category_data,
+            'Productos por Proveedor': list(service.get_products_by_supplier()),
+            'Productos Más Vendidos': list(service.get_best_selling_products(limit=10)),
+            'Productos Sin Stock': list(service.get_out_of_stock_products()[:10]),
+        }
+        return data, "Reporte de Productos"
+    
+    def get_filename(self):
+        return f"reporte_productos_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportSalesPDFView(ExportReportsPDFView):
+    """Exportar Reportes de Ventas a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        daily_sales = list(service.get_sales_by_period('day'))
+        for sale in daily_sales:
+            if sale.get('period'):
+                sale['Fecha'] = sale['period'].strftime('%d/%m/%Y')
+                if 'period' in sale:
+                    del sale['period']
+        
+        weekly_sales = list(service.get_sales_by_period('week'))
+        for i, sale in enumerate(weekly_sales, 1):
+            sale['Semana'] = f"Semana {i}"
+            if 'period' in sale:
+                del sale['period']
+        
+        monthly_sales = list(service.get_sales_by_period('month'))
+        for sale in monthly_sales:
+            if sale.get('period'):
+                sale['Mes'] = sale['period'].strftime('%B %Y')
+                if 'period' in sale:
+                    del sale['period']
+        
+        data = {
+            'summary': {
+                'Ingresos Totales': service.get_total_revenue(),
+                'Promedio Diario': service.get_daily_average_sales(),
+                'Ganancia Neta': service.get_profit_summary()['gross_profit'],
+                'Margen': f"{service.get_profit_summary()['profit_margin']:.1f}%",
+                'Ventas Canceladas': len(service.get_cancelled_sales()),
+            },
+            'Ventas Diarias': daily_sales[:14],
+            'Ventas Semanales': weekly_sales,
+            'Ventas Mensuales': monthly_sales,
+            'Ventas por Vendedor': list(service.get_sales_by_seller(limit=10)),
+            'Clientes con Mayor Compra': list(service.get_sales_by_client(limit=10)),
+        }
+        return data, "Reporte de Ventas"
+    
+    def get_filename(self):
+        return f"reporte_ventas_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportFinancialPDFView(ExportReportsPDFView):
+    """Exportar Reportes Financieros a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        monthly = service.get_financial_by_period('month')
+        weekly = service.get_financial_by_period('week')
+        yearly = service.get_financial_by_period('year')
+        
+        profitability = service.get_product_profitability(limit=10)
+        profit_data = []
+        for p in profitability:
+            profit_data.append({
+                'Producto': p['product_name'],
+                'Categoría': p['category'],
+                'Precio': p['sale_price'],
+                'Costo': p['price'],
+                'Margen %': f"{p['margin_percentage']:.1f}%",
+                'Vendidos': p['total_sold'],
+                'Ingresos': p['total_revenue'],
+            })
+        
+        data = {
+            'summary': {
+                'Ingresos Mensuales': monthly['revenue'],
+                'Costos Mensuales': monthly['cost'],
+                'Ganancia Mensual': monthly['profit'],
+                'Margen Mensual': f"{monthly['profit_margin']:.1f}%",
+                'Ventas Mensuales': monthly['sales_count'],
+                'Valor Inventario': service.get_inventory_value()['total_value'],
+            },
+            'Resumen Semanal': [{
+                'Ingresos': weekly['revenue'],
+                'Costos': weekly['cost'],
+                'Ganancia': weekly['profit'],
+                'Margen': f"{weekly['profit_margin']:.1f}%",
+                'Ventas': weekly['sales_count'],
+            }],
+            'Resumen Mensual': [{
+                'Ingresos': monthly['revenue'],
+                'Costos': monthly['cost'],
+                'Ganancia': monthly['profit'],
+                'Margen': f"{monthly['profit_margin']:.1f}%",
+                'Ventas': monthly['sales_count'],
+            }],
+            'Resumen Anual': [{
+                'Ingresos': yearly['revenue'],
+                'Costos': yearly['cost'],
+                'Ganancia': yearly['profit'],
+                'Margen': f"{yearly['profit_margin']:.1f}%",
+                'Ventas': yearly['sales_count'],
+            }],
+            'Rentabilidad por Producto': profit_data,
+            'Ventas Canceladas': list(service.get_cancelled_sales()[:10]),
+        }
+        return data, "Reporte Financiero"
+    
+    def get_filename(self):
+        return f"reporte_financiero_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    
+# ============================================
+# EXPORTAR REPORTES DE PRODUCTOS POR SECCIÓN
+# ============================================
+
+class ExportProductsCategoryPDFView(ExportReportsPDFView):
+    """Exportar Productos por Categoría a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        products_by_category = service.get_products_by_category()
+        category_data = []
+        for cat in products_by_category:
+            category_data.append({
+                'Categoría': cat['category'],
+                'Cantidad': cat['count'],
+                'Porcentaje': f"{cat['percentage']:.1f}%"
+            })
+        
+        data = {
+            'summary': {
+                'Total Productos': service.get_total_products(),
+                'Categorías': len(products_by_category),
+            },
+            'Productos por Categoría': category_data,
+        }
+        return data, "Productos por Categoría"
+    
+    def get_filename(self):
+        return f"productos_por_categoria_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportProductsSupplierPDFView(ExportReportsPDFView):
+    """Exportar Productos por Proveedor a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        data = {
+            'summary': {
+                'Total Productos': service.get_total_products(),
+                'Proveedores': len(service.get_suppliers_summary()),
+            },
+            'Productos por Proveedor': list(service.get_products_by_supplier()),
+        }
+        return data, "Productos por Proveedor"
+    
+    def get_filename(self):
+        return f"productos_por_proveedor_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportProductsBestSellersPDFView(ExportReportsPDFView):
+    """Exportar Productos Más Vendidos a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        best_sellers = list(service.get_best_selling_products(limit=20))
+        best_sellers_data = []
+        for item in best_sellers:
+            best_sellers_data.append({
+                'Producto': item.get('product__name', '-'),
+                'Cantidad': item.get('total_quantity', 0),
+                'Ingresos': item.get('total_revenue', 0),
+            })
+        
+        data = {
+            'summary': {
+                'Total Productos': service.get_total_products(),
+                'Período': 'Últimos 30 días',
+            },
+            'Productos Más Vendidos': best_sellers_data,
+        }
+        return data, "Productos Más Vendidos"
+    
+    def get_filename(self):
+        return f"productos_mas_vendidos_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportProductsWorstSellersPDFView(ExportReportsPDFView):
+    """Exportar Productos Menos Vendidos a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        worst_sellers = list(service.get_worst_selling_products(limit=20))
+        worst_sellers_data = []
+        for item in worst_sellers:
+            worst_sellers_data.append({
+                'Producto': item.get('name', '-'),
+                'Stock': item.get('stock', 0),
+                'SKU': item.get('sku', '-'),
+            })
+        
+        data = {
+            'summary': {
+                'Total Productos': service.get_total_products(),
+                'Período': 'Últimos 30 días',
+            },
+            'Productos Menos Vendidos': worst_sellers_data,
+        }
+        return data, "Productos Menos Vendidos"
+    
+    def get_filename(self):
+        return f"productos_menos_vendidos_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportProductsOutOfStockPDFView(ExportReportsPDFView):
+    """Exportar Productos Sin Stock a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        out_of_stock = list(service.get_out_of_stock_products())
+        out_of_stock_data = []
+        for item in out_of_stock:
+            out_of_stock_data.append({
+                'Producto': item.get('name', '-'),
+                'Categoría': item.get('category__name', '-'),
+                'SKU': item.get('sku', '-'),
+            })
+        
+        data = {
+            'summary': {
+                'Total Productos': service.get_total_products(),
+                'Sin Stock': len(out_of_stock),
+            },
+            'Productos Sin Stock': out_of_stock_data,
+        }
+        return data, "Productos Sin Stock"
+    
+    def get_filename(self):
+        return f"productos_sin_stock_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+# ============================================
+# EXPORTAR REPORTES DE VENTAS POR SECCIÓN
+# ============================================
+
+class ExportSalesDailyPDFView(ExportReportsPDFView):
+    """Exportar Ventas Diarias a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        daily_sales = list(service.get_sales_by_period('day'))
+        daily_sales_data = []
+        for sale in daily_sales:
+            daily_sales_data.append({
+                'Fecha': sale.get('period', '').strftime('%d/%m/%Y') if sale.get('period') else '',
+                'Ventas': sale.get('count', 0),
+                'Total': sale.get('total_sales', 0),
+                'Promedio': sale.get('avg_sale', 0),
+            })
+        
+        data = {
+            'summary': {
+                'Total Ingresos': service.get_total_revenue(days=1),
+                'Período': 'Hoy',
+            },
+            'Ventas Diarias': daily_sales_data,
+        }
+        return data, "Ventas Diarias"
+    
+    def get_filename(self):
+        return f"ventas_diarias_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportSalesWeeklyPDFView(ExportReportsPDFView):
+    """Exportar Ventas Semanales a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        weekly_sales = list(service.get_sales_by_period('week'))
+        weekly_sales_data = []
+        for i, sale in enumerate(weekly_sales, 1):
+            weekly_sales_data.append({
+                'Semana': f"Semana {i}",
+                'Ventas': sale.get('count', 0),
+                'Total': sale.get('total_sales', 0),
+                'Promedio': sale.get('avg_sale', 0),
+            })
+        
+        data = {
+            'summary': {
+                'Total Ingresos': service.get_total_revenue(days=7),
+                'Período': 'Última semana',
+            },
+            'Ventas Semanales': weekly_sales_data,
+        }
+        return data, "Ventas Semanales"
+    
+    def get_filename(self):
+        return f"ventas_semanales_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportSalesMonthlyPDFView(ExportReportsPDFView):
+    """Exportar Ventas Mensuales a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        monthly_sales = list(service.get_sales_by_period('month'))
+        monthly_sales_data = []
+        for sale in monthly_sales:
+            monthly_sales_data.append({
+                'Mes': sale.get('period', '').strftime('%B %Y') if sale.get('period') else '',
+                'Ventas': sale.get('count', 0),
+                'Total': sale.get('total_sales', 0),
+                'Promedio': sale.get('avg_sale', 0),
+            })
+        
+        data = {
+            'summary': {
+                'Total Ingresos': service.get_total_revenue(days=30),
+                'Período': 'Último mes',
+            },
+            'Ventas Mensuales': monthly_sales_data,
+        }
+        return data, "Ventas Mensuales"
+    
+    def get_filename(self):
+        return f"ventas_mensuales_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportSalesYearlyPDFView(ExportReportsPDFView):
+    """Exportar Ventas Anuales a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        yearly_sales = list(service.get_sales_by_period('year'))
+        yearly_sales_data = []
+        for sale in yearly_sales:
+            yearly_sales_data.append({
+                'Año': sale.get('period', '').strftime('%Y') if sale.get('period') else '',
+                'Ventas': sale.get('count', 0),
+                'Total': sale.get('total_sales', 0),
+                'Promedio': sale.get('avg_sale', 0),
+            })
+        
+        data = {
+            'summary': {
+                'Total Ingresos': service.get_total_revenue(days=365),
+                'Período': 'Último año',
+            },
+            'Ventas Anuales': yearly_sales_data,
+        }
+        return data, "Ventas Anuales"
+    
+    def get_filename(self):
+        return f"ventas_anuales_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportSalesBySellerPDFView(ExportReportsPDFView):
+    """Exportar Ventas por Vendedor a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        sales_by_seller = list(service.get_sales_by_seller(limit=20))
+        sales_by_seller_data = []
+        for item in sales_by_seller:
+            name = item.get('user__first_name', '') or item.get('user__username', '-')
+            if item.get('user__last_name'):
+                name = f"{name} {item.get('user__last_name', '')}"
+            sales_by_seller_data.append({
+                'Vendedor': name,
+                'Ventas': item.get('count', 0),
+                'Total': item.get('total_sales', 0),
+                'Promedio': item.get('average', 0),
+            })
+        
+        data = {
+            'summary': {
+                'Total Vendedores': len(sales_by_seller_data),
+                'Período': 'Últimos 30 días',
+            },
+            'Ventas por Vendedor': sales_by_seller_data,
+        }
+        return data, "Ventas por Vendedor"
+    
+    def get_filename(self):
+        return f"ventas_por_vendedor_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportSalesByClientPDFView(ExportReportsPDFView):
+    """Exportar Clientes con Mayor Compra a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        sales_by_client = list(service.get_sales_by_client(limit=20))
+        sales_by_client_data = []
+        for item in sales_by_client:
+            sales_by_client_data.append({
+                'Cliente': item.get('customer_name', '-'),
+                'Compras': item.get('count', 0),
+                'Total': item.get('total_purchases', 0),
+                'Última Compra': item.get('last_purchase', '').strftime('%d/%m/%Y') if item.get('last_purchase') else '',
+            })
+        
+        data = {
+            'summary': {
+                'Total Clientes': len(sales_by_client_data),
+                'Período': 'Últimos 30 días',
+            },
+            'Clientes con Mayor Compra': sales_by_client_data,
+        }
+        return data, "Clientes con Mayor Compra"
+    
+    def get_filename(self):
+        return f"clientes_mayor_compra_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+# ============================================
+# EXPORTAR REPORTES FINANCIEROS POR SECCIÓN
+# ============================================
+
+class ExportFinancialWeeklyPDFView(ExportReportsPDFView):
+    """Exportar Resumen Semanal a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        weekly = service.get_financial_by_period('week')
+        
+        data = {
+            'summary': {
+                'Ingresos': weekly['revenue'],
+                'Costos': weekly['cost'],
+                'Ganancia': weekly['profit'],
+                'Margen': f"{weekly['profit_margin']:.1f}%",
+                'Ventas': weekly['sales_count'],
+                'Items Vendidos': weekly['items_sold'],
+            },
+        }
+        return data, "Resumen Semanal"
+    
+    def get_filename(self):
+        return f"resumen_semanal_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportFinancialMonthlyPDFView(ExportReportsPDFView):
+    """Exportar Resumen Mensual a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        monthly = service.get_financial_by_period('month')
+        
+        data = {
+            'summary': {
+                'Ingresos': monthly['revenue'],
+                'Costos': monthly['cost'],
+                'Ganancia': monthly['profit'],
+                'Margen': f"{monthly['profit_margin']:.1f}%",
+                'Ventas': monthly['sales_count'],
+                'Items Vendidos': monthly['items_sold'],
+            },
+        }
+        return data, "Resumen Mensual"
+    
+    def get_filename(self):
+        return f"resumen_mensual_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportFinancialYearlyPDFView(ExportReportsPDFView):
+    """Exportar Resumen Anual a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        yearly = service.get_financial_by_period('year')
+        
+        data = {
+            'summary': {
+                'Ingresos': yearly['revenue'],
+                'Costos': yearly['cost'],
+                'Ganancia': yearly['profit'],
+                'Margen': f"{yearly['profit_margin']:.1f}%",
+                'Ventas': yearly['sales_count'],
+                'Items Vendidos': yearly['items_sold'],
+            },
+        }
+        return data, "Resumen Anual"
+    
+    def get_filename(self):
+        return f"resumen_anual_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportFinancialProfitabilityPDFView(ExportReportsPDFView):
+    """Exportar Rentabilidad por Producto a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        profitability = service.get_product_profitability(limit=30)
+        profitability_data = []
+        for p in profitability:
+            profitability_data.append({
+                'Producto': p['product_name'],
+                'Categoría': p['category'],
+                'Precio': p['sale_price'],
+                'Costo': p['price'],
+                'Margen %': f"{p['margin_percentage']:.1f}%",
+                'Vendidos': p['total_sold'],
+                'Ingresos': p['total_revenue'],
+            })
+        
+        data = {
+            'summary': {
+                'Total Productos': service.get_total_products(),
+                'Productos Analizados': len(profitability_data),
+            },
+            'Rentabilidad por Producto': profitability_data,
+        }
+        return data, "Rentabilidad por Producto"
+    
+    def get_filename(self):
+        return f"rentabilidad_productos_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+
+class ExportFinancialCancelledPDFView(ExportReportsPDFView):
+    """Exportar Ventas Canceladas a PDF"""
+    
+    def get_data(self):
+        company = self.request.user.company
+        service = ReportService(company)
+        
+        cancelled_sales = list(service.get_cancelled_sales())
+        cancelled_data = []
+        for sale in cancelled_sales:
+            cancelled_data.append({
+                'ID': f"#{sale.get('id', '')}",
+                'Cliente': sale.get('customer_name', '-'),
+                'Total': sale.get('total', 0),
+                'Vendedor': sale.get('user__username', '-'),
+                'Fecha': sale.get('created_at', '').strftime('%d/%m/%Y %H:%M') if sale.get('created_at') else '',
+            })
+        
+        data = {
+            'summary': {
+                'Total Canceladas': len(cancelled_data),
+                'Período': 'Últimos 30 días',
+            },
+            'Ventas Canceladas': cancelled_data,
+        }
+        return data, "Ventas Canceladas"
+    
+    def get_filename(self):
+        return f"ventas_canceladas_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"

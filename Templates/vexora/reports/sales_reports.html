@@ -1,0 +1,430 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %} | Reportes de Ventas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .border-left-primary { border-left: 4px solid #4e73df !important; }
+    .border-left-success { border-left: 4px solid #1cc88a !important; }
+    .border-left-info { border-left: 4px solid #36b9cc !important; }
+    .border-left-warning { border-left: 4px solid #f6c23e !important; }
+    
+    .badge {
+        padding: 0.5rem 0.75rem;
+        font-weight: 500;
+    }
+    
+    .badge.bg-success { background-color: #1cc88a !important; }
+    .badge.bg-warning { background-color: #f6c23e !important; color: #000; }
+    .badge.bg-danger { background-color: #e74a3b !important; }
+    .badge.bg-info { background-color: #36b9cc !important; }
+    
+    .report-card {
+        height: 100%;
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .report-card .card-body {
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .report-card .card-body::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .report-card .card-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .card-header .btn {
+        white-space: nowrap;
+    }
+    
+    @media (max-width: 768px) {
+        .card-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .card-header .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0" style="color: var(--text-color) !important;">💰 Reportes de Ventas</h1>
+        <div>
+            <a href="{% url 'vexora:export_sales_pdf' %}" class="btn btn-sm btn-danger shadow-sm" target="_blank">
+                <i class="fas fa-file-pdf"></i> Exportar Todo
+            </a>
+            <a href="{% url 'vexora:reports_dashboard' %}" class="btn btn-sm btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+            <button class="btn btn-sm btn-primary shadow-sm" onclick="window.location.reload()">
+                <i class="fas fa-sync fa-sm"></i> Actualizar
+            </button>
+        </div>
+    </div>
+    
+    {% if error %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> {{ error }}
+    </div>
+    {% else %}
+    
+    <!-- Cards de resumen - 4 columnas iguales -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Ingresos Totales</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                ${{ total_revenue|floatformat:2|default:"0.00" }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Promedio Diario</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                ${{ daily_average|floatformat:2|default:"0.00" }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Ganancia Neta</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                ${{ profit_summary.gross_profit|floatformat:2|default:"0.00" }}
+                            </div>
+                            <small style="color: var(--text-color) !important; opacity: 0.7;">
+                                Margen: {{ profit_summary.profit_margin|floatformat:1|default:"0" }}%
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-coins fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Ventas Canceladas</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                {{ cancelled_sales|length|default:"0" }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cards de reportes - Todas del mismo tamaño -->
+    <div class="row">
+        <!-- Ventas Diarias -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">📅 Ventas Diarias</h6>
+                    <a href="{% url 'vexora:export_sales_daily_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Ventas</th>
+                                    <th>Total</th>
+                                    <th>Promedio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in daily_sales %}
+                                <tr>
+                                    <td>{{ sale.period|date:"d/m/Y" }}</td>
+                                    <td>{{ sale.count|default:"0" }}</td>
+                                    <td>${{ sale.total_sales|floatformat:2|default:"0.00" }}</td>
+                                    <td>${{ sale.avg_sale|floatformat:2|default:"0.00" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle"></i> No hay ventas registradas
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ventas Semanales -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">📊 Ventas Semanales</h6>
+                    <a href="{% url 'vexora:export_sales_weekly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                            <thead>
+                                <tr>
+                                    <th>Semana</th>
+                                    <th>Ventas</th>
+                                    <th>Total</th>
+                                    <th>Promedio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in weekly_sales %}
+                                <tr>
+                                    <td>Semana {{ forloop.counter }}</td>
+                                    <td>{{ sale.count|default:"0" }}</td>
+                                    <td>${{ sale.total_sales|floatformat:2|default:"0.00" }}</td>
+                                    <td>${{ sale.avg_sale|floatformat:2|default:"0.00" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle"></i> No hay ventas registradas
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Ventas Mensuales -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">📈 Ventas Mensuales</h6>
+                    <a href="{% url 'vexora:export_sales_monthly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Ventas</th>
+                                    <th>Total</th>
+                                    <th>Promedio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in monthly_sales %}
+                                <tr>
+                                    <td>{{ sale.period|date:"F Y" }}</td>
+                                    <td>{{ sale.count|default:"0" }}</td>
+                                    <td>${{ sale.total_sales|floatformat:2|default:"0.00" }}</td>
+                                    <td>${{ sale.avg_sale|floatformat:2|default:"0.00" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle"></i> No hay ventas registradas
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ventas Anuales -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">📊 Ventas Anuales</h6>
+                    <a href="{% url 'vexora:export_sales_yearly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                            <thead>
+                                <tr>
+                                    <th>Año</th>
+                                    <th>Ventas</th>
+                                    <th>Total</th>
+                                    <th>Promedio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in yearly_sales %}
+                                <tr>
+                                    <td>{{ sale.period|date:"Y" }}</td>
+                                    <td>{{ sale.count|default:"0" }}</td>
+                                    <td>${{ sale.total_sales|floatformat:2|default:"0.00" }}</td>
+                                    <td>${{ sale.avg_sale|floatformat:2|default:"0.00" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle"></i> No hay ventas registradas
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Ventas por Vendedor -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">👤 Ventas por Vendedor</h6>
+                    <a href="{% url 'vexora:export_sales_by_seller_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                            <thead>
+                                <tr>
+                                    <th>Vendedor</th>
+                                    <th>Ventas</th>
+                                    <th>Total</th>
+                                    <th>Promedio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for seller in sales_by_seller %}
+                                <tr>
+                                    <td>{{ seller.user__first_name|default:seller.user__username }}</td>
+                                    <td>{{ seller.count|default:"0" }}</td>
+                                    <td>${{ seller.total_sales|floatformat:2|default:"0.00" }}</td>
+                                    <td>${{ seller.average|floatformat:2|default:"0.00" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle"></i> No hay datos disponibles
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Clientes con Mayor Compra -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow report-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">👥 Clientes con Mayor Compra</h6>
+                    <a href="{% url 'vexora:export_sales_by_client_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Compras</th>
+                                    <th>Total</th>
+                                    <th>Última</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in sales_by_client %}
+                                <tr>
+                                    <td>{{ client.customer_name|default:"-"|truncatechars:20 }}</td>
+                                    <td>{{ client.count|default:"0" }}</td>
+                                    <td>${{ client.total_purchases|floatformat:2|default:"0.00" }}</td>
+                                    <td>{{ client.last_purchase|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle"></i> No hay clientes registrados
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% endif %}
+</div>
+{% endblock %}
