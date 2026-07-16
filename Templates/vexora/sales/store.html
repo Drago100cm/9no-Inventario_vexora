@@ -107,6 +107,31 @@
               {% if p.sale_price and p.sale_price != p.price %}<span class="prod-price-old">${{ p.price }}</span>{% endif %}
             </div>
 
+            <div
+    class="prod-stock"
+    id="stock-info-{{ p.id }}"
+    data-stock="{{ p.available_stock }}"
+>
+    {% if p.available_stock <= 0 %}
+        <span class="stock-agotado">
+            <i class="fas fa-times-circle"></i>
+            Agotado
+        </span>
+
+    {% elif p.available_stock <= p.min_stock %}
+        <span class="stock-bajo">
+            <i class="fas fa-exclamation-circle"></i>
+            Últimas {{ p.available_stock }} unidades
+        </span>
+
+    {% else %}
+        <span class="stock-disponible">
+            <i class="fas fa-check-circle"></i>
+            En stock: {{ p.available_stock }}
+        </span>
+    {% endif %}
+</div>
+
             <div class="prod-stock-status">
   {% if p.stock <= 0 %}
     <span class="stock-status stock-out">
@@ -131,9 +156,32 @@
 
           <div class="prod-foot">
             <a href="{% url 'vexora:store_product' p.pk %}" class="btn-ver"><i class="fas fa-eye"></i> Ver detalle</a>
-            <button type="button" class="btn-add" id="btn-add-{{ p.id }}" data-has-variants="{% if has_variants %}true{% else %}false{% endif %}" {% if p.stock <= 0 %}disabled{% endif %} onclick="agregarRapido({{ p.id }}, '{{ p.name|escapejs }}', event)">
-              {% if p.stock <= 0 %}<i class="fas fa-ban"></i> Agotado{% elif has_variants %}<i class="fas fa-list"></i> Elegir opciones{% else %}<i class="fas fa-plus"></i> Agregar{% endif %}
-            </button>
+            <button
+    type="button"
+    class="btn-add"
+    id="btn-add-{{ p.id }}"
+    data-has-variants="{% if has_variants %}true{% else %}false{% endif %}"
+    data-stock="{{ p.available_stock }}"
+    {% if p.available_stock <= 0 %}disabled{% endif %}
+    onclick="agregarRapido(
+        {{ p.id }},
+        '{{ p.name|escapejs }}',
+        event
+    )"
+>
+    {% if p.available_stock <= 0 %}
+        <i class="fas fa-ban"></i>
+        Agotado
+
+    {% elif has_variants %}
+        <i class="fas fa-list"></i>
+        Elegir opciones
+
+    {% else %}
+        <i class="fas fa-plus"></i>
+        Agregar
+    {% endif %}
+</button>
           </div>
         </article>
         {% endwith %}
@@ -149,174 +197,533 @@
 
 {% block extra_js %}
 <script>
-const FAVORITOS_KEY = 'vexora_favoritos';
+(() => {
+  const CART_ADD_URL =
+    "{% url 'vexora:cart_add' %}";
 
-function getCookie(name) {
-  const row = document.cookie.split('; ').find(item => item.startsWith(name + '='));
-  return row ? decodeURIComponent(row.split('=')[1]) : '';
-}
-const CSRF_TOKEN = getCookie('csrftoken');
+  const CART_COUNT_URL =
+    "{% url 'vexora:cart_count' %}";
 
-function mostrarToast(message) {
-  const toast = document.getElementById('tienda-toast');
-  const text = document.getElementById('toast-msg');
-  if (!toast || !text) return;
-  text.textContent = message;
-  toast.classList.add('show');
-  clearTimeout(window.storeToastTimer);
-  window.storeToastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
-}
+  const FAVORITOS_KEY =
+    "vexora_favoritos";
 
-function actualizarContadoresCarrito(total) {
-  ['cart-count-top', 'cartFabBadge', 'sidebar-cart-count'].forEach(id => {
-    const element = document.getElementById(id);
-    if (element) element.textContent = Number(total) || 0;
-  });
-}
 
-async function refreshCartCount() {
-  try {
-    const response = await fetch("{% url 'vexora:cart_count' %}", {credentials: 'same-origin', headers: {'X-Requested-With': 'XMLHttpRequest'}});
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    actualizarContadoresCarrito(data.total_items);
-  } catch (error) {
-    console.error('No se pudo actualizar el carrito:', error);
-  }
-}
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
 
-async function agregarRapido(productId, productName, event) {
-  event?.preventDefault();
-  event?.stopPropagation();
-  const button = document.getElementById(`btn-add-${productId}`);
-  const card = button?.closest('.prod-card');
-  if (!button || button.disabled || !card) return;
+    if (parts.length === 2) {
+      return parts.pop().split(";").shift();
+    }
 
-  if (button.dataset.hasVariants === 'true') {
-    window.location.href = card.dataset.url;
-    return;
+    return "";
   }
 
-  const original = button.innerHTML;
-  button.disabled = true;
-  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Agregando...';
 
-  try {
-    const response = await fetch("{% url 'vexora:cart_add' %}", {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
-      body: new URLSearchParams({product_id: String(productId), variant_id: '', quantity: '1'})
-    });
+  const csrfToken =
+    getCookie("csrftoken");
 
-    if (response.redirected) {
-      window.location.href = response.url;
+
+  function mostrarToast(mensaje) {
+    const toast =
+      document.getElementById(
+        "tienda-toast"
+      );
+
+    const texto =
+      document.getElementById(
+        "toast-msg"
+      );
+
+    if (!toast || !texto) {
       return;
     }
 
-    const contentType = response.headers.get('content-type') || '';
+    texto.textContent = mensaje;
+    toast.classList.add("show");
 
-    if (!response.ok || !contentType.includes('application/json')) {
-      throw new Error(`Respuesta inválida ${response.status}`);
+    clearTimeout(
+      window.storeToastTimer
+    );
+
+    window.storeToastTimer =
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2800);
+  }
+
+
+  function actualizarContadores(total) {
+    const cantidad = Number(total) || 0;
+
+    [
+      "cart-count-top",
+      "cartFabBadge",
+      "sidebar-cart-count",
+    ].forEach(id => {
+      const elemento =
+        document.getElementById(id);
+
+      if (elemento) {
+        elemento.textContent = cantidad;
+      }
+    });
+  }
+
+
+  function actualizarStockProducto(
+    productId,
+    stockDisponible
+  ) {
+    const stock = Math.max(
+      Number(stockDisponible) || 0,
+      0
+    );
+
+    const informacion =
+      document.getElementById(
+        `stock-info-${productId}`
+      );
+
+    const boton =
+      document.getElementById(
+        `btn-add-${productId}`
+      );
+
+    const minimo = Number(
+      informacion?.dataset.minStock || 0
+    );
+
+    if (informacion) {
+      informacion.dataset.stock = stock;
+
+      if (stock <= 0) {
+        informacion.innerHTML = `
+          <span class="stock-agotado">
+            <i class="fas fa-times-circle"></i>
+            Agotado
+          </span>
+        `;
+
+      } else if (stock <= minimo) {
+        informacion.innerHTML = `
+          <span class="stock-bajo">
+            <i class="fas fa-exclamation-circle"></i>
+            Últimas ${stock} unidades
+          </span>
+        `;
+
+      } else {
+        informacion.innerHTML = `
+          <span class="stock-disponible">
+            <i class="fas fa-check-circle"></i>
+            En stock: ${stock}
+          </span>
+        `;
+      }
     }
 
-    const data = await response.json();
-    if (data.ok) {
-      mostrarToast(`"${productName}" agregado al carrito`);
-      actualizarContadoresCarrito(data.total_items);
+    if (!boton) {
+      return;
+    }
+
+    boton.dataset.stock = stock;
+
+    if (stock <= 0) {
+      boton.disabled = true;
+
+      boton.innerHTML = `
+        <i class="fas fa-ban"></i>
+        Agotado
+      `;
+
     } else {
-      mostrarToast(data.message || 'No se pudo agregar el producto');
+      boton.disabled = false;
+
+      if (
+        boton.dataset.hasVariants
+        === "true"
+      ) {
+        boton.innerHTML = `
+          <i class="fas fa-list"></i>
+          Elegir opciones
+        `;
+
+      } else {
+        boton.innerHTML = `
+          <i class="fas fa-plus"></i>
+          Agregar
+        `;
+      }
     }
-  } catch (error) {
-    console.error(error);
-    mostrarToast('Ocurrió un error al agregar el producto');
-  } finally {
-    button.disabled = false;
-    button.innerHTML = original;
-  }
-}
-
-function getFavoritos() {
-  try {
-    const data = JSON.parse(localStorage.getItem(FAVORITOS_KEY) || '[]');
-    return Array.isArray(data) ? data.map(Number) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveFavoritos(items) {
-  localStorage.setItem(FAVORITOS_KEY, JSON.stringify([...new Set(items.map(Number))]));
-}
-
-function toggleFavorito(productId, event) {
-  event?.preventDefault();
-  event?.stopPropagation();
-  const id = Number(productId);
-  let favorites = getFavoritos();
-
-  if (favorites.includes(id)) {
-    favorites = favorites.filter(item => item !== id);
-    mostrarToast('Producto eliminado de favoritos');
-  } else {
-    favorites.push(id);
-    mostrarToast('Producto agregado a favoritos');
   }
 
-  saveFavoritos(favorites);
-  updateFavoriteButtons();
-  updateFavoriteCount();
-  filterFavoritesSection();
-}
 
-function updateFavoriteButtons() {
-  const favorites = getFavoritos();
-  document.querySelectorAll('.store-favorite-btn').forEach(button => {
-    const active = favorites.includes(Number(button.dataset.productId));
-    button.classList.toggle('active', active);
-    const icon = button.querySelector('i');
-    if (icon) icon.className = active ? 'fas fa-heart' : 'far fa-heart';
-    button.setAttribute('aria-label', active ? 'Eliminar de favoritos' : 'Agregar a favoritos');
-  });
-}
+  async function refreshCartCount() {
+    try {
+      const response = await fetch(
+        CART_COUNT_URL,
+        {
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: {
+            "X-Requested-With":
+              "XMLHttpRequest",
+          },
+        }
+      );
 
-function updateFavoriteCount() {
-  const counter = document.getElementById('fav-count-link');
-  if (counter) counter.textContent = getFavoritos().length;
-}
+      if (!response.ok) {
+        return;
+      }
 
-function filterFavoritesSection() {
-  if (new URLSearchParams(window.location.search).get('seccion') !== 'favoritos') return;
-  const favorites = getFavoritos();
-  let visible = 0;
+      const data = await response.json();
 
-  document.querySelectorAll('.prod-card').forEach(card => {
-    const show = favorites.includes(Number(card.dataset.id));
-    card.hidden = !show;
-    if (show) visible++;
-  });
+      actualizarContadores(
+        data.total_items
+      );
 
-  const count = document.getElementById('results-count');
-  if (count) count.textContent = `${visible} resultado${visible === 1 ? '' : 's'}`;
-
-  const grid = document.getElementById('product-grid');
-  let empty = document.getElementById('empty-favorites');
-  if (visible > 0) {
-    empty?.remove();
-  } else if (grid && !empty) {
-    empty = document.createElement('div');
-    empty.id = 'empty-favorites';
-    empty.className = 'store-empty';
-    empty.innerHTML = `<i class="far fa-heart"></i><h3>No tienes favoritos</h3><p>Presiona el corazón de un producto para guardarlo aquí.</p><a href="{% url 'vexora:store_home' %}" class="btn-hero-p">Ver catálogo</a>`;
-    grid.appendChild(empty);
+    } catch (error) {
+      console.error(
+        "Error al consultar carrito:",
+        error
+      );
+    }
   }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-  refreshCartCount();
-  updateFavoriteCount();
-  updateFavoriteButtons();
-  filterFavoritesSection();
-});
+
+  window.agregarRapido =
+    async function(
+      productId,
+      productName,
+      event
+    ) {
+      event?.preventDefault();
+      event?.stopPropagation();
+
+      const boton =
+        document.getElementById(
+          `btn-add-${productId}`
+        );
+
+      const tarjeta =
+        boton?.closest(".prod-card");
+
+      if (
+        !boton
+        || boton.disabled
+        || !tarjeta
+      ) {
+        return;
+      }
+
+      if (
+        boton.dataset.hasVariants
+        === "true"
+      ) {
+        window.location.href =
+          tarjeta.dataset.url;
+
+        return;
+      }
+
+      const contenidoOriginal =
+        boton.innerHTML;
+
+      boton.disabled = true;
+
+      boton.innerHTML = `
+        <i class="fas fa-spinner fa-spin"></i>
+        Agregando...
+      `;
+
+      try {
+        const response = await fetch(
+          CART_ADD_URL,
+          {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRFToken": csrfToken,
+              "Content-Type":
+                "application/x-www-form-urlencoded",
+              "X-Requested-With":
+                "XMLHttpRequest",
+            },
+            body: new URLSearchParams({
+              product_id:
+                String(productId),
+              variant_id: "",
+              quantity: "1",
+            }),
+          }
+        );
+
+        const contentType =
+          response.headers.get(
+            "content-type"
+          ) || "";
+
+        if (
+          !contentType.includes(
+            "application/json"
+          )
+        ) {
+          throw new Error(
+            `Respuesta inválida ${response.status}`
+          );
+        }
+
+        const data =
+          await response.json();
+
+        if (!response.ok || !data.ok) {
+          mostrarToast(
+            data.error
+            || data.message
+            || "No se pudo agregar."
+          );
+
+          return;
+        }
+
+        actualizarContadores(
+          data.total_items
+        );
+
+        actualizarStockProducto(
+          productId,
+          data.stock_disponible
+        );
+
+        mostrarToast(
+          `"${productName}" agregado al carrito`
+        );
+
+      } catch (error) {
+        console.error(
+          "Error al agregar producto:",
+          error
+        );
+
+        mostrarToast(
+          "Error al agregar el producto."
+        );
+
+      } finally {
+        const stockActual = Number(
+          boton.dataset.stock || 0
+        );
+
+        if (stockActual > 0) {
+          boton.disabled = false;
+
+          boton.innerHTML =
+            contenidoOriginal;
+        }
+      }
+    };
+
+
+  function getFavoritos() {
+    try {
+      const guardados = JSON.parse(
+        localStorage.getItem(
+          FAVORITOS_KEY
+        ) || "[]"
+      );
+
+      return Array.isArray(guardados)
+        ? guardados.map(Number)
+        : [];
+
+    } catch {
+      return [];
+    }
+  }
+
+
+  function saveFavoritos(items) {
+    const itemsUnicos = [
+      ...new Set(
+        items.map(Number)
+      ),
+    ];
+
+    localStorage.setItem(
+      FAVORITOS_KEY,
+      JSON.stringify(itemsUnicos)
+    );
+  }
+
+
+  window.toggleFavorito =
+    function(productId, event) {
+      event?.preventDefault();
+      event?.stopPropagation();
+
+      const id = Number(productId);
+
+      let favoritos =
+        getFavoritos();
+
+      if (favoritos.includes(id)) {
+        favoritos =
+          favoritos.filter(
+            item => item !== id
+          );
+
+        mostrarToast(
+          "Producto eliminado de favoritos"
+        );
+
+      } else {
+        favoritos.push(id);
+
+        mostrarToast(
+          "Producto agregado a favoritos"
+        );
+      }
+
+      saveFavoritos(favoritos);
+      actualizarFavoritos();
+      filtrarFavoritos();
+    };
+
+
+  function actualizarFavoritos() {
+    const favoritos =
+      getFavoritos();
+
+    document
+      .querySelectorAll(
+        ".store-favorite-btn, .btn-favorito"
+      )
+      .forEach(boton => {
+        const activo =
+          favoritos.includes(
+            Number(
+              boton.dataset.productId
+            )
+          );
+
+        boton.classList.toggle(
+          "active",
+          activo
+        );
+
+        const icono =
+          boton.querySelector("i");
+
+        if (icono) {
+          icono.className = activo
+            ? "fas fa-heart"
+            : "far fa-heart";
+        }
+      });
+
+    const contador =
+      document.getElementById(
+        "fav-count-link"
+      );
+
+    if (contador) {
+      contador.textContent =
+        favoritos.length;
+    }
+  }
+
+
+  function filtrarFavoritos() {
+    const seccion =
+      new URLSearchParams(
+        window.location.search
+      ).get("seccion");
+
+    if (seccion !== "favoritos") {
+      return;
+    }
+
+    const favoritos =
+      getFavoritos();
+
+    let visibles = 0;
+
+    document
+      .querySelectorAll(".prod-card")
+      .forEach(tarjeta => {
+        const mostrar =
+          favoritos.includes(
+            Number(tarjeta.dataset.id)
+          );
+
+        tarjeta.hidden = !mostrar;
+
+        if (mostrar) {
+          visibles += 1;
+        }
+      });
+
+    const contador =
+      document.getElementById(
+        "results-count"
+      );
+
+    if (contador) {
+      contador.textContent =
+        `${visibles} resultado`
+        + `${visibles === 1 ? "" : "s"}`;
+    }
+  }
+
+
+  function inicializarTienda() {
+    refreshCartCount();
+    actualizarFavoritos();
+    filtrarFavoritos();
+  }
+
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    inicializarTienda
+  );
+
+
+  window.addEventListener(
+    "pageshow",
+    event => {
+      const stockCambio =
+        sessionStorage.getItem(
+          "vexora_stock_changed"
+        );
+
+      /*
+      Al volver con el botón Atrás,
+      el navegador puede mostrar una
+      copia vieja de la tienda.
+      */
+      if (
+        event.persisted
+        && stockCambio === "1"
+      ) {
+        sessionStorage.removeItem(
+          "vexora_stock_changed"
+        );
+
+        window.location.reload();
+        return;
+      }
+
+      if (stockCambio === "1") {
+        sessionStorage.removeItem(
+          "vexora_stock_changed"
+        );
+      }
+
+      refreshCartCount();
+    }
+  );
+})();
 </script>
 {% endblock %}

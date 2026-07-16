@@ -1433,3 +1433,42 @@
     height: 220px;
   }
 }
+
+.prod-stock {
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.stock-disponible,
+.stock-bajo,
+.stock-agotado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+}
+
+.stock-disponible {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.stock-bajo {
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.stock-agotado {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.btn-add:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}

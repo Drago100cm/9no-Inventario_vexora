@@ -30,13 +30,51 @@
               {% if item.variant %}Talla: {{ item.variant.size }} · Color: {{ item.variant.color }}{% endif %}
             </div>
             <div class="ci-price" id="ci-subtotal-{{ item.id }}">${{ item.subtotal }}</div>
+            <div
+              class="ci-stock"
+              id="ci-stock-{{ item.id }}"
+            >
+              {% if item.available_stock <= 0 %}
+                No hay más unidades disponibles
+              {% else %}
+                Puedes agregar {{ item.available_stock }} más
+              {% endif %}
+            </div>
           </div>
           <div class="ci-qty">
-            <button class="cq-btn" onclick="camQty({{ item.id }},-1)"><i class="fas fa-minus"></i></button>
-            <span class="cq-num" id="cq-num-{{ item.id }}">{{ item.quantity }}</span>
-            <button class="cq-btn" onclick="camQty({{ item.id }},1)"><i class="fas fa-plus"></i></button>
+            <button
+              type="button"
+              class="cq-btn"
+              id="btn-minus-{{ item.id }}"
+              onclick="camQty({{ item.id }}, -1)"
+            >
+              <i class="fas fa-minus"></i>
+            </button>
+
+            <span
+              class="cq-num"
+              id="cq-num-{{ item.id }}"
+            >
+              {{ item.quantity }}
+            </span>
+
+            <button
+              type="button"
+              class="cq-btn"
+              id="btn-plus-{{ item.id }}"
+              onclick="camQty({{ item.id }}, 1)"
+              {% if item.available_stock <= 0 %}disabled{% endif %}
+            >
+              <i class="fas fa-plus"></i>
+            </button>
           </div>
-          <button class="ci-del" onclick="elimItem({{ item.id }})"><i class="fas fa-trash"></i></button>
+          <button
+            type="button"
+            class="ci-del"
+            onclick="elimItem({{ item.id }})"
+          >
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
         {% endfor %}
       </div>
@@ -71,46 +109,476 @@
 
 {% block extra_js %}
 <script>
+const CART_COUNT_URL = "{% url 'vexora:cart_count' %}";
+const CART_UPDATE_URL = "{% url 'vexora:cart_update' 999999 %}";
+const CART_REMOVE_URL = "{% url 'vexora:cart_remove' 999999 %}";
+const STORE_URL = "{% url 'vexora:store_home' %}";
+
+
 function getCookie(name) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-}
-const CSRF_TOKEN = getCookie('csrftoken');
 
-function camQty(itemId, delta){
-  fetch(`/store/cart/update/${itemId}/`, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `delta=${delta}`
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(!data.ok) return;
-    document.getElementById(`cq-num-${itemId}`).textContent = data.quantity;
-    document.getElementById(`ci-subtotal-${itemId}`).textContent = `$${data.subtotal.toFixed(2)}`;
-    document.getElementById('res-sub').textContent = `$${data.total.toFixed(2)}`;
-    document.getElementById('res-tot').textContent = `$${data.total.toFixed(2)}`;
-    const fabBadge = document.getElementById('cartFabBadge');
-    if(fabBadge) fabBadge.textContent = data.total_items;
+  if (parts.length === 2) {
+    return parts.pop().split(";").shift();
+  }
+
+  return "";
+}
+
+
+const CSRF_TOKEN = getCookie("csrftoken");
+
+function registrarCambioStock() {
+  /*
+  Indica que el stock fue modificado
+  desde el carrito.
+  */
+  sessionStorage.setItem(
+    "vexora_stock_changed",
+    "1"
+  );
+
+  /*
+  Actualiza la bolsa flotante y los demás
+  contadores disponibles en la página.
+  */
+  window.dispatchEvent(
+    new CustomEvent(
+      "vexora:cart-updated"
+    )
+  );
+
+  if (
+    typeof window.actualizarBolsaGlobal
+    === "function"
+  ) {
+    window.actualizarBolsaGlobal();
+  }
+}
+
+function crearUrl(template, itemId) {
+  return template.replace(
+    "999999",
+    String(itemId)
+  );
+}
+
+
+function formatoDinero(valor) {
+  const numero = Number(valor) || 0;
+
+  return new Intl.NumberFormat(
+    "es-MX",
+    {
+      style: "currency",
+      currency: "MXN",
+    }
+  ).format(numero);
+}
+
+
+function mostrarError(mensaje) {
+  if (typeof Swal !== "undefined") {
+    Swal.fire({
+      icon: "error",
+      title: "No se pudo realizar la operación",
+      text: mensaje,
+    });
+
+    return;
+  }
+
+  alert(mensaje);
+}
+
+
+function actualizarContadores(totalItems) {
+  const total = Number(totalItems) || 0;
+
+  [
+    "cartFabBadge",
+    "cart-count-top",
+    "sidebar-cart-count",
+  ].forEach(id => {
+    const elemento = document.getElementById(id);
+
+    if (elemento) {
+      elemento.textContent = total;
+    }
   });
 }
 
-function elimItem(itemId){
-  fetch(`/store/cart/remove/${itemId}/`, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': CSRF_TOKEN }
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(!data.ok) return;
-    document.querySelector(`.cart-item[data-item-id="${itemId}"]`)?.remove();
-    document.getElementById('res-sub').textContent = `$${data.total.toFixed(2)}`;
-    document.getElementById('res-tot').textContent = `$${data.total.toFixed(2)}`;
-    const fabBadge = document.getElementById('cartFabBadge');
-    if(fabBadge) fabBadge.textContent = data.total_items;
-    if(data.total_items === 0){ location.reload(); }
-  });
+
+function actualizarTotales(total) {
+  const totalFormateado = formatoDinero(total);
+
+  const subtotal = document.getElementById(
+    "res-sub"
+  );
+
+  const totalElemento = document.getElementById(
+    "res-tot"
+  );
+
+  if (subtotal) {
+    subtotal.textContent = totalFormateado;
+  }
+
+  if (totalElemento) {
+    totalElemento.textContent = totalFormateado;
+  }
 }
+
+
+function bloquearControles(itemId, bloquear) {
+  const minus = document.getElementById(
+    `btn-minus-${itemId}`
+  );
+
+  const plus = document.getElementById(
+    `btn-plus-${itemId}`
+  );
+
+  const eliminar = document.querySelector(
+    `.cart-item[data-item-id="${itemId}"] .ci-del`
+  );
+
+  if (minus) {
+    minus.disabled = bloquear;
+  }
+
+  if (plus) {
+    plus.disabled = bloquear;
+  }
+
+  if (eliminar) {
+    eliminar.disabled = bloquear;
+  }
+}
+
+
+function actualizarStockItem(
+  itemId,
+  stockDisponible
+) {
+  const stock = Math.max(
+    Number(stockDisponible) || 0,
+    0
+  );
+
+  const stockElemento = document.getElementById(
+    `ci-stock-${itemId}`
+  );
+
+  const botonPlus = document.getElementById(
+    `btn-plus-${itemId}`
+  );
+
+  if (stockElemento) {
+    if (stock <= 0) {
+      stockElemento.textContent =
+        "No hay más unidades disponibles";
+
+      stockElemento.classList.add(
+        "sin-stock"
+      );
+
+    } else {
+      stockElemento.textContent =
+        `Puedes agregar ${stock} más`;
+
+      stockElemento.classList.remove(
+        "sin-stock"
+      );
+    }
+  }
+
+  if (botonPlus) {
+    botonPlus.disabled = stock <= 0;
+  }
+}
+
+
+function mostrarCarritoVacio() {
+  const cartContent = document.getElementById(
+    "cart-content"
+  );
+
+  if (cartContent) {
+    cartContent.innerHTML = `
+      <div class="carrito-vacio" id="empty-cart">
+        <i class="fas fa-shopping-bag"></i>
+
+        <h3>Tu carrito está vacío</h3>
+
+        <p>
+          Agrega productos para comenzar.
+        </p>
+
+        <a
+          href="${STORE_URL}"
+          class="btn-seguir-comp"
+        >
+          <i class="fas fa-store"></i>
+          Ir a la tienda
+        </a>
+      </div>
+    `;
+  }
+
+  const checkout = document.getElementById(
+    "btn-ir-checkout"
+  );
+
+  if (checkout) {
+    checkout.style.pointerEvents = "none";
+    checkout.style.opacity = ".35";
+  }
+
+  actualizarTotales(0);
+}
+
+
+async function camQty(itemId, delta) {
+  const cantidadElemento = document.getElementById(
+    `cq-num-${itemId}`
+  );
+
+  if (!cantidadElemento) {
+    return;
+  }
+
+  const cantidadActual = Number(
+    cantidadElemento.textContent
+  ) || 1;
+
+  const nuevaCantidad =
+    cantidadActual + Number(delta);
+
+  // Al bajar de uno se elimina el producto
+  if (nuevaCantidad < 1) {
+    await elimItem(itemId);
+    return;
+  }
+
+  bloquearControles(itemId, true);
+
+  try {
+    const response = await fetch(
+      crearUrl(CART_UPDATE_URL, itemId),
+      {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": CSRF_TOKEN,
+          "Content-Type":
+            "application/x-www-form-urlencoded",
+          "X-Requested-With":
+            "XMLHttpRequest",
+        },
+        body: new URLSearchParams({
+          quantity: String(nuevaCantidad),
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      if (
+        data.stock_disponible !== undefined
+      ) {
+        actualizarStockItem(
+          itemId,
+          data.stock_disponible
+        );
+      }
+
+      mostrarError(
+        data.error
+        || "No se pudo actualizar la cantidad."
+      );
+
+      return;
+    }
+
+    cantidadElemento.textContent =
+      data.quantity;
+
+    const subtotalElemento =
+      document.getElementById(
+        `ci-subtotal-${itemId}`
+      );
+
+    if (subtotalElemento) {
+      subtotalElemento.textContent =
+        formatoDinero(data.subtotal);
+    }
+
+    actualizarTotales(
+      data.cart_total
+    );
+
+    actualizarContadores(
+      data.total_items
+    );
+
+    registrarCambioStock();
+
+    if (
+      data.stock_disponible !== undefined
+    ) {
+      actualizarStockItem(
+        itemId,
+        data.stock_disponible
+      );
+    }
+
+  } catch (error) {
+    console.error(
+      "Error al actualizar el carrito:",
+      error
+    );
+
+    mostrarError(
+      "Ocurrió un error al actualizar el carrito."
+    );
+
+  } finally {
+    bloquearControles(itemId, false);
+
+    const botonPlus = document.getElementById(
+      `btn-plus-${itemId}`
+    );
+
+    const stockElemento = document.getElementById(
+      `ci-stock-${itemId}`
+    );
+
+    if (
+      botonPlus
+      && stockElemento
+      && stockElemento.classList.contains(
+        "sin-stock"
+      )
+    ) {
+      botonPlus.disabled = true;
+    }
+  }
+}
+
+
+async function elimItem(itemId) {
+  const confirmar = window.confirm(
+    "¿Deseas eliminar este producto del carrito?"
+  );
+
+  if (!confirmar) {
+    return;
+  }
+
+  bloquearControles(itemId, true);
+
+  try {
+    const response = await fetch(
+      crearUrl(CART_REMOVE_URL, itemId),
+      {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": CSRF_TOKEN,
+          "X-Requested-With":
+            "XMLHttpRequest",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      mostrarError(
+        data.error
+        || "No se pudo eliminar el producto."
+      );
+
+      return;
+    }
+
+    const itemElemento =
+      document.querySelector(
+        `.cart-item[data-item-id="${itemId}"]`
+      );
+
+    if (itemElemento) {
+      itemElemento.remove();
+    }
+
+    actualizarTotales(
+      data.cart_total
+    );
+
+    actualizarContadores(
+      data.total_items
+    );
+
+    registrarCambioStock();
+
+    if (Number(data.total_items) === 0) {
+      mostrarCarritoVacio();
+    }
+
+  } catch (error) {
+    console.error(
+      "Error al eliminar el producto:",
+      error
+    );
+
+    mostrarError(
+      "Ocurrió un error al eliminar el producto."
+    );
+
+  } finally {
+    bloquearControles(itemId, false);
+  }
+}
+
+
+async function obtenerCantidadCarrito() {
+  try {
+    const response = await fetch(
+      CART_COUNT_URL,
+      {
+        credentials: "same-origin",
+        headers: {
+          "X-Requested-With":
+            "XMLHttpRequest",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+
+    actualizarContadores(
+      data.total_items
+    );
+
+  } catch (error) {
+    console.error(
+      "No se pudo consultar el carrito:",
+      error
+    );
+  }
+}
+
+
+document.addEventListener(
+  "DOMContentLoaded",
+  obtenerCantidadCarrito
+);
 </script>
 {% endblock %}
