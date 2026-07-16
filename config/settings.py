@@ -85,20 +85,16 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'pruebas',       # Nombre de tu base de datos
         'NAME': 'prueba',       # Nombre de tu base de datos
         'USER': 'root',               # Usuario de MySQL
-        'PASSWORD': '',       # Contraseña de MySQL
         'HOST' : 'localhost',               # o la IP del servidor MySQL
-        'PASSWORD': 'anselmo05',       # Contraseña de MySQL
-        'PASSWORD': '',       # Contraseña de MySQL5d3aae71642f46d6a537e084a17b9d15de1adcd2
         'PASSWORD': '1234',       # Contraseña de MySQL
         'PORT': '3306',                    # Puerto por defecto de MySQL
         'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES',  time_zone = '-06:00'"
         }
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -117,7 +113,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -200,3 +196,28 @@ EMAIL_HOST_USER = 'tucorreo@gmail.com'
 EMAIL_HOST_PASSWORD = 'apppassword'
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# ==========================================
+# CONFIGURACIÓN DE CORREO GMAIL
+# ==========================================
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 465
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+EMAIL_HOST_USER = os.environ.get(
+    "VEXORA_EMAIL_USER",
+    ""
+)
+
+EMAIL_HOST_PASSWORD = os.environ.get(
+    "VEXORA_EMAIL_PASSWORD",
+    ""
+)
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+EMAIL_TIMEOUT = 10

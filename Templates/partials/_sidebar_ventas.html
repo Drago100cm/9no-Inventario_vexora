@@ -1,0 +1,17 @@
+<div class="menu-module">
+  <button class="module-btn" type="button">
+    <i class="fas fa-cash-register"></i>
+    <span>Ventas</span>
+    <i class="fas fa-chevron-down arrow"></i>
+  </button>
+  <div class="module-content">
+    <a href="{% url 'vexora:sales_main_list' %}"
+       class="menu-item {% if url_name == 'sales_main_list' or url_name == 'sales_main_create' or url_name == 'sales_main_update' %}active{% endif %}">
+      <i class="fas fa-receipt"></i><span>Ventas</span>
+    </a>
+    <a href="{% url 'vexora:list_categories' %}"
+       class="menu-item {% if url_name == 'list_categories' %}active{% endif %}">
+      <i class="fas fa-tags"></i><span>Categorías</span>
+    </a>
+  </div>
+</div>

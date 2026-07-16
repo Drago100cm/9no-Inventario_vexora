@@ -73,3 +73,19 @@
 }
 
 @media(max-width:768px){ .carrito-layout{ grid-template-columns:1fr; } }
+.ci-stock {
+    margin-top: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6ee7b7;
+}
+
+.ci-stock.sin-stock {
+    color: #fca5a5;
+}
+
+.cq-btn:disabled,
+.ci-del:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}

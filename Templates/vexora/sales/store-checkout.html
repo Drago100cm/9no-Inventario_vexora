@@ -8,81 +8,515 @@
 {% endblock %}
 
 {% block content %}
-<form method="POST" action="{% url 'vexora:store_checkout' %}" id="checkout-form">
-{% csrf_token %}
-<input type="hidden" name="carrito" id="carrito-data">
 
-<div class="checkout-layout">
-  <div>
-    <h1 class="checkout-title"><i class="fas fa-lock"></i> Finalizar pedido</h1>
+<form
+  method="POST"
+  action="{% url 'vexora:store_checkout' %}"
+  id="checkout-form"
+>
+  {% csrf_token %}
 
-    <div class="form-card">
-      <div class="form-sec">
-        <div class="form-sec-title"><i class="fas fa-user"></i> Datos de contacto</div>
-        <div class="field-2col">
-          <div class="field"><label>Nombre completo *</label><input name="nombre" placeholder="Tu nombre" required></div>
-          <div class="field"><label>Teléfono *</label><input name="telefono" type="tel" placeholder="10 dígitos" required></div>
+  <div class="checkout-layout">
+
+    <!-- DATOS DEL CLIENTE -->
+    <div>
+
+      <h1 class="checkout-title">
+        <i class="fas fa-lock"></i>
+        Finalizar pedido
+      </h1>
+
+      <div class="form-card">
+
+        <!-- CONTACTO -->
+        <div class="form-sec">
+
+          <div class="form-sec-title">
+            <i class="fas fa-user"></i>
+            Datos de contacto
+          </div>
+
+          <div class="field-2col">
+
+            <div class="field">
+              <label>Nombre completo *</label>
+
+              <input
+                name="nombre"
+                placeholder="Tu nombre"
+                required
+              >
+            </div>
+
+            <div class="field">
+              <label>Teléfono *</label>
+
+              <input
+                name="telefono"
+                type="tel"
+                placeholder="10 dígitos"
+                required
+              >
+            </div>
+
+          </div>
+
+          <div class="field">
+            <label>Correo electrónico *</label>
+
+            <input
+              name="email"
+              type="email"
+              placeholder="correo@gmail.com"
+              required
+            >
+          </div>
+
         </div>
-        <div class="field"><label>Email</label><input name="email" type="email" placeholder="correo@ejemplo.com"></div>
-      </div>
 
-      <div class="form-sec">
-        <div class="form-sec-title"><i class="fas fa-map-marker-alt"></i> Dirección de entrega</div>
-        <div class="field"><label>Calle y número *</label><input name="direccion" placeholder="Ej: Av. Juárez 123, Col. Centro" required></div>
-        <div class="field-2col">
-          <div class="field"><label>Ciudad</label><input name="ciudad" placeholder="Ciudad"></div>
-          <div class="field"><label>Código postal</label><input name="cp" placeholder="00000"></div>
+        <!-- DIRECCIÓN -->
+        <div class="form-sec">
+
+          <div class="form-sec-title">
+            <i class="fas fa-map-marker-alt"></i>
+            Dirección de entrega
+          </div>
+
+          <div class="field">
+            <label>Calle y número *</label>
+
+            <input
+              name="direccion"
+              placeholder="Ej: Av. Juárez 123, Col. Centro"
+              required
+            >
+          </div>
+
+          <div class="field-2col">
+
+            <div class="field">
+              <label>Ciudad</label>
+
+              <input
+                name="ciudad"
+                placeholder="Ciudad"
+              >
+            </div>
+
+            <div class="field">
+              <label>Código postal</label>
+
+              <input
+                name="cp"
+                placeholder="00000"
+              >
+            </div>
+
+          </div>
+
+          <div class="field">
+            <label>Estado</label>
+
+            <input
+              name="estado"
+              placeholder="Estado"
+            >
+          </div>
+
         </div>
-        <div class="field"><label>Estado</label><input name="estado" placeholder="Estado"></div>
-      </div>
 
-      <div class="form-sec">
-        <div class="form-sec-title"><i class="fas fa-comment-dots"></i> Notas (opcional)</div>
-        <div class="field"><label>Instrucciones especiales</label><textarea name="notas" placeholder="Ej: timbre roto, entregar en recepción..."></textarea></div>
+        <!-- NOTAS -->
+        <div class="form-sec">
+
+          <div class="form-sec-title">
+            <i class="fas fa-comment-dots"></i>
+            Notas opcionales
+          </div>
+
+          <div class="field">
+            <label>Instrucciones especiales</label>
+
+            <textarea
+              name="notas"
+              placeholder="Ej: timbre roto, entregar en recepción..."
+            ></textarea>
+          </div>
+
+        </div>
+
       </div>
     </div>
+
+    <!-- RESUMEN DEL PEDIDO -->
+    <div class="res-card">
+
+      <div class="res-titulo">
+        Tu pedido
+      </div>
+
+      <div class="res-items" id="res-items">
+
+        {% for item in items %}
+          <div class="ri-row">
+
+            <div>
+
+              <div class="ri-nom">
+                {{ item.product.name }}
+              </div>
+
+              <div class="ri-det">
+
+                {% if item.variant %}
+                  Talla: {{ item.variant.size }}
+                  · Color: {{ item.variant.color }}
+                  ·
+                {% endif %}
+
+                {{ item.quantity }}
+                unidad{{ item.quantity|pluralize:"es" }}
+
+              </div>
+
+            </div>
+
+            <span class="ri-precio">
+              ${{ item.subtotal }}
+            </span>
+
+          </div>
+        {% endfor %}
+
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="res-fila">
+        <span>Envío</span>
+
+        <span style="color: var(--accent-color);">
+          Gratis
+        </span>
+      </div>
+
+      <div class="res-total">
+        <span>Total</span>
+
+        <span id="res-tot">
+          ${{ cart.total }}
+        </span>
+      </div>
+
+      <button
+        type="submit"
+        class="btn-confirmar"
+      >
+        <i class="fas fa-check"></i>
+        Confirmar pedido
+      </button>
+
+      <p class="res-nota">
+        <i class="fas fa-shield-halved"></i>
+        Compra segura y protegida
+      </p>
+
+      <div class="res-pdf-aviso">
+        <i class="fas fa-file-pdf"></i>
+
+        <span>
+          Al finalizar se generará el comprobante PDF que deberás
+          presentar en la tienda para recibir tu pedido.
+        </span>
+      </div>
+
+    </div>
+
   </div>
 
-  <div class="res-card">
-    <div class="res-titulo">Tu pedido</div>
-    <div class="res-items" id="res-items"><p style="font-size:12px;color:rgba(255,255,255,.3);">Cargando...</p></div>
-    <div class="sep"></div>
-    <div class="res-fila"><span>Envío</span><span style="color:var(--accent-color);">Gratis</span></div>
-    <div class="res-total"><span>Total</span><span id="res-tot">$0.00</span></div>
-    <button type="submit" class="btn-confirmar">
-      <i class="fas fa-check"></i> Confirmar pedido
-    </button>
-    <p class="res-nota"><i class="fas fa-shield-halved"></i> Compra segura y protegida</p>
-  </div>
-</div>
 </form>
+
 {% endblock %}
+
 
 {% block extra_js %}
 <script>
-function getCarrito(){ return JSON.parse(localStorage.getItem('vexora_carrito')||'[]'); }
+document.addEventListener("DOMContentLoaded", function () {
+  const checkoutForm = document.getElementById("checkout-form");
 
-function renderResumen(){
-  const c = getCarrito();
-  if(!c.length){ window.location.href="{% url 'vexora:store_cart' %}"; return; }
-  document.getElementById('carrito-data').value = JSON.stringify(c);
-  let html='', total=0;
-  c.forEach(it=>{
-    const sub=it.precio*it.cantidad; total+=sub;
-    html+=`<div class="ri-row">
-      <div><div class="ri-nom">${it.nombre}</div>
-      <div class="ri-det">${it.talla?'Talla: '+it.talla:''}${it.color?' · '+it.color:''} × ${it.cantidad}</div></div>
-      <span class="ri-precio">$${sub.toFixed(2)}</span>
-    </div>`;
-  });
-  document.getElementById('res-items').innerHTML=html;
-  document.getElementById('res-tot').textContent='$'+total.toFixed(2);
-}
+  if (!checkoutForm) {
+    console.error("No se encontró el formulario checkout-form");
+    return;
+  }
 
-document.getElementById('checkout-form').addEventListener('submit',function(){
-  document.getElementById('carrito-data').value=JSON.stringify(getCarrito());
+  const submitButton = checkoutForm.querySelector(
+    'button[type="submit"]'
+  );
+
+  checkoutForm.addEventListener(
+    "submit",
+    async function (event) {
+      event.preventDefault();
+
+      // Revisar campos obligatorios
+      if (!checkoutForm.checkValidity()) {
+        checkoutForm.reportValidity();
+        return;
+      }
+
+      // Pregunta inicial
+      const confirmation = await Swal.fire({
+        title: "¿Deseas finalizar el pedido?",
+        text: "Revisa que tus datos y productos sean correctos.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí, finalizar pedido",
+        cancelButtonText: "Seguir revisando",
+        confirmButtonColor: "#2563eb",
+        cancelButtonColor: "#64748b",
+        reverseButtons: true,
+        allowOutsideClick: false
+      });
+
+      if (!confirmation.isConfirmed) {
+        return;
+      }
+
+      const originalButton = submitButton
+        ? submitButton.innerHTML
+        : "";
+
+      if (submitButton) {
+        submitButton.disabled = true;
+
+        submitButton.innerHTML = `
+          <i class="fas fa-spinner fa-spin"></i>
+          Procesando pedido...
+        `;
+      }
+
+      /*
+       * Abrir previamente la pestaña para evitar
+       * que el navegador bloquee el PDF.
+       */
+      const pdfWindow = window.open("", "_blank");
+
+      if (pdfWindow) {
+        pdfWindow.document.write(`
+          <!DOCTYPE html>
+
+          <html lang="es">
+            <head>
+              <meta charset="UTF-8">
+              <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1"
+              >
+
+              <title>Generando comprobante</title>
+            </head>
+
+            <body style="
+              margin: 0;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-family: Arial, sans-serif;
+              background: #0f172a;
+              color: #ffffff;
+            ">
+
+              <div style="
+                width: min(420px, calc(100% - 40px));
+                padding: 38px;
+                text-align: center;
+                background: #1e293b;
+                border: 1px solid rgba(255,255,255,.1);
+                border-radius: 24px;
+                box-shadow: 0 20px 50px rgba(0,0,0,.45);
+              ">
+
+                <div style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  width: 70px;
+                  height: 70px;
+                  margin: 0 auto 20px;
+                  background: #ef4444;
+                  border-radius: 20px;
+                  font-size: 32px;
+                ">
+                  📄
+                </div>
+
+                <h2 style="margin: 0 0 10px;">
+                  Generando comprobante
+                </h2>
+
+                <p style="
+                  margin: 0;
+                  color: rgba(255,255,255,.65);
+                  line-height: 1.6;
+                ">
+                  Tu pedido se está procesando.
+                  El PDF aparecerá en unos segundos.
+                </p>
+
+              </div>
+
+            </body>
+          </html>
+        `);
+
+        pdfWindow.document.close();
+      }
+
+      try {
+        const response = await fetch(
+          checkoutForm.action,
+          {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+              "X-Requested-With": "XMLHttpRequest"
+            },
+            body: new FormData(checkoutForm)
+          }
+        );
+
+        const contentType =
+          response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) {
+          throw new Error(
+            "El servidor no devolvió una respuesta válida."
+          );
+        }
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(
+            data.message ||
+            "No se pudo registrar el pedido."
+          );
+        }
+
+        // Abrir PDF
+        if (pdfWindow) {
+          pdfWindow.location.href = data.pdf_url;
+        } else {
+          window.open(data.pdf_url, "_blank");
+        }
+
+        // Mensaje final estético
+        await Swal.fire({
+          title: "¡Pedido confirmado!",
+
+          html: `
+            <div class="pedido-exito-contenido">
+
+              <div class="pedido-pdf-icono">
+                <i class="fas fa-file-pdf"></i>
+              </div>
+
+              <p class="pedido-exito-texto">
+                Tu pedido se registró correctamente y se generó
+                tu comprobante en formato PDF.
+              </p>
+              <div class="pedido-correo-estado">
+  ${
+    data.email_sent
+      ? `
+        <i class="fas fa-envelope-circle-check"></i>
+        El comprobante también fue enviado al correo
+        que registraste.
+      `
+      : `
+        <i class="fas fa-triangle-exclamation"></i>
+        El pedido fue registrado, pero el correo no pudo
+        enviarse. Conserva el PDF que se abrió.
+      `
+  }
+</div>
+              <div class="pedido-instruccion">
+
+                <i class="fas fa-store"></i>
+
+                <div>
+                  <strong>
+                    Presenta tu comprobante
+                  </strong>
+
+                  <span>
+                    Guarda, imprime o muestra el PDF en la tienda
+                    para validar tu compra y realizar la entrega
+                    del pedido.
+                  </span>
+                </div>
+
+              </div>
+
+              <div class="pedido-recomendacion">
+
+                <i class="fas fa-circle-info"></i>
+
+                Conserva tu comprobante hasta recibir
+                tus productos.
+
+              </div>
+
+            </div>
+          `,
+
+          icon: "success",
+
+          confirmButtonText: `
+            <i class="fas fa-check"></i>
+            Entendido
+          `,
+
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          buttonsStyling: false,
+
+          customClass: {
+            popup: "pedido-exito-popup",
+            title: "pedido-exito-titulo",
+            confirmButton: "pedido-exito-boton"
+          }
+        });
+
+        window.location.href =
+          data.confirmation_url;
+
+      } catch (error) {
+        console.error(error);
+
+        if (pdfWindow) {
+          pdfWindow.close();
+        }
+
+        await Swal.fire({
+          title: "No se pudo finalizar",
+          text:
+            error.message ||
+            "Ocurrió un error inesperado.",
+          icon: "error",
+          confirmButtonText: "Aceptar",
+          confirmButtonColor: "#ef4444"
+        });
+
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.innerHTML =
+            originalButton;
+        }
+      }
+    }
+  );
 });
-
-renderResumen();
 </script>
 {% endblock %}
