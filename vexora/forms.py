@@ -431,22 +431,28 @@ class CategoryForm(forms.ModelForm):
 
         self.fields['name'].widget.attrs.update({
             'class': 'form-control',
+            'placeholder': 'Ej: Bebidas, Electrónicos, etc.'
         })
 
         self.fields['description'].widget.attrs.update({
             'class': 'form-control',
             'rows': 3,
+            'placeholder': 'Descripción de la categoría'
         })
 
-        # Asignar compañía automáticamente
+        # Si el usuario tiene compañía, la establecemos automáticamente
         if user and hasattr(user, 'company') and user.company:
+            # Ocultar el campo y asignar el valor
             self.fields['company'].widget = forms.HiddenInput()
-            self.fields['company'].initial = user.company
+            self.fields['company'].initial = user.company.id  # ← IMPORTANTE: usar .id
+            self.fields['company'].required = False  # ← No requerido porque ya tiene valor
         else:
+            # Si no tiene compañía, mostramos el selector
             self.fields['company'].widget.attrs.update({
-                'class': 'form-control'
+                'class': 'form-control select2'
             })
             self.fields['company'].queryset = Company.objects.all()
+            self.fields['company'].empty_label = 'Seleccione una compañía'
 
     class Meta:
         model = Category

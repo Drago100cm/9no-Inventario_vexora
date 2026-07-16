@@ -1,14 +1,113 @@
 <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
 
+        <!-- ===== MENSAJE DE DEPURACIÓN ===== -->
+        <div class="alert alert-info m-2" id="debugAlert">
+            <strong>Depuración:</strong> 
+            Productos en el contexto: {{ products|length }}
+            {% if products %}
+            <br>Primer producto: {{ products.first.name }}
+            {% else %}
+            <br><span class="text-danger">⚠️ No hay productos en el contexto</span>
+            {% endif %}
+        </div>
+
+        <!-- ===== DATOS DE PRODUCTOS DESDE DJANGO (oculto) ===== -->
+        <div style="display: none;" id="productsDataContainer">
+            {% for product in products %}
+            <div class="product-data" 
+                 data-id="{{ product.id }}"
+                 data-name="{{ product.name|escape }}"
+                 data-sku="{{ product.sku|default:'Sin SKU'|escape }}"
+                 data-stock="{{ product.stock|default:0 }}"
+                 data-price="{{ product.sale_price|default:product.price }}"
+                 data-category="{{ product.category.name|default:'Sin categoría'|escape }}">
+            </div>
+            {% empty %}
+            <div class="product-data-empty">No hay productos disponibles</div>
+            {% endfor %}
+        </div>
+
+        <!-- ===== DATOS DE LA VENTA EN JSON ===== -->
+        <script id="saleDataJson" type="application/json">
+            {
+                "id": {{ sale.id }},
+                "invoice_number": "{{ sale.invoice_number|default:'' }}",
+                "customer_name": "{{ sale.customer_name|default:''|escapejs }}",
+                "customer_email": "{{ sale.customer_email|default:''|escapejs }}",
+                "customer_phone": "{{ sale.customer_phone|default:''|escapejs }}",
+                "date": "{{ sale.date|date:'Y-m-d' }}",
+                "status": "{{ sale.status }}",
+                "notes": "{{ sale.notes|default:''|escapejs }}",
+                "subtotal": "{{ sale.subtotal|default:'0' }}",
+                "tax": "{{ sale.tax|default:'0' }}",
+                "discount": "{{ sale.discount|default:'0' }}",
+                "total": "{{ sale.total|default:'0' }}"
+            }
+        </script>
+
+        <!-- ===== DATOS DE ITEMS EN JSON ===== -->
+        <script id="saleItemsJson" type="application/json">
+            {{ sale_items_json|safe }}
+        </script>
+
+        <!-- ===== ESTILOS PARA EL SELECT ===== -->
+        <style>
+            .bootstrap-select .dropdown-toggle .filter-option,
+            .bootstrap-select .dropdown-toggle .filter-option-inner-inner,
+            .bootstrap-select .dropdown-menu .dropdown-item,
+            .bootstrap-select .dropdown-menu .dropdown-item span,
+            .bootstrap-select .dropdown-menu .dropdown-item .text,
+            .bootstrap-select .dropdown-menu .dropdown-item .filter-option,
+            #productSelect + .bootstrap-select .dropdown-toggle .filter-option {
+                color: #000000 !important;
+            }
+            
+            .bootstrap-select .dropdown-toggle .filter-option-inner-inner {
+                color: #000000 !important;
+            }
+            
+            .dropdown-menu .dropdown-item {
+                color: #000000 !important;
+            }
+            
+            .dropdown-menu .dropdown-item:hover {
+                color: #000000 !important;
+                background-color: #f0f0f0 !important;
+            }
+            
+            .filter-option-inner-inner {
+                color: #000000 !important;
+            }
+            
+            .bs-searchbox input.form-control {
+                color: #000000 !important;
+            }
+            
+            .bs-searchbox input.form-control::placeholder {
+                color: #6c757d !important;
+            }
+            
+            /* Asegurar que el select sea visible */
+            .bootstrap-select .dropdown-toggle {
+                background-color: #ffffff !important;
+                border: 1px solid #ced4da !important;
+            }
+            
+            .bootstrap-select .dropdown-toggle:focus {
+                border-color: #86b7fe !important;
+                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+            }
+        </style>
+
         <div class="modal-header">
             <div>
                 <h5 class="modal-title mb-0">
-                    <i class="ri-pencil-line me-2"></i>
-                    Editar venta
+                    <i class="ri-edit-2-line me-2"></i>
+                    Editar venta #{{ sale.invoice_number|default:sale.id }}
                 </h5>
                 <small class="text-muted">
-                    Modifica los datos de la venta y actualiza los productos correspondientes.
+                    Actualiza los datos de la venta y los productos asociados.
                 </small>
             </div>
 
@@ -18,8 +117,10 @@
             </button>
         </div>
 
-        <form id="saleUpdateForm">
-
+        <form id="saleForm">
+            {% csrf_token %}
+            <input type="hidden" name="sale_id" value="{{ sale.id }}">
+            
             <div class="modal-body">
 
                 <div class="card mb-4">
@@ -37,10 +138,11 @@
                                 <input type="text"
                                        class="form-control"
                                        name="invoice_number"
-                                       placeholder="Folio de la venta"
+                                       id="invoiceNumber"
+                                       value="{{ sale.invoice_number|default:'Se generará automáticamente' }}"
                                        readonly>
                                 <small class="text-muted">
-                                    Identificador único de la venta.
+                                    Identificador único generado por el sistema.
                                 </small>
                             </div>
 
@@ -49,20 +151,22 @@
                                 <input type="date"
                                        class="form-control"
                                        name="date"
-                                       id="updateSaleDate">
+                                       id="saleDate"
+                                       value="{{ sale.date|date:'Y-m-d' }}">
                                 <small class="text-muted">
-                                    Día en que se registró la venta.
+                                    Día en que se registra la venta.
                                 </small>
                             </div>
 
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Estado</label>
                                 <select class="form-select"
-                                        name="status">
-                                    <option value="draft">Borrador</option>
-                                    <option value="pending">Pendiente</option>
-                                    <option value="completed">Completada</option>
-                                    <option value="cancelled">Cancelada</option>
+                                        name="status"
+                                        id="saleStatus">
+                                    <option value="draft" {% if sale.status == 'draft' %}selected{% endif %}>Borrador</option>
+                                    <option value="pending" {% if sale.status == 'pending' %}selected{% endif %}>Pendiente</option>
+                                    <option value="completed" {% if sale.status == 'completed' %}selected{% endif %}>Completada</option>
+                                    <option value="cancelled" {% if sale.status == 'cancelled' %}selected{% endif %}>Cancelada</option>
                                 </select>
                                 <small class="text-muted">
                                     Situación actual de la venta.
@@ -89,9 +193,11 @@
                                 <input type="text"
                                        class="form-control"
                                        name="customer_name"
+                                       id="customerName"
+                                       value="{{ sale.customer_name|default:'' }}"
                                        placeholder="Nombre completo o razón social">
                                 <small class="text-muted">
-                                    Persona o negocio que realizó la compra.
+                                    Persona o negocio que realiza la compra.
                                 </small>
                             </div>
 
@@ -100,9 +206,11 @@
                                 <input type="email"
                                        class="form-control"
                                        name="customer_email"
+                                       id="customerEmail"
+                                       value="{{ sale.customer_email|default:'' }}"
                                        placeholder="correo@ejemplo.com">
                                 <small class="text-muted">
-                                    Para comprobantes o seguimiento.
+                                    Para enviar comprobantes o dar seguimiento.
                                 </small>
                             </div>
 
@@ -111,6 +219,8 @@
                                 <input type="text"
                                        class="form-control"
                                        name="customer_phone"
+                                       id="customerPhone"
+                                       value="{{ sale.customer_phone|default:'' }}"
                                        placeholder="Número de contacto">
                                 <small class="text-muted">
                                     Dato opcional para aclaraciones.
@@ -132,54 +242,10 @@
                                     Productos
                                 </h6>
                                 <small class="text-muted">
-                                    Modifica o agrega productos asociados a esta venta.
+                                    Selecciona productos del inventario y agrégalos a la venta.
                                 </small>
                             </div>
                         </div>
-
-
-<div class="card mt-3 d-none" id="quickCreatePanel">
-    <div class="card-body">
-        <h6 class="mb-3"><i class="ri-add-box-line me-1"></i> Nuevo producto</h6>
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Nombre *</label>
-                <input type="text" class="form-control" id="qcName">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Categoría</label>
-                <select class="form-select" id="qcCategory">
-                    <option value="">Sin categoría</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat.id }}">{{ cat.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2 mb-3">
-                <label class="form-label">Precio *</label>
-                <input type="number" class="form-control" id="qcPrice" step="0.01" min="0" value="0.00">
-            </div>
-            <div class="col-md-2 mb-3">
-                <label class="form-label">Stock inicial</label>
-                <input type="number" class="form-control" id="qcStock" min="0" value="0">
-            </div>
-            <div class="col-md-1 mb-3 d-flex align-items-end">
-                <button type="button" class="btn btn-secondary w-100" id="qcCancelBtn">
-                    <i class="ri-close-line"></i>
-                </button>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Imagen</label>
-                <input type="file" class="form-control" id="qcImage" accept="image/*">
-            </div>
-            <div class="col-md-6 mb-3 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-success" id="qcSaveBtn">
-                    <i class="ri-save-3-line me-1"></i> Guardar y usar en esta venta
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
                         <div class="row align-items-end">
 
@@ -187,11 +253,16 @@
                                 <label class="form-label">Buscar producto</label>
 
                                 <select class="selectpicker form-control"
-                                        id="updateProductSelect"
+                                        id="productSelect"
                                         data-live-search="true"
                                         data-width="100%"
-                                        title="Seleccione un producto">
+                                        title="Seleccione un producto"
+                                        data-style="btn-light">
                                 </select>
+
+                                <button type="button" class="btn btn-sm btn-link p-0 mt-1" id="quickCreateProductBtn">
+                                    <i class="ri-add-circle-line me-1"></i>¿No está en la lista? Crear producto nuevo
+                                </button>
 
                                 <small class="text-muted">
                                     Se llenará con productos activos del inventario.
@@ -202,7 +273,7 @@
                                 <label class="form-label">SKU</label>
                                 <input type="text"
                                        class="form-control"
-                                       id="updateProductSku"
+                                       id="productSku"
                                        readonly>
                             </div>
 
@@ -210,7 +281,7 @@
                                 <label class="form-label">Stock</label>
                                 <input type="text"
                                        class="form-control"
-                                       id="updateProductStock"
+                                       id="productStock"
                                        value="0"
                                        readonly>
                             </div>
@@ -219,7 +290,7 @@
                                 <label class="form-label">Precio venta</label>
                                 <input type="number"
                                        class="form-control"
-                                       id="updateProductPrice"
+                                       id="productPrice"
                                        step="0.01"
                                        value="0.00"
                                        readonly>
@@ -229,7 +300,7 @@
                                 <label class="form-label">Cantidad</label>
                                 <input type="number"
                                        class="form-control"
-                                       id="updateProductQuantity"
+                                       id="productQuantity"
                                        min="1"
                                        value="1">
                             </div>
@@ -238,7 +309,7 @@
                                 <label class="form-label">Descuento</label>
                                 <input type="number"
                                        class="form-control"
-                                       id="updateProductDiscount"
+                                       id="productDiscount"
                                        step="0.01"
                                        min="0"
                                        value="0.00">
@@ -247,7 +318,7 @@
                             <div class="col-md-10 mb-3 d-flex justify-content-end">
                                 <button type="button"
                                         class="btn btn-outline-primary"
-                                        id="updateAddProductBtn">
+                                        id="addProductBtn">
                                     <i class="ri-add-line me-1"></i>
                                     Agregar producto
                                 </button>
@@ -258,7 +329,7 @@
                         <div class="table-responsive mt-3">
 
                             <table class="table table-bordered align-middle"
-                                   id="updateSaleItemsTable">
+                                   id="saleItemsTable">
 
                                 <thead class="table-light">
                                     <tr>
@@ -272,7 +343,7 @@
                                 </thead>
 
                                 <tbody>
-                                    <tr id="updateEmptyItemsRow">
+                                    <tr id="emptyItemsRow">
                                         <td colspan="6"
                                             class="text-center py-4 text-muted">
                                             No hay productos agregados.
@@ -301,7 +372,8 @@
                                 <textarea class="form-control"
                                           rows="7"
                                           name="notes"
-                                          placeholder="Escribe observaciones, condiciones de pago o detalles importantes de la venta."></textarea>
+                                          id="saleNotes"
+                                          placeholder="Escribe observaciones, condiciones de pago o detalles importantes de la venta.">{{ sale.notes|default:'' }}</textarea>
 
                             </div>
                         </div>
@@ -318,17 +390,17 @@
 
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="text-muted">Subtotal</span>
-                                    <strong id="updateSubtotalText">$0.00</strong>
+                                    <strong id="subtotalText">$0.00</strong>
                                 </div>
 
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="text-muted">IVA / Impuesto</span>
-                                    <strong id="updateTaxText">$0.00</strong>
+                                    <strong id="taxText">$0.00</strong>
                                 </div>
 
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="text-muted">Descuento</span>
-                                    <strong id="updateDiscountText">$0.00</strong>
+                                    <strong id="discountText">$0.00</strong>
                                 </div>
 
                                 <hr>
@@ -336,29 +408,29 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="fw-bold">Total a pagar</span>
                                     <h4 class="text-success mb-0"
-                                        id="updateTotalText">
+                                        id="totalText">
                                         $0.00
                                     </h4>
                                 </div>
 
                                 <input type="hidden"
                                        name="subtotal"
-                                       id="updateSubtotalInput"
+                                       id="subtotalInput"
                                        value="0">
 
                                 <input type="hidden"
                                        name="tax"
-                                       id="updateTaxInput"
+                                       id="taxInput"
                                        value="0">
 
                                 <input type="hidden"
                                        name="discount"
-                                       id="updateDiscountInput"
+                                       id="discountInput"
                                        value="0">
 
                                 <input type="hidden"
                                        name="total"
-                                       id="updateTotalInput"
+                                       id="totalInput"
                                        value="0">
 
                             </div>
@@ -391,47 +463,220 @@
 </div>
 
 <script>
-    let updateSaleItems = [];
+    let saleItems = [];
+    let productsData = [];
+    const taxRate = 0;
 
-    const updateTaxRate = 0;
+    // ===== CARGAR PRODUCTOS DESDE DJANGO =====
+    function loadProductsFromDjango() {
+        console.log('Cargando productos desde Django...');
+        
+        const productElements = document.querySelectorAll('.product-data');
+        console.log('Elementos de producto encontrados:', productElements.length);
+        
+        // Verificar si hay elementos
+        if (productElements.length === 0) {
+            console.warn('⚠️ No se encontraron elementos .product-data en el DOM');
+            const select = document.getElementById('productSelect');
+            if (select) {
+                select.innerHTML = '<option value="" disabled selected>No hay productos disponibles</option>';
+                if ($('#productSelect').data('selectpicker')) {
+                    $('#productSelect').selectpicker('refresh');
+                }
+            }
+            return;
+        }
+        
+        productsData = [];
+        
+        productElements.forEach(element => {
+            const product = {
+                id: parseInt(element.dataset.id),
+                name: element.dataset.name,
+                sku: element.dataset.sku,
+                stock: parseInt(element.dataset.stock) || 0,
+                price: parseFloat(element.dataset.price) || 0,
+                category: element.dataset.category || 'Sin categoría'
+            };
+            console.log('Producto cargado:', product);
+            productsData.push(product);
+        });
+        
+        console.log('Total productos cargados:', productsData.length);
+        populateProductSelect(productsData);
+    }
 
-    function updateFormatCurrency(value) {
+    function populateProductSelect(products) {
+        console.log('Poblando select con', products.length, 'productos');
+        
+        const select = document.getElementById('productSelect');
+        if (!select) {
+            console.error('❌ No se encontró el elemento #productSelect');
+            return;
+        }
+        
+        // Limpiar opciones existentes
+        select.innerHTML = '';
+        
+        // Agregar placeholder
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Seleccione un producto';
+        placeholder.selected = true;
+        placeholder.disabled = true;
+        select.appendChild(placeholder);
+        
+        // Agregar productos
+        products.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.id;
+            const displayName = product.name + (product.sku ? ' (SKU: ' + product.sku + ')' : '');
+            option.textContent = displayName;
+            option.setAttribute('data-sku', product.sku || '');
+            option.setAttribute('data-stock', product.stock || 0);
+            option.setAttribute('data-price', product.price || 0);
+            option.setAttribute('data-category', product.category || 'Sin categoría');
+            select.appendChild(option);
+        });
+        
+        // Reinicializar selectpicker
+        try {
+            // Destruir el selectpicker existente si existe
+            if ($('#productSelect').data('selectpicker')) {
+                $('#productSelect').selectpicker('destroy');
+            }
+            
+            // Inicializar de nuevo
+            $('#productSelect').selectpicker({
+                liveSearch: true,
+                liveSearchPlaceholder: 'Buscar producto...',
+                size: 10,
+                style: 'btn-light',
+                dropupAuto: false
+            });
+            console.log('✅ Selectpicker inicializado correctamente');
+        } catch (error) {
+            console.error('❌ Error al inicializar selectpicker:', error);
+        }
+    }
+
+    // ===== CARGAR DATOS DE LA VENTA DESDE JSON =====
+    function loadSaleData() {
+        try {
+            const saleJsonElement = document.getElementById('saleDataJson');
+            if (!saleJsonElement) {
+                console.error('No se encontró el elemento saleDataJson');
+                return;
+            }
+            
+            const saleData = JSON.parse(saleJsonElement.textContent);
+            console.log('Datos de la venta cargados:', saleData);
+            
+            // Asignar valores a los campos
+            document.getElementById('saleDate').value = saleData.date || '';
+            document.getElementById('saleStatus').value = saleData.status || 'draft';
+            document.getElementById('customerName').value = saleData.customer_name || '';
+            document.getElementById('customerEmail').value = saleData.customer_email || '';
+            document.getElementById('customerPhone').value = saleData.customer_phone || '';
+            document.getElementById('saleNotes').value = saleData.notes || '';
+            document.getElementById('invoiceNumber').value = saleData.invoice_number || 'Se generará automáticamente';
+            
+            // Actualizar resumen
+            document.getElementById('subtotalText').textContent = formatCurrency(parseFloat(saleData.subtotal || 0));
+            document.getElementById('taxText').textContent = formatCurrency(parseFloat(saleData.tax || 0));
+            document.getElementById('discountText').textContent = formatCurrency(parseFloat(saleData.discount || 0));
+            document.getElementById('totalText').textContent = formatCurrency(parseFloat(saleData.total || 0));
+            
+            document.getElementById('subtotalInput').value = saleData.subtotal || 0;
+            document.getElementById('taxInput').value = saleData.tax || 0;
+            document.getElementById('discountInput').value = saleData.discount || 0;
+            document.getElementById('totalInput').value = saleData.total || 0;
+            
+        } catch (error) {
+            console.error('Error al cargar datos de la venta:', error);
+        }
+    }
+
+    // ===== CARGAR ITEMS DE LA VENTA DESDE JSON =====
+    function loadSaleItems() {
+        try {
+            const itemsJsonElement = document.getElementById('saleItemsJson');
+            if (!itemsJsonElement) {
+                console.error('No se encontró el elemento saleItemsJson');
+                return;
+            }
+            
+            const itemsData = JSON.parse(itemsJsonElement.textContent);
+            console.log('Items de la venta cargados:', itemsData);
+            
+            saleItems = [];
+            
+            itemsData.forEach(item => {
+                saleItems.push({
+                    productId: item.product_id,
+                    productName: item.product_name,
+                    sku: item.sku || 'Sin SKU',
+                    stock: item.stock || 0,
+                    quantity: item.quantity,
+                    unitPrice: item.unit_price,
+                    discount: item.discount || 0
+                });
+            });
+            
+            renderItemsTable();
+            
+        } catch (error) {
+            console.error('Error al cargar items de la venta:', error);
+        }
+    }
+
+    function formatCurrency(value) {
         return '$' + Number(value || 0).toFixed(2);
+    }
+
+    function setTodayDate() {
+        const dateInput = document.getElementById('saleDate');
+        if (!dateInput) return;
+        // Si ya tiene fecha, no la cambiamos
+        if (dateInput.value) return;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        dateInput.value = `${year}-${month}-${day}`;
     }
 
     function updateTotals() {
         let subtotal = 0;
         let discount = 0;
 
-        updateSaleItems.forEach(item => {
+        saleItems.forEach(item => {
             subtotal += item.quantity * item.unitPrice;
             discount += item.discount;
         });
 
-        const tax = subtotal * updateTaxRate;
+        const tax = subtotal * taxRate;
         const total = subtotal + tax - discount;
 
-        document.getElementById('updateSubtotalText').textContent = updateFormatCurrency(subtotal);
-        document.getElementById('updateTaxText').textContent = updateFormatCurrency(tax);
-        document.getElementById('updateDiscountText').textContent = updateFormatCurrency(discount);
-        document.getElementById('updateTotalText').textContent = updateFormatCurrency(total);
+        document.getElementById('subtotalText').textContent = formatCurrency(subtotal);
+        document.getElementById('taxText').textContent = formatCurrency(tax);
+        document.getElementById('discountText').textContent = formatCurrency(discount);
+        document.getElementById('totalText').textContent = formatCurrency(total);
 
-        document.getElementById('updateSubtotalInput').value = subtotal.toFixed(2);
-        document.getElementById('updateTaxInput').value = tax.toFixed(2);
-        document.getElementById('updateDiscountInput').value = discount.toFixed(2);
-        document.getElementById('updateTotalInput').value = total.toFixed(2);
+        document.getElementById('subtotalInput').value = subtotal.toFixed(2);
+        document.getElementById('taxInput').value = tax.toFixed(2);
+        document.getElementById('discountInput').value = discount.toFixed(2);
+        document.getElementById('totalInput').value = total.toFixed(2);
     }
 
-    function renderUpdateItemsTable() {
-        const tbody = document.querySelector('#updateSaleItemsTable tbody');
-
+    function renderItemsTable() {
+        const tbody = document.querySelector('#saleItemsTable tbody');
         tbody.innerHTML = '';
 
-        if (updateSaleItems.length === 0) {
+        if (saleItems.length === 0) {
             tbody.innerHTML = `
-                <tr id="updateEmptyItemsRow">
-                    <td colspan="6"
-                        class="text-center py-4 text-muted">
+                <tr id="emptyItemsRow">
+                    <td colspan="6" class="text-center py-4 text-muted">
                         No hay productos agregados.
                     </td>
                 </tr>
@@ -440,7 +685,7 @@
             return;
         }
 
-        updateSaleItems.forEach((item, index) => {
+        saleItems.forEach((item, index) => {
             const rowSubtotal = (item.quantity * item.unitPrice) - item.discount;
 
             tbody.innerHTML += `
@@ -453,13 +698,13 @@
                         </small>
                     </td>
                     <td>${item.quantity}</td>
-                    <td>${updateFormatCurrency(item.unitPrice)}</td>
-                    <td>${updateFormatCurrency(item.discount)}</td>
-                    <td class="fw-bold">${updateFormatCurrency(rowSubtotal)}</td>
+                    <td>${formatCurrency(item.unitPrice)}</td>
+                    <td>${formatCurrency(item.discount)}</td>
+                    <td class="fw-bold">${formatCurrency(rowSubtotal)}</td>
                     <td>
                         <button type="button"
                                 class="btn btn-sm btn-outline-danger"
-                                onclick="removeUpdateItem(${index})">
+                                onclick="removeItem(${index})">
                             <i class="ri-delete-bin-6-line"></i>
                         </button>
                     </td>
@@ -470,34 +715,26 @@
         updateTotals();
     }
 
-    function removeUpdateItem(index) {
-        updateSaleItems.splice(index, 1);
-        renderUpdateItemsTable();
+    function removeItem(index) {
+        saleItems.splice(index, 1);
+        renderItemsTable();
     }
 
-    function clearUpdateProductFields() {
-        document.getElementById('updateProductSku').value = '';
-        document.getElementById('updateProductStock').value = '0';
-        document.getElementById('updateProductPrice').value = '0.00';
-        document.getElementById('updateProductQuantity').value = 1;
-        document.getElementById('updateProductDiscount').value = '0.00';
-
-        $('#updateProductSelect').selectpicker('val', '');
+    function clearProductFields() {
+        document.getElementById('productSku').value = '';
+        document.getElementById('productStock').value = '0';
+        document.getElementById('productPrice').value = '0.00';
+        document.getElementById('productQuantity').value = 1;
+        document.getElementById('productDiscount').value = '0.00';
+        $('#productSelect').selectpicker('val', '');
     }
 
-    document.getElementById('updateAddProductBtn').addEventListener('click', function () {
-        const productSelect = document.getElementById('updateProductSelect');
+    // ===== AGREGAR PRODUCTO =====
+    document.getElementById('addProductBtn').addEventListener('click', function () {
+        const productSelect = document.getElementById('productSelect');
         const selectedOption = productSelect.options[productSelect.selectedIndex];
 
-        const productId = productSelect.value;
-        const productName = selectedOption ? selectedOption.text : '';
-        const sku = selectedOption ? selectedOption.getAttribute('data-sku') : '';
-        const stock = Number(selectedOption ? selectedOption.getAttribute('data-stock') || 0 : 0);
-        const quantity = Number(document.getElementById('updateProductQuantity').value || 0);
-        const unitPrice = Number(document.getElementById('updateProductPrice').value || 0);
-        const discount = Number(document.getElementById('updateProductDiscount').value || 0);
-
-        if (!productId) {
+        if (!selectedOption || !selectedOption.value) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Selecciona un producto',
@@ -505,6 +742,14 @@
             });
             return;
         }
+
+        const productId = parseInt(selectedOption.value);
+        const productName = selectedOption.text.replace(/\s*\(SKU:.*\)/, '').trim();
+        const sku = selectedOption.getAttribute('data-sku') || '';
+        const stock = parseInt(selectedOption.getAttribute('data-stock') || 0);
+        const unitPrice = parseFloat(selectedOption.getAttribute('data-price') || 0);
+        const quantity = parseInt(document.getElementById('productQuantity').value || 0);
+        const discount = parseFloat(document.getElementById('productDiscount').value || 0);
 
         if (quantity <= 0) {
             Swal.fire({
@@ -519,57 +764,287 @@
             Swal.fire({
                 icon: 'warning',
                 title: 'Stock insuficiente',
-                text: 'La cantidad no puede ser mayor al stock disponible.'
+                text: `Stock disponible: ${stock}. No puedes vender más de lo que hay.`
             });
             return;
         }
 
-        updateSaleItems.push({
-            productId,
-            productName,
-            sku,
-            stock,
-            quantity,
-            unitPrice,
-            discount
+        const existingItemIndex = saleItems.findIndex(item => item.productId === productId);
+        
+        if (existingItemIndex !== -1) {
+            const existingItem = saleItems[existingItemIndex];
+            const newQuantity = existingItem.quantity + quantity;
+            
+            if (stock > 0 && newQuantity > stock) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Stock insuficiente',
+                    text: `La cantidad total (${newQuantity}) excede el stock disponible (${stock}).`
+                });
+                return;
+            }
+            
+            existingItem.quantity = newQuantity;
+            if (discount > existingItem.discount) {
+                existingItem.discount = discount;
+            }
+            
+            renderItemsTable();
+            clearProductFields();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Producto actualizado',
+                text: `Se actualizó la cantidad de ${productName} a ${newQuantity}.`,
+                timer: 1500,
+                showConfirmButton: false
+            });
+            return;
+        }
+
+        saleItems.push({
+            productId: productId,
+            productName: productName,
+            sku: sku,
+            stock: stock,
+            quantity: quantity,
+            unitPrice: unitPrice,
+            discount: discount
         });
 
-        clearUpdateProductFields();
-        renderUpdateItemsTable();
+        clearProductFields();
+        renderItemsTable();
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Producto agregado',
+            text: `${productName} agregado a la venta.`,
+            timer: 1000,
+            showConfirmButton: false
+        });
     });
 
-    $('#updateProductSelect').on('changed.bs.select', function () {
+    // ===== SELECCIONAR PRODUCTO =====
+    $('#productSelect').on('changed.bs.select', function () {
         const selectedOption = this.options[this.selectedIndex];
-
-        if (!selectedOption) return;
+        if (!selectedOption || !selectedOption.value) {
+            document.getElementById('productSku').value = '';
+            document.getElementById('productStock').value = '0';
+            document.getElementById('productPrice').value = '0.00';
+            return;
+        }
 
         const sku = selectedOption.getAttribute('data-sku') || '';
         const stock = selectedOption.getAttribute('data-stock') || '0';
         const price = selectedOption.getAttribute('data-price') || '0.00';
 
-        document.getElementById('updateProductSku').value = sku;
-        document.getElementById('updateProductStock').value = stock;
-        document.getElementById('updateProductPrice').value = Number(price).toFixed(2);
+        document.getElementById('productSku').value = sku;
+        document.getElementById('productStock').value = stock;
+        document.getElementById('productPrice').value = parseFloat(price).toFixed(2);
+        document.getElementById('productQuantity').value = 1;
+        document.getElementById('productDiscount').value = '0.00';
     });
 
-    document.getElementById('saleUpdateForm').addEventListener('submit', function (event) {
+    // ===== CREAR PRODUCTO RÁPIDO =====
+    document.getElementById('quickCreateProductBtn').addEventListener('click', function() {
+        Swal.fire({
+            title: 'Crear producto rápido',
+            html: `
+                <div class="text-start">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del producto <span class="text-danger">*</span></label>
+                        <input type="text" id="quickProductName" class="form-control" placeholder="Nombre del producto">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Precio</label>
+                        <input type="number" id="quickProductPrice" class="form-control" step="0.01" placeholder="0.00" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stock</label>
+                        <input type="number" id="quickProductStock" class="form-control" placeholder="0" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Categoría</label>
+                        <select id="quickProductCategory" class="form-select">
+                            <option value="">Sin categoría</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Crear producto',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                const name = document.getElementById('quickProductName').value.trim();
+                const price = document.getElementById('quickProductPrice').value;
+                const stock = document.getElementById('quickProductStock').value;
+                const category = document.getElementById('quickProductCategory').value;
+
+                if (!name) {
+                    Swal.showValidationMessage('El nombre del producto es obligatorio');
+                    return false;
+                }
+
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('price', price || '0');
+                formData.append('stock', stock || '0');
+                formData.append('category', category);
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                return fetch('/products/quick-create/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.ok) {
+                        throw new Error(data.error || 'Error al crear el producto');
+                    }
+                    return data;
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(error.message);
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                const newProduct = result.value;
+                
+                productsData.push({
+                    id: newProduct.id,
+                    name: newProduct.name,
+                    sku: 'Sin SKU',
+                    stock: parseInt(document.getElementById('quickProductStock').value || 0),
+                    price: parseFloat(document.getElementById('quickProductPrice').value || 0),
+                    category: 'Nuevo'
+                });
+                
+                populateProductSelect(productsData);
+                
+                $('#productSelect').selectpicker('val', newProduct.id);
+                $('#productSelect').trigger('changed.bs.select');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Producto creado',
+                    text: `El producto "${newProduct.name}" fue creado exitosamente.`
+                });
+            }
+        });
+    });
+
+    // ===== ENVIAR FORMULARIO =====
+    document.getElementById('saleForm').addEventListener('submit', function (event) {
         event.preventDefault();
 
-        if (updateSaleItems.length === 0) {
+        if (saleItems.length === 0) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Venta sin productos',
-                text: 'Agrega al menos un producto para actualizar la venta.'
+                text: 'Agrega al menos un producto para registrar la venta.'
             });
             return;
         }
 
-        Swal.fire({
-            icon: 'info',
-            title: 'Frontend listo',
-            text: 'El formulario de edición ya está preparado para conectarse al backend.'
+        const saleData = {
+            sale_id: document.querySelector('[name="sale_id"]').value,
+            customer_name: document.getElementById('customerName').value,
+            customer_email: document.getElementById('customerEmail').value,
+            customer_phone: document.getElementById('customerPhone').value,
+            date: document.getElementById('saleDate').value,
+            status: document.getElementById('saleStatus').value,
+            notes: document.getElementById('saleNotes').value,
+            subtotal: document.getElementById('subtotalInput').value,
+            tax: document.getElementById('taxInput').value,
+            discount: document.getElementById('discountInput').value,
+            total: document.getElementById('totalInput').value,
+            items: saleItems.map(item => ({
+                product_id: item.productId,
+                quantity: item.quantity,
+                unit_price: item.unitPrice,
+                discount: item.discount
+            }))
+        };
+
+        console.log('📦 Datos de venta a actualizar:', saleData);
+
+        fetch('/sales-main/update/?id=' + saleData.sale_id, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(saleData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '✅ Venta actualizada',
+                    text: 'La venta fue actualizada exitosamente.'
+                }).then(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('ModalOptions'));
+                    if (modal) modal.hide();
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Error',
+                    text: data.error || 'No se pudo actualizar la venta.'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: '❌ Error',
+                text: 'Ocurrió un error al actualizar la venta.'
+            });
+            console.error('Error:', error);
         });
     });
 
-    $('.selectpicker').selectpicker();
+    // ===== INICIALIZACIÓN =====
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Inicializando edición de venta...');
+        
+        // 1. Cargar productos
+        loadProductsFromDjango();
+        
+        // 2. Cargar datos de la venta
+        loadSaleData();
+        
+        // 3. Cargar items de la venta
+        loadSaleItems();
+        
+        // 4. Establecer fecha
+        setTodayDate();
+        
+        // 5. Verificar que el select se haya inicializado
+        setTimeout(function() {
+            console.log('Verificando select...');
+            const select = document.getElementById('productSelect');
+            console.log('Opciones del select:', select.options.length);
+            if (select.options.length <= 1) {
+                console.warn('⚠️ El select solo tiene el placeholder. Recargando productos...');
+                loadProductsFromDjango();
+            }
+        }, 500);
+    });
+
+    // También ejecutar cuando se abre el modal
+    document.addEventListener('shown.bs.modal', function (e) {
+        if (e.target.id === 'ModalOptions') {
+            console.log('📂 Modal mostrado, recargando productos...');
+            setTimeout(function() {
+                loadProductsFromDjango();
+            }, 300);
+        }
+    });
 </script>

@@ -1,0 +1,387 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}
+- Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="page-content">
+        <div class="container-fluid">
+
+            {% if messages %}
+                {% for m in messages %}
+                <script>
+                    Swal.fire({
+                        position:'center',
+                        icon:'{{ m.level_tag }}'=='error'?'error':'success',
+                        title:'{{ m }}',
+                        showConfirmButton:false,
+                        timer:2500
+                    })
+                </script>
+                {% endfor %}
+            {% endif %}
+
+            <!-- ENCABEZADO -->
+
+            <div class="row mb-4">
+
+                <div class="col">
+
+                    <div class="card shadow-sm border-0">
+
+                        <div class="card-body">
+
+                            <h3 class="fw-bold mb-1">
+                                Bienvenido {{ request.user.first_name }}
+                            </h3>
+
+                            <p class="text-muted mb-0">
+
+                                {{ company.name }}
+
+                            </p>
+
+                            <small>
+
+                                Plan:
+                                <span class="badge bg-success">
+                                    {{ subscription.plan.name }}
+                                </span>
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- TARJETAS -->
+
+            <div class="row">
+
+                <div class="col-xl-3 col-md-6">
+
+                    <div class="card">
+
+                        <div class="card-body">
+
+                            <i class="ri-box-3-line fs-2 text-primary"></i>
+
+                            <h5 class="mt-3">
+
+                                Productos
+
+                            </h5>
+
+                            <h2>
+
+                                {{ products_count }}
+
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-xl-3 col-md-6">
+
+                    <div class="card">
+
+                        <div class="card-body">
+
+                            <i class="ri-user-3-line fs-2 text-success"></i>
+
+                            <h5 class="mt-3">
+
+                                Colaboradores
+
+                            </h5>
+
+                            <h2>
+
+                                {{ members_count }}
+
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-xl-3 col-md-6">
+
+                    <div class="card">
+
+                        <div class="card-body">
+
+                            <i class="ri-truck-line fs-2 text-warning"></i>
+
+                            <h5 class="mt-3">
+
+                                Proveedores
+
+                            </h5>
+
+                            <h2>
+
+                                {{ suppliers_count }}
+
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-xl-3 col-md-6">
+
+                    <div class="card">
+
+                        <div class="card-body">
+
+                            <i class="ri-shopping-cart-line fs-2 text-danger"></i>
+
+                            <h5 class="mt-3">
+
+                                Ventas
+
+                            </h5>
+
+                            <h2>
+
+                                {{ sales_count }}
+
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- SEGUNDA FILA -->
+
+            <div class="row">
+
+                <div class="col-lg-8">
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <h5 class="mb-0">
+
+                                Ventas recientes
+
+                            </h5>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <table class="table">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th>Factura</th>
+                                        <th>Cliente</th>
+                                        <th>Total</th>
+                                        <th>Estado</th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                {% for sale in recent_sales %}
+
+                                    <tr>
+
+                                        <td>{{ sale.invoice_number }}</td>
+
+                                        <td>{{ sale.customer_name }}</td>
+
+                                        <td>$ {{ sale.total }}</td>
+
+                                        <td>
+
+                                            <span class="badge bg-success">
+
+                                                {{ sale.get_status_display }}
+
+                                            </span>
+
+                                        </td>
+
+                                    </tr>
+
+                                {% empty %}
+
+                                    <tr>
+
+                                        <td colspan="4">
+
+                                            No hay ventas.
+
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-lg-4">
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            Alertas
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="alert alert-warning">
+
+                                Productos con poco stock:
+                                <strong>
+
+                                    {{ low_stock }}
+
+                                </strong>
+
+                            </div>
+
+                            <div class="alert alert-success">
+
+                                Total vendido
+
+                                <br>
+
+                                <h3>
+
+                                    $ {{ sales_total }}
+
+                                </h3>
+
+                            </div>
+
+                            <div class="alert alert-info">
+
+                                Categorías:
+                                {{ categories_count }}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- PRODUCTOS -->
+
+            <div class="row">
+
+                <div class="col-12">
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            Últimos productos
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <table class="table align-middle">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th>#</th>
+                                        <th>Producto</th>
+                                        <th>Stock</th>
+                                        <th>Precio</th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                {% for product in recent_products %}
+
+                                    <tr>
+
+                                        <td>{{ product.item_number }}</td>
+
+                                        <td>{{ product.name }}</td>
+
+                                        <td>{{ product.stock }}</td>
+
+                                        <td>$ {{ product.price }}</td>
+
+                                    </tr>
+
+                                {% empty %}
+
+                                    <tr>
+
+                                        <td colspan="4">
+
+                                            Sin productos.
+
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
