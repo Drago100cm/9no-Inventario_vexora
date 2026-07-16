@@ -138,11 +138,11 @@
                                                     <div class="btn-group btn-group-sm">
                                                         <button type="button" class="btn btn-outline-secondary btn-icon" 
                                                                 onclick="editModal('{% url 'vexora:edit_member' member.id %}')" title="Editar">
-                                                            <i class="ri-pencil-fill"></i>
+                                                            <i class="ri-pencil-fill"></i>Editar
                                                         </button>
                                                         <button type="button" class="btn btn-outline-danger btn-icon" 
                                                                 onclick="deleteMember('{{ member.id }}', '{{ member.user.get_full_name|default:member.user.username|escapejs }}')" title="Eliminar">
-                                                            <i class="ri-delete-bin-6-fill"></i>
+                                                            <i class="ri-delete-bin-6-fill"></i>Eliminar
                                                         </button>
                                                     </div>
                                                 </td>
