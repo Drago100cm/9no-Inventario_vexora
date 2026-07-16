@@ -9,7 +9,7 @@ urlpatterns = [
 
     #----------------------Home----------------------
     path('', HomeView.as_view(), name='home'),
-    path('Dashboard',DashboardView.as_view(),name='dashboard'),
+    path('Dashboard/',DashboardView.as_view(),name='dashboard'),
 
     #----------------------Autenticación----------------------
     path("login/", CustomLoginView.as_view(), name="login"),

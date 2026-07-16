@@ -85,10 +85,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'prueba',       # Nombre de tu base de datos
+        'NAME': 'pruebas',       # Nombre de tu base de datos
         'USER': 'root',               # Usuario de MySQL
-        'HOST' : 'localhost',               # o la IP del servidor MySQL
-        'PASSWORD': '1234',       # Contraseña de MySQL
+        'PASSWORD': '',       # Contraseña de MySQL
+        'HOST': 'localhost',               # o la IP del servidor MySQL
         'PORT': '3306',                    # Puerto por defecto de MySQL
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES',  time_zone = '-06:00'"

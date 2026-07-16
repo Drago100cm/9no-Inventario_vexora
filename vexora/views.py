@@ -436,17 +436,20 @@ def delete_group(request, pk):
 
 class RegisterView(CreateView):
     model = CustomUser
+    form_class = CustomUserRegisterForm
     form_class = PublicUserRegistrationForm
     template_name = "Accounts/register.html"
     success_url = reverse_lazy("vexora:home")
 
     def form_valid(self, form):
+        print("FORMULARIO VÁLIDO")
         form.instance.is_active = True
         form.instance.is_staff = False
         form.instance.is_superuser = False
 
         response = super().form_valid(form)
 
+        login(self.request, self.object)
         user = self.object
 
         # Buscar la empresa activa de la tienda
@@ -484,6 +487,9 @@ class RegisterView(CreateView):
         return response
 
     def form_invalid(self, form):
+        print(form.errors)
+        print(form.non_field_errors())
+        return super().form_invalid(form)
         print("========== ERROR EN EL REGISTRO ==========")
 
         for campo, errores in form.errors.items():
@@ -616,61 +622,82 @@ def subscription_end_date(start_date, billing_type):
 
 class PlanListView(LoginRequiredMixin, ListView):
     model = Plan
-    template_name = 'vexora/subscriptions/plans.html'
-    context_object_name = 'plans'
-    ordering = ['id']  # o 'name', según prefieras
+    template_name = "vexora/subscriptions/plans.html"
+    context_object_name = "plans"
+    ordering = ["id"]
+
+    def dispatch(self, request, *args, **kwargs):
+        # Solo el superusuario puede acceder
+        if not request.user.is_superuser:
+            messages.error(
+                request,
+                "❌ No tienes permisos para acceder a la administración de planes."
+            )
+            return redirect("vexora:home")
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         ensure_default_plans()  # Crea los planes por defecto si no existen
-        return Plan.objects.filter(active=True).order_by('id')
-    
+        return Plan.objects.filter(active=True).order_by("id")
 
 class PlanCreateView(LoginRequiredMixin, CreateView):
     model = Plan
     form_class = PlanesForm
-    template_name = 'vexora/subscriptions/plan_create.html'
-    success_url = reverse_lazy('vexora:plan_list')
+    template_name = "vexora/subscriptions/plan_create.html"
+    success_url = reverse_lazy("vexora:plan_list")
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            messages.error(
+                request,
+                "❌ No tienes permisos para crear planes."
+            )
+            return redirect("vexora:home")
+
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        messages.success(self.request, "✅ Plan creado correctamente!")
+        messages.success(
+            self.request,
+            f"✅ Plan '{form.instance.name}' creado correctamente."
+        )
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Crear nuevo plan'
+        context["title"] = "Crear nuevo plan"
         return context
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
-
-    def form_valid(self, form):
-        if self.request.user.company:
-            form.instance.company = self.request.user.company
-            messages.success(self.request, f"✅ Proveedor '{form.instance.name}' creado correctamente!")
-            return super().form_valid(form)
-        else:
-            messages.error(self.request, "❌ No tienes una empresa asignada.")
-            return redirect('vexora:list_suppliers')
-
-    def get_success_url(self):
-        return reverse('vexora:list_suppliers')
     
-class PlanUpdateView(LoginRequiredMixin,UpdateView):
+class PlanUpdateView(LoginRequiredMixin, UpdateView):
     model = Plan
     form_class = PlanesForm
     template_name = "vexora/subscriptions/plan_edit.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            messages.error(
+                request,
+                "❌ No tienes permisos para editar planes."
+            )
+            return redirect("vexora:home")
+
+        return super().dispatch(request, *args, **kwargs)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         return kwargs
-    
+
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, "✅ Plan actualizado correctamente!")
+        messages.success(
+            self.request,
+            f"✅ Plan '{form.instance.name}' actualizado correctamente."
+        )
         return response
 
     def get_success_url(self):
-        return reverse('vexora:plan_list')
+        return reverse("vexora:plan_list")
 
 def delete_plan(request, pk):
     plan = get_object_or_404(Plan, id=pk)
@@ -843,6 +870,14 @@ class UserCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
+
+        if not self.request.user.has_perm("vexora.add_customuser"):
+            messages.error(
+                self.request,
+                "❌ No tienes permisos para crear usuarios."
+            )
+            return redirect("vexora:user_list")
+
         messages.success(self.request, "✅ ¡Usuario creado correctamente!")
         return super().form_valid(form)
 
@@ -1397,62 +1432,111 @@ class SalesUpdateView(LoginRequiredMixin, UpdateView):
 # ============================================
 # MEMBERS VIEWS
 # ============================================
-
 class MembersView(LoginRequiredMixin, ListView):
     model = CompanyMember
-    template_name = 'vexora/members/list.html'
-    context_object_name = 'members'
+    template_name = "vexora/members/list.html"
+    context_object_name = "members"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm("vexora.view_companymember"):
+            messages.error(request, "❌ No tienes permisos para acceder a esta sección.")
+            return redirect("vexora:home")
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         company = self.request.user.company
+
         if not company:
             return CompanyMember.objects.none()
-        return CompanyMember.objects.filter(company=company).select_related('user', 'role').order_by('user__username')
+
+        return (
+            CompanyMember.objects
+            .filter(company=company)
+            .select_related("user", "role")
+            .order_by("user__username")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        company = self.request.user.company
-        if company:
-            context['total_users'] = CompanyMember.objects.filter(company=company).count()
-        else:
-            context['total_users'] = 0
-        return context
 
+        company = self.request.user.company
+
+        context["total_users"] = (
+            CompanyMember.objects.filter(company=company).count()
+            if company else 0
+        )
+
+        return context
 
 class MembersCreateView(LoginRequiredMixin, CreateView):
     model = CompanyMember
-    form_class = MemberCreateForm  # Usar MemberCreateForm
-    template_name = 'vexora/members/create.html'
+    form_class = MemberCreateForm
+    template_name = "vexora/members/create.html"
+
+    def dispatch(self, request, *args, **kwargs):
+
+        # Verificar permiso
+        if not request.user.has_perm("vexora.add_companymember"):
+            messages.error(request, "❌ No tienes permisos para crear colaboradores.")
+            return redirect("vexora:list_members")
+
+        company = request.user.company
+
+        if not company:
+            messages.error(request, "❌ No tienes una empresa asignada.")
+            return redirect("vexora:list_members")
+
+        # Verificar suscripción
+        if not hasattr(company, "subscription"):
+            messages.error(request, "❌ La empresa no tiene una suscripción activa.")
+            return redirect("vexora:list_members")
+
+        subscription = company.subscription
+        plan = subscription.plan
+
+        # Contar colaboradores actuales
+        total_members = CompanyMember.objects.filter(company=company).count()
+
+        # Validar límite del plan
+        if total_members >= plan.max_collaborators:
+            messages.error(
+                request,
+                f"❌ Tu plan '{plan.name}' permite un máximo de {plan.max_collaborators} colaboradores."
+            )
+            return redirect("vexora:list_members")
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
+        kwargs["user"] = self.request.user
         return kwargs
 
     def form_valid(self, form):
-        if self.request.user.company:
-            form.instance.company = self.request.user.company
-            
-            response = super().form_valid(form)
-            member_user = form.instance.user
-            member_name = f"{member_user.first_name} {member_user.last_name}".strip() or member_user.username
-            full_name = f"{member_user.first_name} {member_user.last_name}".strip()
+        form.instance.company = self.request.user.company
 
-            messages.success(
-                self.request,
-                f"✅ Miembro '{full_name or member_user.username}' creado correctamente!"
-            )
-            return response
-        else:
-            messages.error(self.request, "❌ No tienes una empresa asignada.")
-            return redirect('vexora:list_members')
+        response = super().form_valid(form)
+
+        member_user = form.instance.user
+        full_name = (
+            f"{member_user.first_name} {member_user.last_name}".strip()
+            or member_user.username
+        )
+
+        messages.success(
+            self.request,
+            f"✅ Miembro '{full_name}' creado correctamente."
+        )
+
+        return response
 
     def get_success_url(self):
-        return reverse('vexora:list_members')
+        return reverse("vexora:list_members")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Crear Miembro'
+        context["title"] = "Crear Miembro"
         return context
 
 
@@ -1486,13 +1570,20 @@ class MemberUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
 
-def delete_member(request, pk):
+def delete_member(request, id):
     company = request.user.company
-    member = get_object_or_404(CompanyMember, id=pk, company=company)
+    member = get_object_or_404(CompanyMember, id=id, company=company)
+
     member_name = member.user.get_full_name() or member.user.username
+
     member.delete()
-    messages.success(request, f"✅ Miembro '{member_name}' eliminado correctamente!")
-    return redirect('vexora:list_members')
+
+    messages.success(
+        request,
+        f"✅ Miembro '{member_name}' eliminado correctamente!"
+    )
+
+    return redirect("vexora:list_members")
 
 # =====================================
 # SALES MAIN (CRUD Frontend)

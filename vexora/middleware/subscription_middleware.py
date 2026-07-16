@@ -12,13 +12,13 @@ EXCLUDED_PATHS = [
     '/Registro/',
     '/register/',
     '/logout/',
-    '/admin/',
     '/subscription_list/',
     '/subscriptions/choose/',
     '/subscriptions/detail/',
     '/company_create/',
     #-----------------------Vista de compañía-----------------------
-    '/companies/',    
+    '/companies/',
+    '/Dashboard/',
 ]
 
 
@@ -46,7 +46,7 @@ class SubscriptionMiddleware:
         #    )
 
         if company is None:
-            return redirect("vexora:company_list")
+            return redirect("vexora:dashboard")
 
         # if not subscription_is_active(company):
         #    return JsonResponse(
