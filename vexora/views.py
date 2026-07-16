@@ -1,4 +1,3 @@
-from pyexpat.errors import messages
 from django.contrib.auth.decorators import login_required
 from urllib import request
 from django.contrib.auth import  login, logout
@@ -6,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse, reverse_lazy
 from .forms import *
+from xml.sax.saxutils import escape
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView,RedirectView, DetailView, TemplateView
 from vexora.models import *
 from django.contrib import messages
@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.core.mail import send_mail
 import logging
+from django.db import transaction, models
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission
@@ -33,6 +34,7 @@ from .forms import SiteConfigurationForm, SMTPConfigurationForm
 from django.db.models import Q
 from datetime import datetime
 from django.views.decorators.http import require_POST
+from io import BytesIO
 from .services.report_service import ReportService
 from django.http import HttpResponse
 from reportlab.lib import colors
@@ -46,7 +48,28 @@ from io import BytesIO
 import json
 from decimal import Decimal
 
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+)
+
+from .models import Sale, SaleItem
 # Create your views here.
+logger = logging.getLogger(__name__)
 class HomeView(TemplateView):
     template_name = 'Home/home.html'
 #======Home de la empresa (con slug)======
@@ -83,8 +106,16 @@ class AIChatView(LoginRequiredMixin, FormView):
 
 
 # views.py
-
-
+from .models import (
+    CustomUser,
+    Company,
+    Role,
+    CompanyMember,
+)
+from .forms import (
+    PublicUserRegistrationForm,
+    CustomUserCreationForm,
+)
 #--------------------Configuración del sitio-------------------
 class SiteConfigurationUpdateView(LoginRequiredMixin,UpdateView):
 
@@ -401,21 +432,57 @@ def delete_group(request, pk):
     group.delete()
     messages.success(request, "✅ Grupo eliminado correctamente!")
     return redirect('vexora:group_list')  # ruta a la lista de grupos
+# --------------------- Registro ----------------------
 
-#---------------------Registro----------------------
 class RegisterView(CreateView):
     model = CustomUser
     form_class = CustomUserRegisterForm
+    form_class = PublicUserRegistrationForm
     template_name = "Accounts/register.html"
     success_url = reverse_lazy("vexora:home")
 
     def form_valid(self, form):
         print("FORMULARIO VÁLIDO")
         form.instance.is_active = True
+        form.instance.is_staff = False
+        form.instance.is_superuser = False
 
         response = super().form_valid(form)
 
         login(self.request, self.object)
+        user = self.object
+
+        # Buscar la empresa activa de la tienda
+        company = Company.objects.filter(
+            is_active=True
+        ).first()
+
+        if company:
+            # Crear o buscar el rol Cliente
+            cliente_role, created = Role.objects.get_or_create(
+                company=company,
+                name="Cliente",
+                defaults={
+                    "description": "Cliente de la tienda",
+                    "active": True,
+                }
+            )
+
+            # Relacionar al usuario con la empresa
+            CompanyMember.objects.get_or_create(
+                company=company,
+                user=user,
+                defaults={
+                    "role": cliente_role
+                }
+            )
+
+        login(self.request, user)
+
+        messages.success(
+            self.request,
+            "¡Tu cuenta fue creada correctamente!"
+        )
 
         return response
 
@@ -423,6 +490,15 @@ class RegisterView(CreateView):
         print(form.errors)
         print(form.non_field_errors())
         return super().form_invalid(form)
+        print("========== ERROR EN EL REGISTRO ==========")
+
+        for campo, errores in form.errors.items():
+            print(f"{campo}: {errores}")
+
+        return self.render_to_response(
+            self.get_context_data(form=form)
+        )
+        
 #---------------------Login----------------------
 class CustomLoginView(FormView):
     form_class = CustomAuthenticationForm
@@ -780,16 +856,11 @@ class UserListView(LoginRequiredMixin, ListView):
 
         return redirect("vexora:home")
 
-#=================================================================
-#=================================================================
-#=================================================================
-#=================================================================
-#=================================================================
-#=================================================================
+
 #--------------------Crear usuario -------------------
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = CustomUser
-    form_class = CustomUserCreationForm
+    form_class = PublicUserRegistrationForm
     template_name = "vexora/users/create.html"
     success_url = reverse_lazy("vexora:user_list")
 
@@ -823,7 +894,6 @@ class UserUpdateView(LoginRequiredMixin,UpdateView):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user   # 👈 se lo pasamos al form
         kwargs["company"] = self.request.user.company   # 👈 se lo pasamos al form
-        
         return kwargs
     
     def form_valid(self, form):
@@ -847,29 +917,22 @@ def delete_user(request, pk):
 #-----------------perfil usuario----------------------
 class ProfileView(LoginRequiredMixin, DetailView):
     model = CustomUser
-    template_name = "accounts/profile/profile.html"
-    context_object_name = "profile"
-
-    def get_object(self, queryset=None):
-        # Siempre devuelve el usuario autenticado
-        return self.request.user
+    template_name = 'Accounts/profile/profile.html'
+    context_object_name = 'profile'
+    pk_url_kwarg = 'pk'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
+        company = self.request.user.company if hasattr(self.request.user, 'company') else None
 
+        context['total_pedidos'] = Sale.objects.filter(
+            company=company
+        ).count() if company else 0
 
+        context['ultimos_pedidos'] = Sale.objects.filter(
+            company=company
+        ).order_by('-date')[:5] if company else []
 
-        # Destinos visitados (por reservas confirmadas)
-
-
-        # Puntos de fidelidad simple (ejemplo: 100 puntos por reserva confirmada)
-
-        context.update({
-
-       
-            # Próximos viajes: reservas pendientes o confirmadas (máx 4)
-        })
         return context
     
 #==================== Company Views (Empresas) ====================
@@ -941,6 +1004,8 @@ class CompanyCreateView(LoginRequiredMixin,CreateView):
                 user=request.user,
                 role=admin_role
             )
+            
+            request.session["company_id"] = company.id
 
             messages.success(request, "✅ ¡Empresa creada correctamente!")
 
@@ -1773,6 +1838,37 @@ class SalesMainUpdateView(LoginRequiredMixin, View):
 # STORE PÚBLICA
 # ============================================
 
+def get_or_create_cart(request):
+    """
+    Obtiene o crea el carrito del usuario para su empresa.
+    """
+
+    company = getattr(request.user, "company", None)
+
+    # Respaldo para usuarios vinculados mediante CompanyMember
+    if not company:
+        membership = (
+            CompanyMember.objects
+            .select_related("company")
+            .filter(user=request.user)
+            .first()
+        )
+
+        if membership:
+            company = membership.company
+
+    if not company:
+        raise ValueError(
+            "El usuario no tiene una empresa vinculada."
+        )
+
+    cart, created = Cart.objects.get_or_create(
+        company=company,
+        user=request.user,
+    )
+
+    return cart
+
 class StoreHomeView(LoginRequiredMixin, View):
     template_name = 'vexora/sales/store.html'
 
@@ -1851,202 +1947,1448 @@ class StoreCarritoView(LoginRequiredMixin, View):
 
 
 class StoreCheckoutView(LoginRequiredMixin, View):
-    template_name = 'vexora/sales/store-checkout.html'
+    template_name = "vexora/sales/store-checkout.html"
 
     def get(self, request):
-        return render(request, self.template_name)
+        cart = get_or_create_cart(request)
+
+        items = cart.items.select_related(
+            "product",
+            "variant",
+        ).all()
+
+        if not items.exists():
+            messages.warning(
+                request,
+                "Tu carrito está vacío.",
+            )
+            return redirect("vexora:store_cart")
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "cart": cart,
+                "items": items,
+            },
+        )
 
     def post(self, request):
-        import json
-        nombre    = request.POST.get('nombre', '')
-        email     = request.POST.get('email', '')
-        telefono  = request.POST.get('telefono', '')
-        direccion = request.POST.get('direccion', '')
-        notas     = request.POST.get('notas', '')
+        # Indica si el formulario fue enviado con fetch/AJAX.
+        is_ajax = (
+            request.headers.get("X-Requested-With")
+            == "XMLHttpRequest"
+        )
 
-        carrito_json = request.POST.get('carrito', '[]')
-        try:
-            carrito = json.loads(carrito_json)
-        except Exception:
-            carrito = []
+        cart = get_or_create_cart(request)
 
-        if not carrito:
-            messages.error(request, 'Tu carrito está vacío.')
-            return redirect('vexora:store_cart')
+        items = list(
+            cart.items.select_related(
+                "product",
+                "variant",
+            ).all()
+        )
+
+        # Carrito vacío
+        if not items:
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "message": "Tu carrito está vacío.",
+                    },
+                    status=400,
+                )
+
+            messages.error(
+                request,
+                "Tu carrito está vacío.",
+            )
+            return redirect("vexora:store_cart")
+
+        # Datos enviados desde el checkout
+        nombre = request.POST.get(
+            "nombre",
+            "",
+        ).strip()
+
+        email = request.POST.get(
+            "email",
+            "",
+        ).strip()
+
+        telefono = request.POST.get(
+            "telefono",
+            "",
+        ).strip()
+
+        direccion = request.POST.get(
+            "direccion",
+            "",
+        ).strip()
+
+        ciudad = request.POST.get(
+            "ciudad",
+            "",
+        ).strip()
+
+        cp = request.POST.get(
+            "cp",
+            "",
+        ).strip()
+
+        estado = request.POST.get(
+            "estado",
+            "",
+        ).strip()
+
+        notas = request.POST.get(
+            "notas",
+            "",
+        ).strip()
+
+        # Validar campos obligatorios
+        if (
+            not nombre
+            or not email
+            or not telefono
+            or not direccion
+        ):
+            mensaje_error = (
+                "Completa nombre, correo, teléfono "
+                "y dirección."
+            )
+
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "message": mensaje_error,
+                    },
+                    status=400,
+                )
+
+            messages.error(
+                request,
+                mensaje_error,
+            )
+
+            return render(
+                request,
+                self.template_name,
+                {
+                    "cart": cart,
+                    "items": items,
+                },
+            )
 
         company = request.user.company
 
+        # Crear la venta
         sale = Sale.objects.create(
             company=company,
             customer_name=nombre,
             customer_email=email,
             customer_phone=telefono,
-            notes=f"Dirección: {direccion}\n{notas}",
-            status='pending',
+            notes=(
+                f"Dirección: {direccion}\n"
+                f"Ciudad: {ciudad}\n"
+                f"Estado: {estado}\n"
+                f"Código postal: {cp}\n"
+                f"Notas: {notas}"
+            ),
+            status="pending",
             user=request.user,
         )
 
         total = 0
-        for item in carrito:
-            try:
-                producto = Product.objects.get(pk=item['id'], is_active=True, company=company)
-                cantidad = int(item.get('cantidad', 1))
-                precio   = float(item.get('precio', producto.sale_price or producto.price))
-                subtotal = precio * cantidad
 
-                SaleItem.objects.create(
-                    sale=sale,
-                    product=producto,
-                    description=f"Talla: {item.get('talla','-')} | Color: {item.get('color','-')}",
-                    quantity=cantidad,
-                    unit_price=precio,
-                    total_price=subtotal,
+        # Crear los productos de la venta
+        for item in items:
+            product = item.product
+            price = item.unit_price
+            subtotal = item.subtotal
+
+            variant_description = ""
+
+            if item.variant:
+                variant_description = (
+                    f"Talla: {item.variant.size} | "
+                    f"Color: {item.variant.color}"
                 )
-                total += subtotal
-            except Product.DoesNotExist:
-                continue
 
+            SaleItem.objects.create(
+                sale=sale,
+                product=product,
+                description=variant_description,
+                quantity=item.quantity,
+                unit_price=price,
+                total_price=subtotal,
+            )
+
+            total += subtotal
+
+        # Guardar totales
         sale.subtotal = total
-        sale.total    = total
-        sale.save()
+        sale.total = total
 
-        return redirect('vexora:store_confirmation', pk=sale.pk)
+        sale.save(
+            update_fields=[
+                "subtotal",
+                "total",
+            ]
+        )
 
-    
+        # Vaciar el carrito
+        cart.items.all().delete()
+
+        # URL de confirmación
+        confirmation_url = reverse(
+            "vexora:store_confirmation",
+            kwargs={
+                "pk": sale.pk,
+            },
+        )
+
+        # URL del PDF
+        pdf_url = reverse(
+            "vexora:store_order_pdf",
+            kwargs={
+                "pk": sale.pk,
+            },
+        )
+
+        # Intentar enviar el PDF por correo
+        email_sent = False
+
+        try:
+            # Generar el mismo PDF que se abre en el navegador
+            pdf_response = store_order_pdf(
+                request,
+                sale.pk,
+            )
+
+            pdf_content = pdf_response.content
+
+            correo_pedido = EmailMessage(
+                subject=(
+                    f"Comprobante del pedido #{sale.pk}"
+                ),
+                body=(
+                    f"Hola {nombre},\n\n"
+                    f"Tu pedido #{sale.pk} fue registrado "
+                    f"correctamente.\n\n"
+                    f"Total del pedido: ${sale.total}\n\n"
+                    f"Adjuntamos tu comprobante en formato "
+                    f"PDF.\n\n"
+                    f"Guarda, imprime o muestra el PDF en la "
+                    f"tienda para validar tu compra y recibir "
+                    f"tu pedido.\n\n"
+                    f"Conserva el comprobante hasta recibir "
+                    f"todos tus productos.\n\n"
+                    f"Gracias por tu compra."
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email],
+            )
+
+            correo_pedido.attach(
+                filename=f"pedido_{sale.pk}.pdf",
+                content=pdf_content,
+                mimetype="application/pdf",
+            )
+
+            resultado_envio = correo_pedido.send(
+                fail_silently=False,
+            )
+
+            email_sent = resultado_envio == 1
+
+        except Exception:
+            # El pedido no se pierde aunque el correo falle.
+            logger.exception(
+                "No se pudo enviar el correo del pedido %s",
+                sale.pk,
+            )
+
+        # Respuesta para tu JavaScript fetch/AJAX
+        if is_ajax:
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "message": (
+                        "Pedido registrado correctamente."
+                    ),
+                    "confirmation_url": confirmation_url,
+                    "pdf_url": pdf_url,
+                    "email_sent": email_sent,
+                }
+            )
+
+        # Respuesta cuando no se utiliza JavaScript
+        messages.success(
+            request,
+            "Tu pedido fue registrado correctamente.",
+        )
+
+        return redirect(confirmation_url)
+class StoreConfirmacionView(LoginRequiredMixin, DetailView):
+    model = Sale
+    template_name = "vexora/sales/store-confirm.html"
+    context_object_name = "sale"
+    pk_url_kwarg = "pk"
+
+    def get_queryset(self):
+        company = getattr(
+            self.request.user,
+            "company",
+            None,
+        )
+
+        # Buscar empresa mediante CompanyMember
+        if not company:
+            membership = (
+                CompanyMember.objects
+                .select_related("company")
+                .filter(user=self.request.user)
+                .first()
+            )
+
+            if membership:
+                company = membership.company
+
+        if not company:
+            return Sale.objects.none()
+
+        return Sale.objects.filter(
+            company=company,
+            user=self.request.user,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["items"] = (
+            self.object.items
+            .select_related("product")
+            .all()
+        )
+
+        return context
+@login_required
+def store_order_pdf(request, pk):
+    sale = get_object_or_404(
+        Sale.objects.select_related(
+            "company",
+            "user",
+        ),
+        pk=pk,
+    )
+
+    # ==========================================
+    # VALIDAR QUE EL USUARIO PUEDA VER EL PEDIDO
+    # ==========================================
+
+    if not request.user.is_superuser:
+        is_owner = sale.user_id == request.user.id
+
+        can_view_company_sales = (
+            request.user.is_staff
+            or request.user.has_perm("vexora.view_sale")
+        )
+
+        user_company = getattr(
+            request.user,
+            "company",
+            None,
+        )
+
+        if not user_company:
+            membership = (
+                CompanyMember.objects
+                .select_related("company")
+                .filter(user=request.user)
+                .first()
+            )
+
+            if membership:
+                user_company = membership.company
+
+        belongs_to_company = (
+            user_company
+            and sale.company_id == user_company.id
+        )
+
+        if not is_owner and not (
+            can_view_company_sales
+            and belongs_to_company
+        ):
+            raise PermissionDenied(
+                "No tienes permiso para consultar este pedido."
+            )
+
+    items = (
+        SaleItem.objects
+        .filter(sale=sale)
+        .select_related("product")
+        .order_by("id")
+    )
+
+    # ==========================================
+    # CREAR RESPUESTA PDF
+    # ==========================================
+
+    response = HttpResponse(
+        content_type="application/pdf",
+    )
+
+    response["Content-Disposition"] = (
+        f'inline; filename="pedido_{sale.pk}.pdf"'
+    )
+
+    buffer = BytesIO()
+
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=15 * mm,
+        leftMargin=15 * mm,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
+        title=f"Pedido {sale.pk}",
+        author="Vexora",
+    )
+
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "OrderTitle",
+        parent=styles["Heading1"],
+        alignment=TA_CENTER,
+        fontSize=20,
+        spaceAfter=15,
+    )
+
+    subtitle_style = ParagraphStyle(
+        "OrderSubtitle",
+        parent=styles["Normal"],
+        alignment=TA_CENTER,
+        fontSize=10,
+        spaceAfter=15,
+    )
+
+    story = []
+
+    company_name = (
+        sale.company.name
+        if sale.company
+        else "Vexora"
+    )
+
+    story.append(
+        Paragraph(
+            escape(company_name),
+            title_style,
+        )
+    )
+
+    story.append(
+        Paragraph(
+            f"Comprobante del pedido #{sale.pk}",
+            subtitle_style,
+        )
+    )
+
+    story.append(Spacer(1, 8))
+
+    customer_data = [
+        [
+            Paragraph("<b>Cliente</b>", styles["Normal"]),
+            Paragraph(
+                escape(
+                    sale.customer_name
+                    or "Sin nombre"
+                ),
+                styles["Normal"],
+            ),
+        ],
+        [
+            Paragraph("<b>Correo</b>", styles["Normal"]),
+            Paragraph(
+                escape(
+                    sale.customer_email
+                    or "No registrado"
+                ),
+                styles["Normal"],
+            ),
+        ],
+        [
+            Paragraph("<b>Teléfono</b>", styles["Normal"]),
+            Paragraph(
+                escape(
+                    sale.customer_phone
+                    or "No registrado"
+                ),
+                styles["Normal"],
+            ),
+        ],
+        [
+            Paragraph("<b>Fecha</b>", styles["Normal"]),
+            Paragraph(
+                sale.date.strftime(
+                    "%d/%m/%Y %H:%M"
+                ),
+                styles["Normal"],
+            ),
+        ],
+        [
+            Paragraph("<b>Estado</b>", styles["Normal"]),
+            Paragraph(
+                escape(
+                    sale.get_status_display()
+                ),
+                styles["Normal"],
+            ),
+        ],
+    ]
+
+    customer_table = Table(
+        customer_data,
+        colWidths=[
+            40 * mm,
+            125 * mm,
+        ],
+    )
+
+    customer_table.setStyle(
+        TableStyle([
+            (
+                "GRID",
+                (0, 0),
+                (-1, -1),
+                0.5,
+                colors.grey,
+            ),
+            (
+                "BACKGROUND",
+                (0, 0),
+                (0, -1),
+                colors.HexColor("#F3F4F6"),
+            ),
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "TOP",
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+        ])
+    )
+
+    story.append(customer_table)
+    story.append(Spacer(1, 16))
+
+    # ==========================================
+    # TABLA DE PRODUCTOS
+    # ==========================================
+
+    products_data = [
+        [
+            Paragraph("<b>Producto</b>", styles["Normal"]),
+            Paragraph("<b>Cantidad</b>", styles["Normal"]),
+            Paragraph("<b>Precio</b>", styles["Normal"]),
+            Paragraph("<b>Total</b>", styles["Normal"]),
+        ]
+    ]
+
+    for item in items:
+        product_name = (
+            item.product.name
+            if item.product
+            else item.description
+            or "Producto"
+        )
+
+        description = item.description or ""
+
+        if description:
+            product_name = (
+                f"{product_name}<br/>"
+                f"<font size='8'>"
+                f"{escape(description)}"
+                f"</font>"
+            )
+        else:
+            product_name = escape(product_name)
+
+        products_data.append([
+            Paragraph(
+                product_name,
+                styles["Normal"],
+            ),
+            str(item.quantity),
+            f"${item.unit_price:,.2f}",
+            f"${item.total_price:,.2f}",
+        ])
+
+    products_table = Table(
+        products_data,
+        colWidths=[
+            90 * mm,
+            25 * mm,
+            30 * mm,
+            30 * mm,
+        ],
+        repeatRows=1,
+    )
+
+    products_table.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, 0),
+                colors.HexColor("#111827"),
+            ),
+            (
+                "TEXTCOLOR",
+                (0, 0),
+                (-1, 0),
+                colors.white,
+            ),
+            (
+                "ALIGN",
+                (1, 1),
+                (-1, -1),
+                "CENTER",
+            ),
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "MIDDLE",
+            ),
+            (
+                "GRID",
+                (0, 0),
+                (-1, -1),
+                0.5,
+                colors.grey,
+            ),
+            (
+                "ROWBACKGROUNDS",
+                (0, 1),
+                (-1, -1),
+                [
+                    colors.white,
+                    colors.HexColor("#F9FAFB"),
+                ],
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+        ])
+    )
+
+    story.append(products_table)
+    story.append(Spacer(1, 16))
+
+    totals_data = [
+        [
+            "Subtotal:",
+            f"${sale.subtotal:,.2f}",
+        ],
+        [
+            "Descuento:",
+            f"${sale.discount:,.2f}",
+        ],
+        [
+            "Impuesto:",
+            f"${sale.tax:,.2f}",
+        ],
+        [
+            "Total:",
+            f"${sale.total:,.2f}",
+        ],
+    ]
+
+    totals_table = Table(
+        totals_data,
+        colWidths=[
+            130 * mm,
+            45 * mm,
+        ],
+    )
+
+    totals_table.setStyle(
+        TableStyle([
+            (
+                "ALIGN",
+                (0, 0),
+                (-1, -1),
+                "RIGHT",
+            ),
+            (
+                "FONTNAME",
+                (0, -1),
+                (-1, -1),
+                "Helvetica-Bold",
+            ),
+            (
+                "FONTSIZE",
+                (0, -1),
+                (-1, -1),
+                12,
+            ),
+            (
+                "LINEABOVE",
+                (0, -1),
+                (-1, -1),
+                1,
+                colors.black,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                5,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                5,
+            ),
+        ])
+    )
+
+    story.append(totals_table)
+
+    if sale.notes:
+        story.append(Spacer(1, 16))
+        story.append(
+            Paragraph(
+                "<b>Información del pedido</b>",
+                styles["Heading3"],
+            )
+        )
+        story.append(
+            Paragraph(
+                escape(sale.notes).replace(
+                    "\n",
+                    "<br/>",
+                ),
+                styles["Normal"],
+            )
+        )
+
+    story.append(Spacer(1, 20))
+
+    story.append(
+        Paragraph(
+            "Gracias por tu compra.",
+            subtitle_style,
+        )
+    )
+
+    document.build(story)
+
+    pdf = buffer.getvalue()
+    buffer.close()
+
+    response.write(pdf)
+
+    return response
+def formato_dinero(valor):
+    try:
+        return f"${Decimal(valor):,.2f}"
+    except (TypeError, ValueError):
+        return "$0.00"
 class CartUpdateView(LoginRequiredMixin, View):
+
     def post(self, request, item_id):
-        cart = get_or_create_cart(request)
-        item = get_object_or_404(CartItem, pk=item_id, cart=cart)
-        delta = int(request.POST.get('delta', 0))
-        item.quantity = max(1, item.quantity + delta)
-        item.save()
-        return JsonResponse({
-            'ok': True,
-            'quantity': item.quantity,
-            'subtotal': float(item.subtotal),
-            'total': float(cart.total),
-            'total_items': cart.total_items,
-        })
+        try:
+            quantity = int(
+                request.POST.get("quantity", 1)
+            )
 
+        except (TypeError, ValueError):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": "La cantidad no es válida.",
+                },
+                status=400,
+            )
 
+        if quantity < 1:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": (
+                        "La cantidad debe ser mayor que cero."
+                    ),
+                },
+                status=400,
+            )
+
+        try:
+            cart = get_or_create_cart(request)
+
+        except ValueError as error:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": str(error),
+                },
+                status=400,
+            )
+
+        try:
+            with transaction.atomic():
+
+                try:
+                    item = (
+                        CartItem.objects
+                        .select_for_update()
+                        .select_related(
+                            "product",
+                            "variant",
+                        )
+                        .get(
+                            pk=item_id,
+                            cart=cart,
+                        )
+                    )
+
+                except CartItem.DoesNotExist:
+                    return JsonResponse(
+                        {
+                            "ok": False,
+                            "error": (
+                                "El producto no existe "
+                                "en tu carrito."
+                            ),
+                        },
+                        status=404,
+                    )
+
+                old_quantity = item.quantity
+                difference = quantity - old_quantity
+
+                # No cambió la cantidad
+                if difference == 0:
+                    return JsonResponse(
+                        {
+                            "ok": True,
+                            "quantity": item.quantity,
+                            "subtotal": float(
+                                item.subtotal
+                            ),
+                            "cart_total": float(
+                                cart.total
+                            ),
+                            "total_items": (
+                                cart.total_items
+                            ),
+                        }
+                    )
+
+                # ==================================
+                # PRODUCTO CON VARIANTE
+                # ==================================
+
+                if item.variant_id:
+                    variant = (
+                        ProductVariant.objects
+                        .select_for_update()
+                        .get(
+                            pk=item.variant_id,
+                        )
+                    )
+
+                    available_stock = (
+                        variant.stock
+                        - variant.reserved_stock
+                    )
+
+                    if (
+                        difference > 0
+                        and difference > available_stock
+                    ):
+                        return JsonResponse(
+                            {
+                                "ok": False,
+                                "error": (
+                                    f"Solo puedes agregar "
+                                    f"{available_stock} "
+                                    "unidad(es) más."
+                                ),
+                                "stock_disponible": (
+                                    available_stock
+                                ),
+                            },
+                            status=400,
+                        )
+
+                    variant.reserved_stock += difference
+
+                    if variant.reserved_stock < 0:
+                        variant.reserved_stock = 0
+
+                    variant.save(
+                        update_fields=[
+                            "reserved_stock",
+                        ]
+                    )
+
+                    stock_remaining = (
+                        variant.stock
+                        - variant.reserved_stock
+                    )
+
+                # ==================================
+                # PRODUCTO SIN VARIANTE
+                # ==================================
+
+                else:
+                    product = (
+                        Product.objects
+                        .select_for_update()
+                        .get(
+                            pk=item.product_id,
+                        )
+                    )
+
+                    available_stock = (
+                        product.stock
+                        - product.reserved_stock
+                    )
+
+                    if (
+                        difference > 0
+                        and difference > available_stock
+                    ):
+                        return JsonResponse(
+                            {
+                                "ok": False,
+                                "error": (
+                                    f"Solo puedes agregar "
+                                    f"{available_stock} "
+                                    "unidad(es) más."
+                                ),
+                                "stock_disponible": (
+                                    available_stock
+                                ),
+                            },
+                            status=400,
+                        )
+
+                    product.reserved_stock += difference
+
+                    if product.reserved_stock < 0:
+                        product.reserved_stock = 0
+
+                    product.save(
+                        update_fields=[
+                            "reserved_stock",
+                        ]
+                    )
+
+                    stock_remaining = (
+                        product.stock
+                        - product.reserved_stock
+                    )
+
+                # Actualizar cantidad del carrito
+                item.quantity = quantity
+
+                item.save(
+                    update_fields=[
+                        "quantity",
+                    ]
+                )
+
+                return JsonResponse(
+                    {
+                        "ok": True,
+                        "message": (
+                            "Cantidad actualizada."
+                        ),
+                        "quantity": item.quantity,
+                        "subtotal": float(
+                            item.subtotal
+                        ),
+                        "cart_total": float(
+                            cart.total
+                        ),
+                        "total_items": (
+                            cart.total_items
+                        ),
+                        "stock_disponible": (
+                            stock_remaining
+                        ),
+                        "agotado": (
+                            stock_remaining <= 0
+                        ),
+                    }
+                )
+
+        except Exception as error:
+            logger.exception(
+                "Error al actualizar el carrito: %s",
+                error,
+            )
+
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": (
+                        "No fue posible actualizar "
+                        "la cantidad."
+                    ),
+                },
+                status=500,
+            )
 class CartRemoveView(LoginRequiredMixin, View):
+
     def post(self, request, item_id):
-        cart = get_or_create_cart(request)
-        CartItem.objects.filter(pk=item_id, cart=cart).delete()
-        return JsonResponse({
-            'ok': True,
-            'total': float(cart.total),
-            'total_items': cart.total_items,
-        })
+        try:
+            cart = get_or_create_cart(request)
 
-class StoreConfirmacionView(LoginRequiredMixin, View):
-    template_name = 'vexora/sales/store-confirm.html'
-
-    def get(self, request, pk):
-        sale  = get_object_or_404(Sale, pk=pk, company=request.user.company)
-        items = sale.items.select_related('product').all()
-        return render(request, self.template_name, {'sale': sale, 'items': items})
-    
-from django.http import JsonResponse
-
-class ProductQuickCreateView(LoginRequiredMixin, View):
-    def get(self, request):
-        context = {
-            'categories': Category.objects.filter(company=request.user.company)
-        }
-        return render(request, 'vexora/products/quick_create_modal.html', context)
-
-    def post(self, request):
-        name  = request.POST.get('name', '').strip()
-        price = request.POST.get('price', '0')
-        stock = request.POST.get('stock', '0')
-        category_id = request.POST.get('category')
-        image = request.FILES.get('image')
-
-        if not name:
-            return JsonResponse({'ok': False, 'error': 'El nombre es obligatorio.'}, status=400)
+        except ValueError as error:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": str(error),
+                },
+                status=400,
+            )
 
         try:
-            price = float(price)
-        except ValueError:
-            price = 0
+            with transaction.atomic():
 
-        try:
-            stock = int(stock)
-        except ValueError:
-            stock = 0
+                try:
+                    item = (
+                        CartItem.objects
+                        .select_for_update()
+                        .select_related(
+                            "product",
+                            "variant",
+                        )
+                        .get(
+                            pk=item_id,
+                            cart=cart,
+                        )
+                    )
 
-        company = request.user.company
+                except CartItem.DoesNotExist:
+                    return JsonResponse(
+                        {
+                            "ok": False,
+                            "error": (
+                                "El producto no existe "
+                                "en tu carrito."
+                            ),
+                        },
+                        status=404,
+                    )
 
-        default_supplier, _ = Supplier.objects.get_or_create(
-            company=company,
-            name='Proveedor general',
-            defaults={'address': 'N/A'}
-        )
+                quantity = item.quantity
 
-        category = None
-        if category_id:
-            category = Category.objects.filter(pk=category_id, company=company).first()
+                # Liberar reserva de una variante
+                if item.variant_id:
+                    variant = (
+                        ProductVariant.objects
+                        .select_for_update()
+                        .get(pk=item.variant_id)
+                    )
 
-        product = Product.objects.create(
-            name=name,
-            company=company,
-            supplier=default_supplier,
-            category=category,
-            price=price,
-            sale_price=price,
-            stock=stock,
-            purchase_date=timezone.now().date(),
-            image=image,
-            is_active=True,
-        )
+                    variant.reserved_stock = max(
+                        variant.reserved_stock - quantity,
+                        0,
+                    )
 
-        return JsonResponse({'ok': True, 'id': product.id, 'name': product.name})
-    
+                    variant.save(
+                        update_fields=[
+                            "reserved_stock",
+                        ]
+                    )
 
-def get_or_create_cart(request):
-    return Cart.objects.get_or_create(company=request.user.company, user=request.user)[0]
+                    stock_remaining = (
+                        variant.stock
+                        - variant.reserved_stock
+                    )
 
+                # Liberar reserva del producto normal
+                else:
+                    product = (
+                        Product.objects
+                        .select_for_update()
+                        .get(pk=item.product_id)
+                    )
+
+                    product.reserved_stock = max(
+                        product.reserved_stock - quantity,
+                        0,
+                    )
+
+                    product.save(
+                        update_fields=[
+                            "reserved_stock",
+                        ]
+                    )
+
+                    stock_remaining = (
+                        product.stock
+                        - product.reserved_stock
+                    )
+
+                product_name = item.product.name
+
+                # Eliminar del carrito
+                item.delete()
+
+                return JsonResponse(
+                    {
+                        "ok": True,
+                        "message": (
+                            f"{product_name} fue eliminado "
+                            "del carrito."
+                        ),
+                        "total_items": cart.total_items,
+                        "cart_total": float(cart.total),
+                        "stock_disponible": stock_remaining,
+                    }
+                )
+
+        except Exception as error:
+            logger.exception(
+                "Error al eliminar el producto del carrito: %s",
+                error,
+            )
+
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": (
+                        "No fue posible eliminar el producto "
+                        "del carrito."
+                    ),
+                },
+                status=500,
+            )
 class CartCountView(LoginRequiredMixin, View):
     def get(self, request):
-        cart = get_or_create_cart(request)
-        return JsonResponse({'total_items': cart.total_items})
+        try:
+            cart = get_or_create_cart(request)
+
+            return JsonResponse({
+                "total_items": cart.total_items,
+            })
+
+        except ValueError:
+            return JsonResponse({
+                "total_items": 0,
+            })
+
 @login_required
 @require_POST
 def cart_add(request):
     product_id = request.POST.get("product_id")
     variant_id = request.POST.get("variant_id") or None
-    quantity = int(request.POST.get("quantity", 1))
+
+    # ==========================================
+    # VALIDAR CANTIDAD
+    # ==========================================
 
     try:
-        product = Product.objects.get(pk=product_id, company=request.user.company, is_active=True)
-    except Product.DoesNotExist:
-        return JsonResponse({"ok": False, "error": "Producto no encontrado"}, status=404)
+        quantity = int(request.POST.get("quantity", 1))
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": "La cantidad ingresada no es válida.",
+            },
+            status=400,
+        )
 
-    variant = None
-    if variant_id:
-        try:
-            variant = ProductVariant.objects.get(pk=variant_id, product=product)
-        except ProductVariant.DoesNotExist:
-            variant = None
+    if quantity < 1:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": "La cantidad debe ser mayor que cero.",
+            },
+            status=400,
+        )
+    try:
+        cart = get_or_create_cart(request)
+        company = cart.company
 
-    cart = get_or_create_cart(request)
-
-    item, created = CartItem.objects.get_or_create(
-        cart=cart, product=product, variant=variant,
-        defaults={'quantity': quantity}
+    except ValueError as error:
+        return JsonResponse(
+        {
+            "ok": False,
+            "error": str(error),
+        },
+        status=400,
     )
-    if not created:
-        item.quantity += quantity
-        item.save()
+   
 
-    return JsonResponse({
-        "ok": True,
-        "nombre": product.name,
-        "cantidad": item.quantity,
-        "precio": float(product.sale_price or product.price),
-        "total_items": cart.total_items,
-    })
+    # ==========================================
+    # TRANSACCIÓN SEGURA
+    # ==========================================
+
+    try:
+        with transaction.atomic():
+
+            # Bloqueamos el producto mientras se modifica el stock
+            try:
+                product = (
+                    Product.objects
+                    .select_for_update()
+                    .get(
+                        pk=product_id,
+                        company=company,
+                        is_active=True,
+                    )
+                )
+
+            except Product.DoesNotExist:
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "error": "Producto no encontrado o no disponible.",
+                    },
+                    status=404,
+                )
+
+            variant = None
+            product_has_variants = product.variants.exists()
+
+            # ==========================================
+            # VALIDAR VARIANTE
+            # ==========================================
+
+            if product_has_variants:
+
+                if not variant_id:
+                    return JsonResponse(
+                        {
+                            "ok": False,
+                            "error": (
+                                "Selecciona una talla y un color "
+                                "antes de agregar el producto."
+                            ),
+                        },
+                        status=400,
+                    )
+
+                try:
+                    variant = (
+                        ProductVariant.objects
+                        .select_for_update()
+                        .get(
+                            pk=variant_id,
+                            product=product,
+                        )
+                    )
+
+                except ProductVariant.DoesNotExist:
+                    return JsonResponse(
+                        {
+                            "ok": False,
+                            "error": (
+                                "La talla o el color seleccionado "
+                                "no están disponibles."
+                            ),
+                        },
+                        status=404,
+                    )
+
+                available_stock = (
+                    variant.stock
+                    - variant.reserved_stock
+                )
+
+            else:
+                # No permitimos una variante ajena en productos simples
+                if variant_id:
+                    return JsonResponse(
+                        {
+                            "ok": False,
+                            "error": (
+                                "Este producto no utiliza variantes."
+                            ),
+                        },
+                        status=400,
+                    )
+
+                available_stock = (
+                    product.stock
+                    - product.reserved_stock
+                )
+
+            # ==========================================
+            # VALIDAR STOCK
+            # ==========================================
+
+            if available_stock <= 0:
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "error": "Este producto está agotado.",
+                        "stock_disponible": 0,
+                    },
+                    status=400,
+                )
+
+            if quantity > available_stock:
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "error": (
+                            f"Solo hay {available_stock} "
+                            "unidad(es) disponibles."
+                        ),
+                        "stock_disponible": available_stock,
+                    },
+                    status=400,
+                )
+            # Bloquear el artículo si ya existe
+            item = (
+                CartItem.objects
+                .select_for_update()
+                .filter(
+                    cart=cart,
+                    product=product,
+                    variant=variant,
+                )
+                .first()
+            )
+
+            if item:
+                item.quantity += quantity
+                item.save(
+                    update_fields=[
+                        "quantity",
+                    ]
+                )
+
+            else:
+                item = CartItem.objects.create(
+                    cart=cart,
+                    product=product,
+                    variant=variant,
+                    quantity=quantity,
+                )
+
+            # ==========================================
+            # RESERVAR STOCK
+            # ==========================================
+
+            if variant:
+                variant.reserved_stock += quantity
+
+                variant.save(
+                    update_fields=[
+                        "reserved_stock",
+                    ]
+                )
+
+                stock_remaining = (
+                    variant.stock
+                    - variant.reserved_stock
+                )
+
+            else:
+                product.reserved_stock += quantity
+
+                product.save(
+                    update_fields=[
+                        "reserved_stock",
+                    ]
+                )
+
+                stock_remaining = (
+                    product.stock
+                    - product.reserved_stock
+                )
+
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "message": (
+                        f"{product.name} se agregó al carrito."
+                    ),
+                    "nombre": product.name,
+                    "cantidad_agregada": quantity,
+                    "cantidad_carrito": item.quantity,
+                    "precio": float(
+                        product.sale_price
+                        or product.price
+                    ),
+                    "stock_disponible": stock_remaining,
+                    "agotado": stock_remaining <= 0,
+                    "total_items": cart.total_items,
+                }
+            )
+
+    except Exception:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": (
+                    "No fue posible agregar el producto. "
+                    "Inténtalo nuevamente."
+                ),
+            },
+            status=500,
+        )
 
 #===============================esta por verse si funciona bien========================================
 from django.db.models import Count, Sum, Q
@@ -2059,69 +3401,202 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_company(self):
         return self.request.user.company
 
+    # REEMPLAZA DESDE AQUÍ
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        user = self.request.user
         company = self.get_company()
+
+        # ==========================================
+        # IDENTIFICAR PERMISOS DEL USUARIO
+        # ==========================================
+
+        is_admin_role = (
+            user.is_superuser
+            or user.is_staff
+            or user.groups.filter(
+                name__in=[
+                    "Admin",
+                    "Administrador",
+                    "Super Admin",
+                    "Superusuario",
+                ]
+            ).exists()
+        )
+
+        context["can_view_products"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_product")
+        )
+
+        context["can_view_categories"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_category")
+        )
+
+        context["can_view_suppliers"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_supplier")
+        )
+
+        context["can_view_members"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_companymember")
+        )
+
+        context["can_view_sales"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_sale")
+        )
+
+        # Será verdadero solamente cuando tenga
+        # al menos un permiso administrativo.
+        context["show_admin_dashboard"] = any([
+            context["can_view_products"],
+            context["can_view_categories"],
+            context["can_view_suppliers"],
+            context["can_view_members"],
+            context["can_view_sales"],
+        ])
+
+        context["show_client_dashboard"] = not context[
+            "show_admin_dashboard"
+        ]
+
+        # ==========================================
+        # EMPRESA
+        # ==========================================
+
+        context["company"] = company
 
         if not company:
             messages.warning(
                 self.request,
-                "Debes crear una empresa o aceptar una invitación."
+                "Debes crear una empresa o aceptar una invitación.",
             )
             return context
+
+        # ==========================================
+        # SUSCRIPCIÓN
+        # ==========================================
 
         try:
             subscription = company.subscription
+
         except Subscription.DoesNotExist:
+            subscription = None
+
             messages.warning(
                 self.request,
-                "Tu empresa no tiene una suscripción activa."
+                "Tu empresa no tiene una suscripción activa.",
             )
-            return context
 
-        today = timezone.now().date()
-
-        context["company"] = company
         context["subscription"] = subscription
-        context["subscription_expired"] = (
-            subscription.status != "active"
-            or subscription.end_date < today
-        )
 
-        context["products"] = Product.objects.filter(company=company)
-        context["categories"] = Category.objects.filter(company=company)
-        context["suppliers"] = Supplier.objects.filter(company=company)
-        context["members"] = CompanyMember.objects.filter(company=company)
-        context["sales"] = Sale.objects.filter(company=company)
+        if subscription:
+            today = timezone.now().date()
 
-        context["products_count"] = context["products"].count()
-        context["categories_count"] = context["categories"].count()
-        context["suppliers_count"] = context["suppliers"].count()
-        context["members_count"] = context["members"].count()
+            context["subscription_expired"] = (
+                subscription.status != "active"
+                or (
+                    subscription.end_date
+                    and subscription.end_date < today
+                )
+            )
 
-        completed_sales = context["sales"].filter(status="completed")
+        else:
+            context["subscription_expired"] = True
 
-        context["sales_count"] = completed_sales.count()
+        # ==========================================
+        # PRODUCTOS
+        # Solo se consultan si tiene permiso
+        # ==========================================
 
-        context["sales_total"] = (
-            completed_sales.aggregate(total=Sum("total"))["total"] or 0
-        )
+        if context["can_view_products"]:
+            products = Product.objects.filter(
+                company=company
+            )
 
-        context["low_stock"] = Product.objects.filter(
-            company=company,
-            stock__lte=models.F("min_stock"),
-            is_active=True,
-        ).count()
+            context["products"] = products
+            context["products_count"] = products.count()
 
-        context["recent_sales"] = completed_sales.order_by("-date")[:5]
+            context["low_stock"] = products.filter(
+                stock__lte=models.F("min_stock"),
+                is_active=True,
+            ).count()
 
-        context["recent_products"] = Product.objects.filter(
-            company=company
-        ).order_by("-created_at")[:5]
+            context["recent_products"] = (
+                products
+                .order_by("-created_at")[:5]
+            )
+
+        # ==========================================
+        # CATEGORÍAS
+        # ==========================================
+
+        if context["can_view_categories"]:
+            categories = Category.objects.filter(
+                company=company
+            )
+
+            context["categories"] = categories
+            context["categories_count"] = categories.count()
+
+        # ==========================================
+        # PROVEEDORES
+        # ==========================================
+
+        if context["can_view_suppliers"]:
+            suppliers = Supplier.objects.filter(
+                company=company
+            )
+
+            context["suppliers"] = suppliers
+            context["suppliers_count"] = suppliers.count()
+
+        # ==========================================
+        # COLABORADORES
+        # ==========================================
+
+        if context["can_view_members"]:
+            members = CompanyMember.objects.filter(
+                company=company
+            )
+
+            context["members"] = members
+            context["members_count"] = members.count()
+
+        # ==========================================
+        # VENTAS
+        # ==========================================
+
+        if context["can_view_sales"]:
+            sales = Sale.objects.filter(
+                company=company
+            )
+
+            completed_sales = sales.filter(
+                status="completed"
+            )
+
+            context["sales"] = sales
+            context["sales_count"] = completed_sales.count()
+
+            context["sales_total"] = (
+                completed_sales.aggregate(
+                    total=Sum("total")
+                )["total"]
+                or 0
+            )
+
+            context["recent_sales"] = (
+                completed_sales
+                .order_by("-date")[:5]
+            )
 
         return context
-    
+    # HASTA AQUÍ
 
 # ============================================
 # REPORTES VIEWS
@@ -2133,7 +3608,6 @@ class ReportsDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         company = self.request.user.company
-        
         if not company:
             context['error'] = 'No tienes una empresa asociada'
             return context
@@ -2158,6 +3632,7 @@ class ReportsDashboardView(LoginRequiredMixin, TemplateView):
             context['error'] = f'Error al generar reportes: {str(e)}'
         
         return context
+    
 
 class ProductReportsView(LoginRequiredMixin, TemplateView):
     template_name = 'vexora/reports/product_reports.html'

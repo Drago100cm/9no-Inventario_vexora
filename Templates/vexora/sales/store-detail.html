@@ -73,11 +73,14 @@
         <div class="colores-grid">
           {% for v in variantes %}
           <div class="color-btn-wrap">
-            <div class="color-btn"
-                 style="background:{{ v.color_hex }}"
-                 data-color="{{ v.color }}"
-                 onclick="selColor(this)"
-                 title="{{ v.color }}">
+            <div
+              class="color-btn {% if v.available_stock <= 0 %}sin-stock{% endif %}"
+              style="background:{{ v.color_hex }}"
+              data-color="{{ v.color }}"
+              data-stock="{{ v.available_stock }}"
+              onclick="selColor(this)"
+              title="{{ v.color }}"
+            >
             </div>
             <span class="color-lbl">{{ v.color }}</span>
           </div>
@@ -85,25 +88,69 @@
         </div>
       </div>
       {% endif %}
-
-      <!-- Cantidad -->
+            <!-- Cantidad -->
       <div>
-        <div class="selector-titulo">Cantidad:</div>
+        <div class="selector-titulo">
+          Cantidad:
+        </div>
+
         <div class="qty-row">
-          <button class="qty-btn" onclick="camQty(-1)"><i class="fas fa-minus"></i></button>
-          <span class="qty-num" id="qty-val">1</span>
-          <button class="qty-btn" onclick="camQty(1)"><i class="fas fa-plus"></i></button>
-          <span class="stock-txt">
-            {% if producto.stock > 0 %}{{ producto.stock }} disponibles
-            {% else %}Sin stock{% endif %}
+          <button
+            type="button"
+            class="qty-btn"
+            id="qty-minus"
+            onclick="camQty(-1)"
+          >
+            <i class="fas fa-minus"></i>
+          </button>
+
+          <span
+            class="qty-num"
+            id="qty-val"
+          >
+            1
+          </span>
+
+          <button
+            type="button"
+            class="qty-btn"
+            id="qty-plus"
+            onclick="camQty(1)"
+          >
+            <i class="fas fa-plus"></i>
+          </button>
+
+          <span
+            class="stock-txt"
+            id="stock-txt"
+          >
+            {% if variantes %}
+              Selecciona talla y color
+            {% elif producto.available_stock > 0 %}
+              {{ producto.available_stock }} disponibles
+            {% else %}
+              Sin stock
+            {% endif %}
           </span>
         </div>
       </div>
 
       <div class="sep"></div>
 
-      <button class="btn-agregar-grande" onclick="agregarDetalle()">
-        <i class="fas fa-cart-plus"></i> Agregar al carrito
+            <button
+        type="button"
+        class="btn-agregar-grande"
+        id="btn-agregar-detalle"
+        onclick="agregarDetalle()"
+        {% if producto.available_stock <= 0 %}disabled{% endif %}
+      >
+        {% if producto.available_stock <= 0 %}
+          <i class="fas fa-ban"></i>
+          Agotado
+        {% else %}
+          <i class="fas fa-cart-plus"></i>
+          Agregar al carrito
+        {% endif %}
       </button>
 
       <div class="garantias-row">
@@ -155,77 +202,539 @@
 {% block extra_js %}
 <script>
 const PID = {{ producto.pk }};
-let tallaS = '', colorS = '', qty = 1;
+const TIENE_VARIANTES =
+  {{ variantes|yesno:"true,false" }};
+
+const STOCK_PRODUCTO =
+  Number("{{ producto.available_stock }}") || 0;
+
+let tallaS = "";
+let colorS = "";
+let qty = 1;
+let varianteSeleccionada = null;
+let stockActual = TIENE_VARIANTES
+  ? 0
+  : STOCK_PRODUCTO;
+
 
 const VARIANTES = [
   {% for v in variantes %}
-  {id: {{ v.id }}, size: "{{ v.size|escapejs }}", color: "{{ v.color|escapejs }}"},
+  {
+    id: {{ v.id }},
+    size: "{{ v.size|escapejs }}",
+    color: "{{ v.color|escapejs }}",
+    stock: {{ v.available_stock|default:0 }}
+  },
   {% endfor %}
 ];
 
-function selTalla(btn){
-  if(btn.classList.contains('sin-stock')) return;
-  document.querySelectorAll('.talla-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  tallaS = btn.dataset.talla;
-  document.getElementById('talla-sel').textContent = tallaS;
-}
-function selColor(el){
-  document.querySelectorAll('.color-btn').forEach(c=>c.classList.remove('selected'));
-  el.classList.add('selected');
-  colorS = el.dataset.color;
-  document.getElementById('color-sel').textContent = colorS;
-}
-function camQty(d){ qty=Math.max(1,qty+d); document.getElementById('qty-val').textContent=qty; }
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
+
+  if (parts.length === 2) {
+    return parts.pop().split(";").shift();
+  }
+
+  return "";
 }
-const CSRF_TOKEN = getCookie('csrftoken');
 
-function agregarDetalle(){
-  {% if variantes %}
-  if(!tallaS || !colorS){ mostrarToast('Selecciona talla y color primero'); return; }
-  {% endif %}
 
-  let variantId = '';
-  {% if variantes %}
-  const match = VARIANTES.find(v => v.size === tallaS && v.color === colorS);
-  if(!match){ mostrarToast('Esa combinación no existe'); return; }
-  variantId = match.id;
-  {% endif %}
+const CSRF_TOKEN = getCookie("csrftoken");
 
-  const body = new URLSearchParams({
-    product_id: PID,
-    variant_id: variantId,
-    quantity: qty
-  });
 
-  fetch("{% url 'vexora:cart_add' %}", {
-    method: 'POST',
-    headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(data.ok){
-      mostrarToast(`"${data.nombre}" agregado al carrito`);
-      const fabBadge = document.getElementById('cartFabBadge');
-if(fabBadge && data.total_items !== undefined) fabBadge.textContent = data.total_items;
-    } else {
-      mostrarToast('No se pudo agregar');
+function actualizarContadoresCarrito(totalItems) {
+  const total = Number(totalItems) || 0;
+
+  [
+    "cartFabBadge",
+    "cart-count-top",
+    "sidebar-cart-count",
+  ].forEach(id => {
+    const elemento =
+      document.getElementById(id);
+
+    if (elemento) {
+      elemento.textContent = total;
     }
-  })
-  .catch(() => mostrarToast('Error al agregar al carrito'));
+  });
 }
 
-function mostrarToast(msg){
-  const t=document.getElementById('tienda-toast');
-  document.getElementById('toast-msg').textContent=msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2800);
+
+function buscarVariante() {
+  return VARIANTES.find(
+    variante =>
+      variante.size === tallaS
+      && variante.color === colorS
+  ) || null;
 }
+
+
+function actualizarBotonesCantidad() {
+  const botonMenos =
+    document.getElementById("qty-minus");
+
+  const botonMas =
+    document.getElementById("qty-plus");
+
+  if (botonMenos) {
+    botonMenos.disabled = qty <= 1;
+  }
+
+  if (botonMas) {
+    botonMas.disabled =
+      stockActual <= 0
+      || qty >= stockActual;
+  }
+}
+
+
+function actualizarVistaStock(
+  stock,
+  mensajePersonalizado = ""
+) {
+  const stockElemento =
+    document.getElementById("stock-txt");
+
+  const botonAgregar =
+    document.getElementById(
+      "btn-agregar-detalle"
+    );
+
+  stockActual = Math.max(
+    Number(stock) || 0,
+    0
+  );
+
+  if (stockActual > 0 && qty > stockActual) {
+    qty = stockActual;
+  }
+
+  if (stockActual <= 0) {
+    qty = 1;
+  }
+
+  document.getElementById(
+    "qty-val"
+  ).textContent = qty;
+
+  if (stockElemento) {
+  const restantes = Math.max(
+    stockActual - qty,
+    0
+  );
+
+  if (mensajePersonalizado) {
+    stockElemento.textContent =
+      mensajePersonalizado;
+
+  } else if (stockActual <= 0) {
+    stockElemento.textContent =
+      "Sin stock";
+
+    stockElemento.classList.add(
+      "sin-stock"
+    );
+
+  } else {
+    stockElemento.innerHTML = `
+      Disponibles: ${stockActual}
+      <span style="opacity:.7;">
+        · Al agregar quedarán:
+        ${restantes}
+      </span>
+    `;
+
+    stockElemento.classList.remove(
+      "sin-stock"
+    );
+  }
+}
+
+  if (botonAgregar) {
+    const faltaVariante =
+      TIENE_VARIANTES
+      && !varianteSeleccionada;
+
+    botonAgregar.disabled =
+      stockActual <= 0
+      || faltaVariante;
+
+    if (stockActual <= 0) {
+      botonAgregar.innerHTML = `
+        <i class="fas fa-ban"></i>
+        Agotado
+      `;
+
+    } else {
+      botonAgregar.innerHTML = `
+        <i class="fas fa-cart-plus"></i>
+        Agregar al carrito
+      `;
+    }
+  }
+
+  actualizarBotonesCantidad();
+}
+
+
+function actualizarVarianteSeleccionada() {
+  if (!tallaS || !colorS) {
+    varianteSeleccionada = null;
+    stockActual = 0;
+
+    actualizarVistaStock(
+      0,
+      "Selecciona talla y color"
+    );
+
+    return;
+  }
+
+  varianteSeleccionada =
+    buscarVariante();
+
+  if (!varianteSeleccionada) {
+    actualizarVistaStock(
+      0,
+      "Esa combinación no está disponible"
+    );
+
+    return;
+  }
+
+  actualizarVistaStock(
+    varianteSeleccionada.stock
+  );
+}
+
+
+function selTalla(btn) {
+  if (btn.classList.contains("sin-stock")) {
+    mostrarToast(
+      "Esta talla no tiene existencias."
+    );
+
+    return;
+  }
+
+  document
+    .querySelectorAll(".talla-btn")
+    .forEach(elemento => {
+      elemento.classList.remove("selected");
+    });
+
+  btn.classList.add("selected");
+
+  tallaS = btn.dataset.talla;
+
+  document.getElementById(
+    "talla-sel"
+  ).textContent = tallaS;
+
+  actualizarVarianteSeleccionada();
+}
+
+
+function selColor(elemento) {
+  if (
+    elemento.classList.contains("sin-stock")
+  ) {
+    mostrarToast(
+      "Este color no tiene existencias."
+    );
+
+    return;
+  }
+
+  document
+    .querySelectorAll(".color-btn")
+    .forEach(color => {
+      color.classList.remove("selected");
+    });
+
+  elemento.classList.add("selected");
+
+  colorS = elemento.dataset.color;
+
+  document.getElementById(
+    "color-sel"
+  ).textContent = colorS;
+
+  actualizarVarianteSeleccionada();
+}
+
+function camQty(cambio) {
+  if (stockActual <= 0) {
+    return;
+  }
+
+  const nuevaCantidad =
+    qty + Number(cambio);
+
+  qty = Math.min(
+    Math.max(nuevaCantidad, 1),
+    stockActual
+  );
+
+  document.getElementById(
+    "qty-val"
+  ).textContent = qty;
+
+  actualizarVistaStock(
+    stockActual
+  );
+}
+
+async function agregarDetalle() {
+  if (
+    TIENE_VARIANTES
+    && !varianteSeleccionada
+  ) {
+    mostrarToast(
+      "Selecciona talla y color primero."
+    );
+
+    return;
+  }
+
+  if (stockActual <= 0) {
+    mostrarToast(
+      "Este producto está agotado."
+    );
+
+    return;
+  }
+
+  if (qty > stockActual) {
+    mostrarToast(
+      `Solo hay ${stockActual} disponibles.`
+    );
+
+    return;
+  }
+
+  const boton =
+    document.getElementById(
+      "btn-agregar-detalle"
+    );
+
+  const contenidoOriginal =
+    boton.innerHTML;
+
+  boton.disabled = true;
+
+  boton.innerHTML = `
+    <i class="fas fa-spinner fa-spin"></i>
+    Agregando...
+  `;
+
+  const variantId =
+    varianteSeleccionada
+      ? varianteSeleccionada.id
+      : "";
+
+  try {
+    const response = await fetch(
+      "{% url 'vexora:cart_add' %}",
+      {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": CSRF_TOKEN,
+          "Content-Type":
+            "application/x-www-form-urlencoded",
+          "X-Requested-With":
+            "XMLHttpRequest",
+        },
+        body: new URLSearchParams({
+          product_id: String(PID),
+          variant_id: String(variantId),
+          quantity: String(qty),
+        }),
+      }
+    );
+
+    const contentType =
+      response.headers.get(
+        "content-type"
+      ) || "";
+
+    if (
+      !contentType.includes(
+        "application/json"
+      )
+    ) {
+      throw new Error(
+        `Respuesta inválida: ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      mostrarToast(
+        data.error
+        || data.message
+        || "No se pudo agregar."
+      );
+
+      return;
+    }
+
+    actualizarContadoresCarrito(
+      data.total_items
+    );
+
+    /*
+    Guardamos el nuevo stock disponible.
+    */
+    if (varianteSeleccionada) {
+      varianteSeleccionada.stock =
+        Number(
+          data.stock_disponible
+        ) || 0;
+    }
+
+    stockActual =
+      Number(
+        data.stock_disponible
+      ) || 0;
+
+    qty = 1;
+
+    actualizarVistaStock(
+      stockActual
+    );
+
+    /*
+    Permite que la tienda sepa que debe
+    actualizar sus productos cuando volvamos.
+    */
+    sessionStorage.setItem(
+      "vexora_cart_changed",
+      "1"
+    );
+
+    window.dispatchEvent(
+      new CustomEvent(
+        "vexora:cart-updated",
+        {
+          detail: {
+            total_items:
+              data.total_items,
+          },
+        }
+      )
+    );
+
+    if (
+      typeof window.actualizarBolsaGlobal
+      === "function"
+    ) {
+      window.actualizarBolsaGlobal();
+    }
+
+    mostrarToast(
+      `"${data.nombre}" agregado al carrito`
+    );
+
+  } catch (error) {
+    console.error(
+      "Error al agregar:",
+      error
+    );
+
+    mostrarToast(
+      "Error al agregar al carrito."
+    );
+
+  } finally {
+    if (stockActual <= 0) {
+      boton.disabled = true;
+
+      boton.innerHTML = `
+        <i class="fas fa-ban"></i>
+        Agotado
+      `;
+
+    } else {
+      boton.disabled = false;
+      boton.innerHTML =
+        contenidoOriginal;
+    }
+  }
+}
+
+
+function mostrarToast(mensaje) {
+  const toast =
+    document.getElementById(
+      "tienda-toast"
+    );
+
+  const texto =
+    document.getElementById(
+      "toast-msg"
+    );
+
+  if (!toast || !texto) {
+    return;
+  }
+
+  texto.textContent = mensaje;
+  toast.classList.add("show");
+
+  clearTimeout(
+    window.detalleToastTimer
+  );
+
+  window.detalleToastTimer =
+    setTimeout(
+      () => {
+        toast.classList.remove("show");
+      },
+      2800
+    );
+}
+
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    if (TIENE_VARIANTES) {
+      actualizarVistaStock(
+        0,
+        "Selecciona talla y color"
+      );
+
+    } else {
+      actualizarVistaStock(
+        STOCK_PRODUCTO
+      );
+    }
+
+    if (
+      typeof window.actualizarBolsaGlobal
+      === "function"
+    ) {
+      window.actualizarBolsaGlobal();
+    }
+  }
+);
+
+
+window.addEventListener(
+  "pageshow",
+  () => {
+    if (
+      typeof window.actualizarBolsaGlobal
+      === "function"
+    ) {
+      window.actualizarBolsaGlobal();
+    }
+  }
+);
 </script>
 {% endblock %}

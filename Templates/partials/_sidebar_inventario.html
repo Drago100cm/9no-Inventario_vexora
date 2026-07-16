@@ -1,0 +1,17 @@
+<div class="menu-module">
+  <button class="module-btn" type="button">
+    <i class="fas fa-boxes"></i>
+    <span>Inventario</span>
+    <i class="fas fa-chevron-down arrow"></i>
+  </button>
+  <div class="module-content">
+    <a href="{% url 'vexora:list_products' %}"
+       class="menu-item {% if url_name == 'list_products' %}active{% endif %}">
+      <i class="fas fa-box-open"></i><span>Productos</span>
+    </a>
+    <a href="{% url 'vexora:list_suppliers' %}"
+       class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
+      <i class="fas fa-truck-field"></i><span>Proveedores</span>
+    </a>
+  </div>
+</div>

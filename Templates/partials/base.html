@@ -94,15 +94,12 @@
             overflow-x:hidden;
         }
 
-        .main-content{
-
-            margin-top:80px;
-
-            transition:.3s ease;
-
-            min-height:100vh;
-
-            padding:20px;
+            .main-content {
+    margin-top: 80px;
+    min-height: calc(100vh - 80px);
+    padding: 24px;
+    box-sizing: border-box;
+    transition: margin-left .3s ease, width .3s ease;
         }
 
 @media(min-width:992px){
@@ -112,16 +109,13 @@
     }
 }
 
-        @media(max-width:991px){
-
-            .main-content{
-
-                width:100%;
-
-                margin-left:0;
-            }
-
-        }
+@media (max-width: 991px) {
+    .main-content {
+        width: 100%;
+        margin-left: 0;
+        padding: 18px;
+    }
+}
 
         .sidebar-backdrop{
 
@@ -388,7 +382,7 @@
 
 </head>
 
-<body class="sidebar-open">
+<body>
 
     <!-- BACKDROP -->
 
@@ -684,16 +678,68 @@
     </script>
 
     {% endif %}
-<script>
-{% if 'store' in request.path %}
-fetch("{% url 'vexora:cart_count' %}")
-  .then(r => r.json())
-  .then(data => {
-    const badge = document.getElementById('cartFabBadge');
-    if (badge) badge.textContent = data.total_items;
-  })
-  .catch(() => {});
-{% endif %}
+        <script>
+async function actualizarBolsaGlobal() {
+  try {
+    const response = await fetch(
+      "{% url 'vexora:cart_count' %}",
+      {
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+    const total = Number(data.total_items) || 0;
+
+    [
+      "cartFabBadge",
+      "cart-count-top",
+      "sidebar-cart-count",
+    ].forEach(id => {
+      const elemento = document.getElementById(id);
+
+      if (elemento) {
+        elemento.textContent = total;
+      }
+    });
+
+  } catch (error) {
+    console.error(
+      "No se pudo actualizar la bolsa:",
+      error
+    );
+  }
+}
+
+
+document.addEventListener(
+  "DOMContentLoaded",
+  actualizarBolsaGlobal
+);
+
+
+window.addEventListener(
+  "pageshow",
+  actualizarBolsaGlobal
+);
+
+
+document.addEventListener(
+  "visibilitychange",
+  () => {
+    if (!document.hidden) {
+      actualizarBolsaGlobal();
+    }
+  }
+);
 </script>
     {% block extra_js %}
     {% endblock %}

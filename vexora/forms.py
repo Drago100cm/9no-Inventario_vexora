@@ -151,59 +151,54 @@ class CustomAuthenticationForm(forms.Form):
 
     def get_user(self):
         return self.user
-#--------------------Crear usuario -------------------
-class CustomUserCreationForm(UserCreationForm):
-    role = forms.ModelChoiceField(
-        queryset=Role.objects.none(),
-        required=True
-    )
+# -------------------- Registro público --------------------
+
+class PublicUserRegistrationForm(UserCreationForm):
+
     def __init__(self, *args, **kwargs):
-        company = kwargs.pop("company", None)
         super().__init__(*args, **kwargs)
 
-        if company:
-            self.fields["role"].queryset = Role.objects.filter(
-                company=company,
-                active=True
-            )
+        campos = [
+            "avatar",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "phone",
+            "password1",
+            "password2",
+        ]
 
-        self.fields["role"].widget.attrs.update({
-            "class": "form-select ",
-            "data-live-search": "true",
-        })
-        self.fields['avatar'].widget.attrs.update({
-            'class': 'form-control'
-        })
+        for field_name in campos:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    "class": "form-control"
+                })
 
-        self.fields['email'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['username'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['first_name'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['last_name'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['phone'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['password1'].widget.attrs.update({   
-            'class': 'form-control'
-        })
-        self.fields['password2'].widget.attrs.update({
-            'class': 'form-control'
-        })
     class Meta:
         model = CustomUser
-        fields = ["avatar","email", "username", "first_name", "last_name", "phone", "password1", "password2", "is_staff", "is_active", "role"]
+        fields = [
+            "avatar",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "phone",
+            "password1",
+            "password2",
+        ]
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
-        if CustomUser.objects.filter(email=email).exists():
-            raise forms.ValidationError("Este correo ya está registrado.")
+
+        if email:
+            email = email.strip().lower()
+
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError(
+                "Este correo ya está registrado."
+            )
+
         return email
     
 #--------------------Crear usuario -------------------
@@ -249,16 +244,18 @@ class CustomUserRegisterForm(UserCreationForm):
         return email
     
 #--------------------Actualizar Usuario -------------------
-class CustomUserUpdateForm(forms.ModelForm):   # 👈 Cambié a ModelForm
+# -------------------- Crear usuario dentro de una empresa --------------------
+
+class CustomUserCreationForm(UserCreationForm):
     role = forms.ModelChoiceField(
         queryset=Role.objects.none(),
-        required=True
+        required=True,
+        label="Rol"
     )
+
     def __init__(self, *args, **kwargs):
         company = kwargs.pop("company", None)
-        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        print("ROLES:", Role.objects.filter(company=company, active=True) if company else "SIN EMPRESA")
 
         if company:
             self.fields["role"].queryset = Role.objects.filter(
@@ -267,84 +264,206 @@ class CustomUserUpdateForm(forms.ModelForm):   # 👈 Cambié a ModelForm
             )
 
         self.fields["role"].widget.attrs.update({
-            "class": "form-select ",
+            "class": "form-select",
             "data-live-search": "true",
         })
-        self.fields['email'].widget.attrs.update({
-            'class': 'form-control'
-        })
 
-        self.fields['username'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['first_name'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['last_name'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['phone'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['cover'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        self.fields['avatar'].widget.attrs.update({
-            'class': 'form-control'
-        })
-        if "is_staff" in self.fields:
-            self.fields["is_staff"].widget.attrs.update({"class": "form-check-input"})
+        campos_form_control = [
+            "avatar",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "phone",
+            "password1",
+            "password2",
+        ]
 
-        # Si no es superusuario, quítale is_staff e is_active del form
-        if user is not None and not user.is_superuser:
-            self.fields.pop("is_staff", None)
-            self.fields.pop("is_active", None)
-        # Ojo: normalmente en un update no editas password aquí
-        # si quieres mantener password1 y password2 deberías heredar de UserCreationForm
-        # y definir fields = (...)
-        
+        for field_name in campos_form_control:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    "class": "form-control"
+                })
+
     class Meta:
         model = CustomUser
-        fields = ("email", "username", "first_name", "last_name", "phone", "is_staff", "is_active","cover","avatar", "role")
-        
-#--------------------Formulario de empresas-------------------
-class CompanyForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['name'].widget.attrs.update({
-            'class': 'form-control',
-            'required': True,
-        })
-        self.fields['address'].widget.attrs.update({
-            'class': 'form-control',
-            'required': True,
+        fields = [
+            "avatar",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "phone",
+            "password1",
+            "password2",
+            "role",
+        ]
 
-        })
-        self.fields['phone'].widget.attrs.update({
-            'class': 'form-control',
-            'required': True,
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
 
-        })
-        self.fields['email'].widget.attrs.update({
-            'class': 'form-control',
-            'required': True,
+        if email:
+            email = email.strip().lower()
 
-        })
-        self.fields['slug'].widget.attrs.update({
-            'class': 'form-control',
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError(
+                "Este correo ya está registrado."
+            )
 
-        })
-        
+        return email
     
+# -------------------- Actualizar usuario --------------------
+
+class CustomUserUpdateForm(forms.ModelForm):
+    role = forms.ModelChoiceField(
+        queryset=Role.objects.none(),
+        required=True,
+        label="Rol"
+    )
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        company = kwargs.pop("company", None)
+
+        super().__init__(*args, **kwargs)
+
+        if company:
+            self.fields["role"].queryset = Role.objects.filter(
+                company=company,
+                active=True
+            )
+
+            # Mostrar el rol actual del usuario
+            if self.instance and self.instance.pk:
+                membership = CompanyMember.objects.filter(
+                    user=self.instance,
+                    company=company
+                ).select_related("role").first()
+
+                if membership:
+                    self.fields["role"].initial = membership.role
+
+        campos_form_control = [
+            "avatar",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "phone",
+        ]
+
+        for field_name in campos_form_control:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    "class": "form-control"
+                })
+
+        self.fields["role"].widget.attrs.update({
+            "class": "form-select",
+            "data-live-search": "true",
+        })
+
+        if "is_active" in self.fields:
+            self.fields["is_active"].widget.attrs.update({
+                "class": "form-check-input"
+            })
+
+        if "is_staff" in self.fields:
+            self.fields["is_staff"].widget.attrs.update({
+                "class": "form-check-input"
+            })
+
+    class Meta:
+        model = CustomUser
+        fields = [
+            "avatar",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "phone",
+            "is_active",
+            "is_staff",
+            "role",
+        ]
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+
+        if email:
+            email = email.strip().lower()
+
+        correo_existente = CustomUser.objects.filter(
+            email__iexact=email
+        ).exclude(
+            pk=self.instance.pk
+        ).exists()
+
+        if correo_existente:
+            raise forms.ValidationError(
+                "Este correo ya está registrado."
+            )
+
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+
+        company = getattr(self, "company", None)
+        role = self.cleaned_data.get("role")
+
+        return user  
+#--------------------Formulario de empresas-------------------
+# -------------------- Formulario de empresas --------------------
+
+class CompanyForm(forms.ModelForm):
+
+    class Meta:
+        model = Company
+        fields = [
+            "name",
+            "address",
+            "phone",
+            "email",
+            "slug",
+        ]
+
+        widgets = {
+            "name": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                }
+            ),
+            "address": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                }
+            ),
+            "phone": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                }
+            ),
+            "email": forms.EmailInput(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                }
+            ),
+            "slug": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
+        }
+        
     class Meta:
         model = Company
         fields = ["name", "address", "phone", "email", "slug"]
 
-
-
-# ============================================
-# CATEGORY, SUPPLIER AND PRODUCT FORMS
-# ============================================
 
 #==============================================
 # CATEGORY FORM

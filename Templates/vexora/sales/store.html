@@ -1,240 +1,729 @@
 {% extends 'partials/base.html' %}
 {% load static %}
 
-{% block title %}- Store{% endblock %}
+{% block title %}- Tienda{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/store.css' %}">
-
+<link rel="stylesheet" href="{% static 'css/store.css' %}?v=10">
 {% endblock %}
 
 {% block content %}
 <div class="store-wrap">
-
-  <!-- ── BARRA SUPERIOR STORE ── -->
   <div class="store-topbar">
     <div class="store-nav-links">
-      <a href="{% url 'vexora:store_home' %}"
-         class="store-nav-link {% if not seccion %}active{% endif %}">
-        <i class="fas fa-store"></i> Catálogo
-      </a>
-      <a href="?seccion=tendencias"
-         class="store-nav-link {% if seccion == 'tendencias' %}active{% endif %}">
-        <i class="fas fa-fire"></i> Tendencias
-      </a>
-      <a href="?seccion=rebajas"
-         class="store-nav-link {% if seccion == 'rebajas' %}active{% endif %}">
-        <i class="fas fa-tag"></i> Rebajas
-      </a>
-      <a href="?seccion=favoritos"
-         class="store-nav-link {% if seccion == 'favoritos' %}active{% endif %}">
+      <a href="{% url 'vexora:store_home' %}" class="store-nav-link {% if not seccion %}active{% endif %}"><i class="fas fa-store"></i> Catálogo</a>
+      <a href="{% url 'vexora:store_home' %}?seccion=tendencias" class="store-nav-link {% if seccion == 'tendencias' %}active{% endif %}"><i class="fas fa-fire"></i> Tendencias</a>
+      <a href="{% url 'vexora:store_home' %}?seccion=rebajas" class="store-nav-link {% if seccion == 'rebajas' %}active{% endif %}"><i class="fas fa-tag"></i> Rebajas</a>
+      <a href="{% url 'vexora:store_home' %}?seccion=favoritos" class="store-nav-link {% if seccion == 'favoritos' %}active{% endif %}">
         <i class="fas fa-heart"></i> Favoritos
-        <span id="fav-count-link" style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:10px;font-size:10px;">0</span>
+        <span id="fav-count-link" class="store-count-badge">0</span>
       </a>
     </div>
 
     <form method="GET" class="store-search">
       {% if categoria_activa %}<input type="hidden" name="categoria" value="{{ categoria_activa }}">{% endif %}
-      <input type="text" name="q" placeholder="Buscar producto..." value="{{ query }}">
-      <button type="submit"><i class="fas fa-search"></i></button>
+      {% if talla_activa %}<input type="hidden" name="talla" value="{{ talla_activa }}">{% endif %}
+      {% if orden %}<input type="hidden" name="orden" value="{{ orden }}">{% endif %}
+      {% if seccion %}<input type="hidden" name="seccion" value="{{ seccion }}">{% endif %}
+      <input type="search" name="q" placeholder="Buscar producto..." value="{{ query|default:'' }}" aria-label="Buscar producto">
+      <button type="submit" aria-label="Buscar"><i class="fas fa-search"></i></button>
     </form>
   </div>
 
-  <!-- ── HERO ── -->
   {% if not query and not categoria_activa and not seccion %}
   <div class="store-hero">
     <div class="hero-badge"><i class="fas fa-bolt"></i> Nueva colección disponible</div>
     <h1 class="hero-title">Bienvenido a<br><span>{{ request.user.company.name|default:"nuestra tienda" }}</span></h1>
-    <p class="hero-sub">Explora nuestro catálogo completo. Los mejores productos al mejor precio, directo para ti.</p>
+    <p class="hero-sub">Explora nuestro catálogo completo. Los mejores productos al mejor precio.</p>
     <div class="hero-btns">
       <a href="#productos" class="btn-hero-p">Ver catálogo completo</a>
-      <a href="?seccion=rebajas" class="btn-hero-s"><i class="fas fa-tag"></i> Ver rebajas</a>
+      <a href="{% url 'vexora:store_home' %}?seccion=rebajas" class="btn-hero-s"><i class="fas fa-tag"></i> Ver rebajas</a>
     </div>
   </div>
   {% endif %}
 
-  <!-- ── CATEGORÍAS ── -->
   <div class="section-label">Categorías</div>
   <div class="cats-row">
-    <a href="{% url 'vexora:store_home' %}"
-       class="cat-chip {% if not categoria_activa %}active{% endif %}">
-      <i class="fas fa-th-large"></i> Todos
-    </a>
+    <a href="{% url 'vexora:store_home' %}" class="cat-chip {% if not categoria_activa %}active{% endif %}"><i class="fas fa-th-large"></i> Todos</a>
     {% for cat in categorias %}
-    <a href="?categoria={{ cat.id }}"
-       class="cat-chip {% if categoria_activa == cat.id|stringformat:'s' %}active{% endif %}">
-      <i class="fas fa-tag"></i> {{ cat.name }}
-    </a>
+      <a href="?categoria={{ cat.id }}{% if talla_activa %}&talla={{ talla_activa }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" class="cat-chip {% if categoria_activa == cat.id|stringformat:'s' %}active{% endif %}">
+        <i class="fas fa-tag"></i> {{ cat.name }}
+      </a>
     {% endfor %}
   </div>
 
-  <!-- ── FILTROS ── -->
-  <div class="filtros-row" id="productos">
-    <span class="filtros-label">Talla:</span>
-    <a href="{% url 'vexora:store_home' %}{% if categoria_activa %}?categoria={{ categoria_activa }}{% endif %}"
-       class="talla-btn {% if not talla_activa %}active{% endif %}">Todas</a>
+  
     {% for t in tallas %}
-    <a href="?{% if categoria_activa %}categoria={{ categoria_activa }}&{% endif %}talla={{ t }}"
-       class="talla-btn {% if talla_activa == t %}active{% endif %}">{{ t }}</a>
+      
+    {% empty %}
+      
     {% endfor %}
 
-    <form method="GET" style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+    <form method="GET" class="store-order-form">
       {% if categoria_activa %}<input type="hidden" name="categoria" value="{{ categoria_activa }}">{% endif %}
       {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
-      <select name="orden" class="orden-select" onchange="this.form.submit()">
-        <option value="nuevo"       {% if orden == 'nuevo'       %}selected{% endif %}>Más nuevos</option>
-        <option value="precio_asc"  {% if orden == 'precio_asc'  %}selected{% endif %}>Menor precio</option>
+      {% if talla_activa %}<input type="hidden" name="talla" value="{{ talla_activa }}">{% endif %}
+      {% if seccion %}<input type="hidden" name="seccion" value="{{ seccion }}">{% endif %}
+      <select name="orden" class="orden-select" onchange="this.form.submit()" aria-label="Ordenar productos">
+        <option value="nuevo" {% if orden == 'nuevo' %}selected{% endif %}>Más nuevos</option>
+        <option value="precio_asc" {% if orden == 'precio_asc' %}selected{% endif %}>Menor precio</option>
         <option value="precio_desc" {% if orden == 'precio_desc' %}selected{% endif %}>Mayor precio</option>
       </select>
-      <span class="results-count">{{ productos|length }} resultado{{ productos|length|pluralize }}</span>
+      <span class="results-count" id="results-count">{{ productos|length }} resultado{{ productos|length|pluralize }}</span>
     </form>
   </div>
 
-  <!-- ── GRID ── -->
-  <div class="prod-grid">
+  <div class="prod-grid" id="product-grid">
     {% if productos %}
       {% for p in productos %}
-      <div class="prod-card" data-id="{{ p.id }}" data-nombre="{{ p.name|escapejs }}" data-precio="{{ p.sale_price|default:p.price }}">
-
-        <div class="prod-img-wrap">
-          {% if p.image %}
-            <img src="{{ p.image.url }}" alt="{{ p.name }}">
-          {% else %}
-            <div class="no-img"><i class="fas fa-box-open"></i></div>
-          {% endif %}
-          <span class="badge-new">Nuevo</span>
-          {% if p.sale_price and p.sale_price != p.price %}
-            <span class="badge-oferta">Oferta</span>
-          {% endif %}
-          {% if p.stock <= p.min_stock %}
-            <span class="badge-agotando">¡Últimas piezas!</span>
-          {% endif %}
-        </div>
-
-        <div class="prod-body">
-          {% if p.category %}
-            <span class="prod-cat">{{ p.category.name }}</span>
-          {% endif %}
-          <a href="{% url 'vexora:store_product' p.pk %}" class="prod-name">{{ p.name }}</a>
-          {% if p.description %}
-            <div class="prod-desc">{{ p.description|truncatechars:55 }}</div>
-          {% endif %}
-
-          {% if p.variants.all %}
-          <div class="prod-variants">
-            {% for v in p.variants.all|slice:":5" %}
-              <span class="size-pill">{{ v.size }}</span>
-            {% endfor %}
+        {% with has_variants=p.variants.exists %}
+        <article class="prod-card" data-id="{{ p.id }}" data-url="{% url 'vexora:store_product' p.pk %}">
+          <div class="prod-img-wrap">
+            <button type="button" class="store-favorite-btn" data-product-id="{{ p.id }}" aria-label="Agregar {{ p.name }} a favoritos" onclick="toggleFavorito({{ p.id }}, event)"><i class="far fa-heart"></i></button>
+            <a href="{% url 'vexora:store_product' p.pk %}" class="prod-img-link" aria-label="Ver {{ p.name }}">
+              {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">{% else %}<div class="no-img"><i class="fas fa-box-open"></i></div>{% endif %}
+            </a>
+            {% if p.stock <= 0 %}<span class="badge-agotado">Agotado</span>{% elif p.stock <= p.min_stock %}<span class="badge-agotando">¡Últimas piezas!</span>{% endif %}
+            <span class="badge-new">Nuevo</span>
+            {% if p.sale_price and p.sale_price != p.price %}<span class="badge-oferta">Oferta</span>{% endif %}
           </div>
-          <div class="prod-variants" style="margin-top:4px;">
-            {% for v in p.variants.all|slice:":6" %}
-              <span class="color-dot" style="background:{{ v.color_hex }}" title="{{ v.color }}"></span>
-            {% endfor %}
-          </div>
-          {% endif %}
 
-          <div class="prod-price-row">
-            <span class="prod-price">${{ p.sale_price|default:p.price }}</span>
-            {% if p.sale_price and p.sale_price != p.price %}
-              <span class="prod-price-old">${{ p.price }}</span>
+          <div class="prod-body">
+            {% if p.category %}<span class="prod-cat">{{ p.category.name }}</span>{% endif %}
+            <a href="{% url 'vexora:store_product' p.pk %}" class="prod-name">{{ p.name }}</a>
+            {% if p.description %}<div class="prod-desc">{{ p.description|truncatechars:70 }}</div>{% endif %}
+
+            {% if has_variants %}
+              <div class="prod-variants">
+                {% for v in p.variants.all|slice:":5" %}{% if v.size %}<span class="size-pill">{{ v.size }}</span>{% endif %}{% endfor %}
+              </div>
+              <div class="prod-variants prod-colors">
+                {% for v in p.variants.all|slice:":6" %}{% if v.color_hex %}<span class="color-dot" style="background:{{ v.color_hex }}" title="{{ v.color|default:'Color' }}"></span>{% endif %}{% endfor %}
+              </div>
             {% endif %}
+
+            <div class="prod-price-row">
+              <span class="prod-price">${{ p.sale_price|default:p.price }}</span>
+              {% if p.sale_price and p.sale_price != p.price %}<span class="prod-price-old">${{ p.price }}</span>{% endif %}
+            </div>
+
+            <div
+    class="prod-stock"
+    id="stock-info-{{ p.id }}"
+    data-stock="{{ p.available_stock }}"
+>
+    {% if p.available_stock <= 0 %}
+        <span class="stock-agotado">
+            <i class="fas fa-times-circle"></i>
+            Agotado
+        </span>
+
+    {% elif p.available_stock <= p.min_stock %}
+        <span class="stock-bajo">
+            <i class="fas fa-exclamation-circle"></i>
+            Últimas {{ p.available_stock }} unidades
+        </span>
+
+    {% else %}
+        <span class="stock-disponible">
+            <i class="fas fa-check-circle"></i>
+            En stock: {{ p.available_stock }}
+        </span>
+    {% endif %}
+</div>
+
+            <div class="prod-stock-status">
+  {% if p.stock <= 0 %}
+    <span class="stock-status stock-out">
+      <i class="fas fa-circle-xmark"></i>
+      Producto agotado
+    </span>
+
+  {% elif p.stock <= p.min_stock %}
+    <span class="stock-status stock-low">
+      <i class="fas fa-triangle-exclamation"></i>
+      Solo quedan {{ p.stock }} pieza{{ p.stock|pluralize }}
+    </span>
+
+  {% else %}
+    <span class="stock-status stock-available">
+      <i class="fas fa-circle-check"></i>
+      Disponible
+    </span>
+  {% endif %}
+</div>
           </div>
-        </div>
 
-        <div class="prod-foot">
-          <a href="{% url 'vexora:store_product' p.pk %}" class="btn-ver">
-            <i class="fas fa-eye"></i> Ver detalle
-          </a>
-          <button class="btn-add"
-                  onclick="agregarRapido({{ p.id }}, '{{ p.name|escapejs }}', {{ p.sale_price|default:p.price }}, event)">
-            <i class="fas fa-plus"></i> Agregar
-          </button>
-        </div>
+          <div class="prod-foot">
+            <a href="{% url 'vexora:store_product' p.pk %}" class="btn-ver"><i class="fas fa-eye"></i> Ver detalle</a>
+            <button
+    type="button"
+    class="btn-add"
+    id="btn-add-{{ p.id }}"
+    data-has-variants="{% if has_variants %}true{% else %}false{% endif %}"
+    data-stock="{{ p.available_stock }}"
+    {% if p.available_stock <= 0 %}disabled{% endif %}
+    onclick="agregarRapido(
+        {{ p.id }},
+        '{{ p.name|escapejs }}',
+        event
+    )"
+>
+    {% if p.available_stock <= 0 %}
+        <i class="fas fa-ban"></i>
+        Agotado
 
-      </div>
+    {% elif has_variants %}
+        <i class="fas fa-list"></i>
+        Elegir opciones
+
+    {% else %}
+        <i class="fas fa-plus"></i>
+        Agregar
+    {% endif %}
+</button>
+          </div>
+        </article>
+        {% endwith %}
       {% endfor %}
     {% else %}
-      <div class="store-empty">
-        <i class="fas fa-box-open"></i>
-        <h3>No encontramos productos</h3>
-        <p>Intenta con otra categoría, talla o búsqueda.</p>
-      </div>
+      <div class="store-empty"><i class="fas fa-box-open"></i><h3>No encontramos productos</h3><p>Intenta con otra categoría, talla o búsqueda.</p></div>
     {% endif %}
   </div>
-
 </div>
 
-<!-- Toast -->
-<div class="store-toast" id="tienda-toast">
-  <i class="fas fa-check-circle"></i>
-  <span id="toast-msg">Producto agregado</span>
-</div>
+<div class="store-toast" id="tienda-toast" role="status" aria-live="polite"><i class="fas fa-check-circle"></i><span id="toast-msg">Producto agregado</span></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-}
-const CSRF_TOKEN = getCookie('csrftoken');
+(() => {
+  const CART_ADD_URL =
+    "{% url 'vexora:cart_add' %}";
 
-// ── Contador real del carrito (desde la base de datos) ──
-function refreshCartCount(){
-  fetch("{% url 'vexora:cart_count' %}")
-    .then(r => r.json())
-    .then(data => {
-      document.getElementById('cart-count-top').textContent = data.total_items;
-    });
-}
+  const CART_COUNT_URL =
+    "{% url 'vexora:cart_count' %}";
 
-// ── Agregar producto rápido (a la base de datos) ──
-function agregarRapido(id, nombre, precio, e){
-  if(e) e.stopPropagation();
+  const FAVORITOS_KEY =
+    "vexora_favoritos";
 
-  const body = new URLSearchParams({
-    product_id: id,
-    variant_id: '',
-    quantity: 1
-  });
 
-  fetch("{% url 'vexora:cart_add' %}", {
-    method: 'POST',
-    headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(data.ok){
-      mostrarToast(`"${nombre}" agregado al carrito`);
-      refreshCartCount();
-      const fabBadge = document.getElementById('cartFabBadge');
-if(fabBadge) fabBadge.textContent = data.total_items;
-    } else {
-      mostrarToast('No se pudo agregar');
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+
+    if (parts.length === 2) {
+      return parts.pop().split(";").shift();
     }
-  })
-  .catch(() => mostrarToast('Error al agregar al carrito'));
-}
 
-function mostrarToast(msg){
-  const t = document.getElementById('tienda-toast');
-  document.getElementById('toast-msg').textContent = msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2800);
-}
+    return "";
+  }
 
-// ── Favoritos localStorage (esto se queda igual) ──
-function getFavoritos(){ return JSON.parse(localStorage.getItem('vexora_favoritos')||'[]'); }
-function actualizarFavCount(){
-  const f = getFavoritos();
-  const el = document.getElementById('fav-count-link');
-  if(el) el.textContent = f.length;
-}
 
-// Init
-refreshCartCount();
-actualizarFavCount();
+  const csrfToken =
+    getCookie("csrftoken");
+
+
+  function mostrarToast(mensaje) {
+    const toast =
+      document.getElementById(
+        "tienda-toast"
+      );
+
+    const texto =
+      document.getElementById(
+        "toast-msg"
+      );
+
+    if (!toast || !texto) {
+      return;
+    }
+
+    texto.textContent = mensaje;
+    toast.classList.add("show");
+
+    clearTimeout(
+      window.storeToastTimer
+    );
+
+    window.storeToastTimer =
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2800);
+  }
+
+
+  function actualizarContadores(total) {
+    const cantidad = Number(total) || 0;
+
+    [
+      "cart-count-top",
+      "cartFabBadge",
+      "sidebar-cart-count",
+    ].forEach(id => {
+      const elemento =
+        document.getElementById(id);
+
+      if (elemento) {
+        elemento.textContent = cantidad;
+      }
+    });
+  }
+
+
+  function actualizarStockProducto(
+    productId,
+    stockDisponible
+  ) {
+    const stock = Math.max(
+      Number(stockDisponible) || 0,
+      0
+    );
+
+    const informacion =
+      document.getElementById(
+        `stock-info-${productId}`
+      );
+
+    const boton =
+      document.getElementById(
+        `btn-add-${productId}`
+      );
+
+    const minimo = Number(
+      informacion?.dataset.minStock || 0
+    );
+
+    if (informacion) {
+      informacion.dataset.stock = stock;
+
+      if (stock <= 0) {
+        informacion.innerHTML = `
+          <span class="stock-agotado">
+            <i class="fas fa-times-circle"></i>
+            Agotado
+          </span>
+        `;
+
+      } else if (stock <= minimo) {
+        informacion.innerHTML = `
+          <span class="stock-bajo">
+            <i class="fas fa-exclamation-circle"></i>
+            Últimas ${stock} unidades
+          </span>
+        `;
+
+      } else {
+        informacion.innerHTML = `
+          <span class="stock-disponible">
+            <i class="fas fa-check-circle"></i>
+            En stock: ${stock}
+          </span>
+        `;
+      }
+    }
+
+    if (!boton) {
+      return;
+    }
+
+    boton.dataset.stock = stock;
+
+    if (stock <= 0) {
+      boton.disabled = true;
+
+      boton.innerHTML = `
+        <i class="fas fa-ban"></i>
+        Agotado
+      `;
+
+    } else {
+      boton.disabled = false;
+
+      if (
+        boton.dataset.hasVariants
+        === "true"
+      ) {
+        boton.innerHTML = `
+          <i class="fas fa-list"></i>
+          Elegir opciones
+        `;
+
+      } else {
+        boton.innerHTML = `
+          <i class="fas fa-plus"></i>
+          Agregar
+        `;
+      }
+    }
+  }
+
+
+  async function refreshCartCount() {
+    try {
+      const response = await fetch(
+        CART_COUNT_URL,
+        {
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: {
+            "X-Requested-With":
+              "XMLHttpRequest",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+
+      actualizarContadores(
+        data.total_items
+      );
+
+    } catch (error) {
+      console.error(
+        "Error al consultar carrito:",
+        error
+      );
+    }
+  }
+
+
+  window.agregarRapido =
+    async function(
+      productId,
+      productName,
+      event
+    ) {
+      event?.preventDefault();
+      event?.stopPropagation();
+
+      const boton =
+        document.getElementById(
+          `btn-add-${productId}`
+        );
+
+      const tarjeta =
+        boton?.closest(".prod-card");
+
+      if (
+        !boton
+        || boton.disabled
+        || !tarjeta
+      ) {
+        return;
+      }
+
+      if (
+        boton.dataset.hasVariants
+        === "true"
+      ) {
+        window.location.href =
+          tarjeta.dataset.url;
+
+        return;
+      }
+
+      const contenidoOriginal =
+        boton.innerHTML;
+
+      boton.disabled = true;
+
+      boton.innerHTML = `
+        <i class="fas fa-spinner fa-spin"></i>
+        Agregando...
+      `;
+
+      try {
+        const response = await fetch(
+          CART_ADD_URL,
+          {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRFToken": csrfToken,
+              "Content-Type":
+                "application/x-www-form-urlencoded",
+              "X-Requested-With":
+                "XMLHttpRequest",
+            },
+            body: new URLSearchParams({
+              product_id:
+                String(productId),
+              variant_id: "",
+              quantity: "1",
+            }),
+          }
+        );
+
+        const contentType =
+          response.headers.get(
+            "content-type"
+          ) || "";
+
+        if (
+          !contentType.includes(
+            "application/json"
+          )
+        ) {
+          throw new Error(
+            `Respuesta inválida ${response.status}`
+          );
+        }
+
+        const data =
+          await response.json();
+
+        if (!response.ok || !data.ok) {
+          mostrarToast(
+            data.error
+            || data.message
+            || "No se pudo agregar."
+          );
+
+          return;
+        }
+
+        actualizarContadores(
+          data.total_items
+        );
+
+        actualizarStockProducto(
+          productId,
+          data.stock_disponible
+        );
+
+        mostrarToast(
+          `"${productName}" agregado al carrito`
+        );
+
+      } catch (error) {
+        console.error(
+          "Error al agregar producto:",
+          error
+        );
+
+        mostrarToast(
+          "Error al agregar el producto."
+        );
+
+      } finally {
+        const stockActual = Number(
+          boton.dataset.stock || 0
+        );
+
+        if (stockActual > 0) {
+          boton.disabled = false;
+
+          boton.innerHTML =
+            contenidoOriginal;
+        }
+      }
+    };
+
+
+  function getFavoritos() {
+    try {
+      const guardados = JSON.parse(
+        localStorage.getItem(
+          FAVORITOS_KEY
+        ) || "[]"
+      );
+
+      return Array.isArray(guardados)
+        ? guardados.map(Number)
+        : [];
+
+    } catch {
+      return [];
+    }
+  }
+
+
+  function saveFavoritos(items) {
+    const itemsUnicos = [
+      ...new Set(
+        items.map(Number)
+      ),
+    ];
+
+    localStorage.setItem(
+      FAVORITOS_KEY,
+      JSON.stringify(itemsUnicos)
+    );
+  }
+
+
+  window.toggleFavorito =
+    function(productId, event) {
+      event?.preventDefault();
+      event?.stopPropagation();
+
+      const id = Number(productId);
+
+      let favoritos =
+        getFavoritos();
+
+      if (favoritos.includes(id)) {
+        favoritos =
+          favoritos.filter(
+            item => item !== id
+          );
+
+        mostrarToast(
+          "Producto eliminado de favoritos"
+        );
+
+      } else {
+        favoritos.push(id);
+
+        mostrarToast(
+          "Producto agregado a favoritos"
+        );
+      }
+
+      saveFavoritos(favoritos);
+      actualizarFavoritos();
+      filtrarFavoritos();
+    };
+
+
+  function actualizarFavoritos() {
+    const favoritos =
+      getFavoritos();
+
+    document
+      .querySelectorAll(
+        ".store-favorite-btn, .btn-favorito"
+      )
+      .forEach(boton => {
+        const activo =
+          favoritos.includes(
+            Number(
+              boton.dataset.productId
+            )
+          );
+
+        boton.classList.toggle(
+          "active",
+          activo
+        );
+
+        const icono =
+          boton.querySelector("i");
+
+        if (icono) {
+          icono.className = activo
+            ? "fas fa-heart"
+            : "far fa-heart";
+        }
+      });
+
+    const contador =
+      document.getElementById(
+        "fav-count-link"
+      );
+
+    if (contador) {
+      contador.textContent =
+        favoritos.length;
+    }
+  }
+
+
+  function filtrarFavoritos() {
+    const seccion =
+      new URLSearchParams(
+        window.location.search
+      ).get("seccion");
+
+    if (seccion !== "favoritos") {
+      return;
+    }
+
+    const favoritos =
+      getFavoritos();
+
+    let visibles = 0;
+
+    document
+      .querySelectorAll(".prod-card")
+      .forEach(tarjeta => {
+        const mostrar =
+          favoritos.includes(
+            Number(tarjeta.dataset.id)
+          );
+
+        tarjeta.hidden = !mostrar;
+
+        if (mostrar) {
+          visibles += 1;
+        }
+      });
+
+    const contador =
+      document.getElementById(
+        "results-count"
+      );
+
+    if (contador) {
+      contador.textContent =
+        `${visibles} resultado`
+        + `${visibles === 1 ? "" : "s"}`;
+    }
+  }
+
+
+  function inicializarTienda() {
+    refreshCartCount();
+    actualizarFavoritos();
+    filtrarFavoritos();
+  }
+
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    inicializarTienda
+  );
+
+
+  window.addEventListener(
+    "pageshow",
+    event => {
+      const stockCambio =
+        sessionStorage.getItem(
+          "vexora_stock_changed"
+        );
+
+      /*
+      Al volver con el botón Atrás,
+      el navegador puede mostrar una
+      copia vieja de la tienda.
+      */
+      if (
+        event.persisted
+        && stockCambio === "1"
+      ) {
+        sessionStorage.removeItem(
+          "vexora_stock_changed"
+        );
+
+        window.location.reload();
+        return;
+      }
+
+      if (stockCambio === "1") {
+        sessionStorage.removeItem(
+          "vexora_stock_changed"
+        );
+      }
+
+      refreshCartCount();
+    }
+  );
+})();
 </script>
 {% endblock %}

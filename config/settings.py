@@ -88,9 +88,6 @@ DATABASES = {
         'NAME': 'pruebas',       # Nombre de tu base de datos
         'USER': 'root',               # Usuario de MySQL
         'PASSWORD': '',       # Contraseña de MySQL
-        'HOST' : 'localhost',               # o la IP del servidor MySQL
-        'PASSWORD': '',       # Contraseña de MySQL
-        'PASSWORD': '',       # Contraseña de MySQL5d3aae71642f46d6a537e084a17b9d15de1adcd2
         'HOST': 'localhost',               # o la IP del servidor MySQL
         'PORT': '3306',                    # Puerto por defecto de MySQL
         'OPTIONS': {
@@ -200,3 +197,28 @@ EMAIL_HOST_USER = 'tucorreo@gmail.com'
 EMAIL_HOST_PASSWORD = 'apppassword'
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# ==========================================
+# CONFIGURACIÓN DE CORREO GMAIL
+# ==========================================
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 465
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+EMAIL_HOST_USER = os.environ.get(
+    "VEXORA_EMAIL_USER",
+    ""
+)
+
+EMAIL_HOST_PASSWORD = os.environ.get(
+    "VEXORA_EMAIL_PASSWORD",
+    ""
+)
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+EMAIL_TIMEOUT = 10

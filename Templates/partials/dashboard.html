@@ -2,8 +2,320 @@
 {% load static %}
 
 {% block title %}
-  - Dashboard
+{% block title %}- Dashboard{% endblock %}
+
+
+{% block extra_css %}
+<style>
+    /* =====================================
+       DISEÑO GENERAL
+       ===================================== */
+
+    .dashboard-page {
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .dashboard-page > .container-fluid {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .dashboard-page .row {
+        --bs-gutter-x: 24px;
+        --bs-gutter-y: 24px;
+    }
+
+    .dashboard-page [class*="col-"] {
+        min-width: 0;
+    }
+
+    /* =====================================
+       TARJETAS
+       ===================================== */
+
+    .dashboard-page .card {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    .dashboard-page .card-header {
+        padding: 16px 20px;
+        background: transparent;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .dashboard-page .card-header h5 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .dashboard-page .card-body {
+        padding: 20px;
+    }
+
+    /* =====================================
+       BIENVENIDA
+       ===================================== */
+
+    .welcome-card {
+        height: auto !important;
+    }
+
+    .welcome-card .card-body {
+        padding: 26px 28px;
+    }
+
+    .welcome-card h3 {
+        margin-bottom: 6px;
+    }
+
+    .welcome-company {
+        margin-bottom: 6px;
+        opacity: 0.72;
+    }
+
+    /* =====================================
+       ESTADÍSTICAS ADMINISTRATIVAS
+       ===================================== */
+
+    .dashboard-stat-card {
+        min-height: 190px;
+    }
+
+    .dashboard-stat-card .card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+        padding: 24px;
+    }
+
+    .dashboard-stat-card i {
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .dashboard-stat-card h5 {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .dashboard-stat-card h2 {
+        margin: 0;
+        font-size: 34px;
+        font-weight: 700;
+    }
+
+    /* =====================================
+       TABLAS
+       ===================================== */
+
+    .dashboard-page .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 12px;
+    }
+
+    .dashboard-page .table {
+        width: 100%;
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+
+    .dashboard-page .table th,
+    .dashboard-page .table td {
+        padding: 13px 14px;
+        white-space: nowrap;
+    }
+
+    .dashboard-page .table th {
+        font-weight: 700;
+    }
+
+    /* =====================================
+       ALERTAS
+       ===================================== */
+
+    .dashboard-alerts {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .dashboard-alerts .alert {
+        margin: 0;
+        padding: 18px;
+        border: 0;
+        border-radius: 12px;
+    }
+
+    .dashboard-alerts h3 {
+        margin: 6px 0 0;
+    }
+
+    /* =====================================
+       DASHBOARD DEL CLIENTE
+       ===================================== */
+
+    .client-info-card {
+        min-height: 230px;
+    }
+
+    .client-info-card .card-body {
+        padding: 26px;
+    }
+
+    .client-card-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .client-card-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 58px;
+        height: 58px;
+        border-radius: 17px;
+        background: rgba(37, 99, 235, 0.16);
+        color: #2563eb;
+        font-size: 28px;
+    }
+
+    .client-company-icon {
+        background: rgba(5, 150, 105, 0.16);
+        color: #059669;
+    }
+
+    .client-plan-icon {
+        background: rgba(217, 119, 6, 0.16);
+        color: #d97706;
+    }
+
+    .client-store-icon {
+        background: rgba(220, 38, 38, 0.15);
+        color: #dc2626;
+    }
+
+    .client-card-header h4 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .client-card-header span {
+        font-size: 14px;
+        opacity: 0.65;
+    }
+
+    .client-data-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .client-data-row:last-child {
+        border-bottom: 0;
+    }
+
+    .client-data-label {
+        font-weight: 600;
+        opacity: 0.7;
+    }
+
+    .client-data-value {
+        max-width: 65%;
+        font-weight: 600;
+        text-align: right;
+        word-break: break-word;
+    }
+
+    .client-access-card {
+        min-height: 200px;
+    }
+
+    .client-access-card .card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 28px;
+    }
+
+    .client-access-card h4 {
+        margin: 18px 0 8px;
+        font-size: 21px;
+        font-weight: 700;
+    }
+
+    .client-access-card p {
+        margin: 0;
+        line-height: 1.6;
+        opacity: 0.7;
+    }
+
+    .client-permission-message {
+        padding: 30px;
+        text-align: center;
+    }
+
+    .client-permission-message i {
+        display: block;
+        margin-bottom: 15px;
+        color: #2563eb;
+        font-size: 42px;
+    }
+
+    /* =====================================
+       RESPONSIVE
+       ===================================== */
+
+    @media (max-width: 767px) {
+        .dashboard-page .row {
+            --bs-gutter-x: 16px;
+            --bs-gutter-y: 16px;
+        }
+
+        .welcome-card .card-body {
+            padding: 20px;
+        }
+
+        .dashboard-stat-card {
+            min-height: 160px;
+        }
+
+        .dashboard-page .card-body {
+            padding: 16px;
+        }
+
+        .client-data-row {
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .client-data-value {
+            max-width: 100%;
+            text-align: left;
+        }
+    }
+</style>
 {% endblock %}
+
 
 {% block content %}
   <div class="main-content">
@@ -36,6 +348,707 @@
             </div>
           </div>
         </div>
+
+<div class="page-content dashboard-page">
+
+    <div class="container-fluid p-0">
+
+        {% if messages %}
+            {% for message in messages %}
+                <script>
+                    Swal.fire({
+                        position: "center",
+                        icon: "{{ message.level_tag }}" === "error"
+                            ? "error"
+                            : "success",
+                        title: "{{ message|escapejs }}",
+                        showConfirmButton: false,
+                        timer: 2500
+                    });
+                </script>
+            {% endfor %}
+        {% endif %}
+
+
+        <!-- =====================================
+        BIENVENIDA
+        ====================================== -->
+
+        <div class="row g-4 mb-4">
+
+            <div class="col-12">
+
+                <div class="card welcome-card shadow-sm border-0">
+
+                    <div class="card-body">
+
+                        <h3 class="fw-bold">
+
+                            Bienvenido
+
+                            {% if request.user.first_name %}
+                                {{ request.user.first_name }}
+                            {% else %}
+                                {{ request.user.username }}
+                            {% endif %}
+
+                        </h3>
+
+                        {% if company %}
+                            <p class="welcome-company">
+                                {{ company.name }}
+                            </p>
+                        {% endif %}
+
+                        {% if subscription %}
+
+                            <small>
+                                Plan:
+
+                                <span class="badge bg-success">
+                                    {{ subscription.plan.name }}
+                                </span>
+                            </small>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================
+        CONTENIDO ADMINISTRATIVO
+        ====================================== -->
+
+        {% if show_admin_dashboard %}
+
+            <!-- TARJETAS DE ESTADÍSTICAS -->
+
+            <div class="row g-4 mb-4">
+
+                {% if can_view_products %}
+
+                    <div class="col-12 col-sm-6 col-xl-3">
+
+                        <div class="card dashboard-stat-card">
+
+                            <div class="card-body">
+
+                                <i class="ri-box-3-line fs-2 text-primary"></i>
+
+                                <h5>Productos</h5>
+
+                                <h2>
+                                    {{ products_count }}
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
+                {% if can_view_members %}
+
+                    <div class="col-12 col-sm-6 col-xl-3">
+
+                        <div class="card dashboard-stat-card">
+
+                            <div class="card-body">
+
+                                <i class="ri-user-3-line fs-2 text-success"></i>
+
+                                <h5>Colaboradores</h5>
+
+                                <h2>
+                                    {{ members_count }}
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
+                {% if can_view_suppliers %}
+
+                    <div class="col-12 col-sm-6 col-xl-3">
+
+                        <div class="card dashboard-stat-card">
+
+                            <div class="card-body">
+
+                                <i class="ri-truck-line fs-2 text-warning"></i>
+
+                                <h5>Proveedores</h5>
+
+                                <h2>
+                                    {{ suppliers_count }}
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
+                {% if can_view_sales %}
+
+                    <div class="col-12 col-sm-6 col-xl-3">
+
+                        <div class="card dashboard-stat-card">
+
+                            <div class="card-body">
+
+                                <i class="ri-shopping-cart-line fs-2 text-danger"></i>
+
+                                <h5>Ventas</h5>
+
+                                <h2>
+                                    {{ sales_count }}
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- VENTAS Y ALERTAS -->
+
+            {% if can_view_sales or can_view_products or can_view_categories %}
+
+                <div class="row g-4 mb-4">
+
+                    {% if can_view_sales %}
+
+                        <div class="
+                            {% if can_view_products or can_view_categories %}
+                                col-12 col-lg-8
+                            {% else %}
+                                col-12
+                            {% endif %}
+                        ">
+
+                            <div class="card">
+
+                                <div class="card-header">
+                                    <h5>Ventas recientes</h5>
+                                </div>
+
+                                <div class="card-body">
+
+                                    <div class="table-responsive">
+
+                                        <table class="table align-middle">
+
+                                            <thead>
+
+                                                <tr>
+                                                    <th>Factura</th>
+                                                    <th>Cliente</th>
+                                                    <th>Total</th>
+                                                    <th>Estado</th>
+                                                </tr>
+
+                                            </thead>
+
+                                            <tbody>
+
+                                                {% for sale in recent_sales %}
+
+                                                    <tr>
+
+                                                        <td>
+                                                            {{ sale.invoice_number }}
+                                                        </td>
+
+                                                        <td>
+                                                            {{ sale.customer_name }}
+                                                        </td>
+
+                                                        <td>
+                                                            $ {{ sale.total }}
+                                                        </td>
+
+                                                        <td>
+
+                                                            <span class="badge bg-success">
+                                                                {{ sale.get_status_display }}
+                                                            </span>
+
+                                                        </td>
+
+                                                    </tr>
+
+                                                {% empty %}
+
+                                                    <tr>
+
+                                                        <td colspan="4">
+                                                            No hay ventas.
+                                                        </td>
+
+                                                    </tr>
+
+                                                {% endfor %}
+
+                                            </tbody>
+
+                                        </table>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if can_view_products or can_view_sales or can_view_categories %}
+
+                        <div class="
+                            {% if can_view_sales %}
+                                col-12 col-lg-4
+                            {% else %}
+                                col-12
+                            {% endif %}
+                        ">
+
+                            <div class="card">
+
+                                <div class="card-header">
+                                    <h5>Alertas</h5>
+                                </div>
+
+                                <div class="card-body">
+
+                                    <div class="dashboard-alerts">
+
+                                        {% if can_view_products %}
+
+                                            <div class="alert alert-warning">
+
+                                                Productos con poco stock:
+
+                                                <strong>
+                                                    {{ low_stock }}
+                                                </strong>
+
+                                            </div>
+
+                                        {% endif %}
+
+
+                                        {% if can_view_sales %}
+
+                                            <div class="alert alert-success">
+
+                                                Total vendido
+
+                                                <h3>
+                                                    $ {{ sales_total }}
+                                                </h3>
+
+                                            </div>
+
+                                        {% endif %}
+
+
+                                        {% if can_view_categories %}
+
+                                            <div class="alert alert-info">
+
+                                                Categorías:
+
+                                                <strong>
+                                                    {{ categories_count }}
+                                                </strong>
+
+                                            </div>
+
+                                        {% endif %}
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endif %}
+
+
+            <!-- ÚLTIMOS PRODUCTOS -->
+
+            {% if can_view_products %}
+
+                <div class="row g-4">
+
+                    <div class="col-12">
+
+                        <div class="card">
+
+                            <div class="card-header">
+                                <h5>Últimos productos</h5>
+                            </div>
+
+                            <div class="card-body">
+
+                                <div class="table-responsive">
+
+                                    <table class="table align-middle">
+
+                                        <thead>
+
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Producto</th>
+                                                <th>Stock</th>
+                                                <th>Precio</th>
+                                            </tr>
+
+                                        </thead>
+
+                                        <tbody>
+
+                                            {% for product in recent_products %}
+
+                                                <tr>
+
+                                                    <td>
+                                                        {{ product.item_number }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ product.name }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ product.stock }}
+                                                    </td>
+
+                                                    <td>
+                                                        $ {{ product.price }}
+                                                    </td>
+
+                                                </tr>
+
+                                            {% empty %}
+
+                                                <tr>
+
+                                                    <td colspan="4">
+                                                        Sin productos.
+                                                    </td>
+
+                                                </tr>
+
+                                            {% endfor %}
+
+                                        </tbody>
+
+                                    </table>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+
+        <!-- =====================================
+        CONTENIDO DEL CLIENTE
+        ====================================== -->
+
+        {% else %}
+
+            <div class="row g-4 mb-4">
+
+                <!-- MI CUENTA -->
+
+                <div class="col-12 col-lg-6">
+
+                    <div class="card client-info-card">
+
+                        <div class="card-body">
+
+                            <div class="client-card-header">
+
+                                <div class="client-card-icon">
+                                    <i class="ri-user-3-line"></i>
+                                </div>
+
+                                <div>
+
+                                    <h4>Mi cuenta</h4>
+
+                                    <span>
+                                        Información de usuario
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="client-data-row">
+
+                                <span class="client-data-label">
+                                    Nombre
+                                </span>
+
+                                <span class="client-data-value">
+
+                                    {% if request.user.first_name or request.user.last_name %}
+
+                                        {{ request.user.first_name }}
+                                        {{ request.user.last_name }}
+
+                                    {% else %}
+
+                                        {{ request.user.username }}
+
+                                    {% endif %}
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="client-data-row">
+
+                                <span class="client-data-label">
+                                    Usuario
+                                </span>
+
+                                <span class="client-data-value">
+                                    {{ request.user.username }}
+                                </span>
+
+                            </div>
+
+
+                            {% if request.user.email %}
+
+                                <div class="client-data-row">
+
+                                    <span class="client-data-label">
+                                        Correo
+                                    </span>
+
+                                    <span class="client-data-value">
+                                        {{ request.user.email }}
+                                    </span>
+
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- EMPRESA -->
+
+                {% if company %}
+
+                    <div class="col-12 col-lg-6">
+
+                        <div class="card client-info-card">
+
+                            <div class="card-body">
+
+                                <div class="client-card-header">
+
+                                    <div class="client-card-icon client-company-icon">
+                                        <i class="ri-building-line"></i>
+                                    </div>
+
+                                    <div>
+
+                                        <h4>Empresa</h4>
+
+                                        <span>
+                                            Empresa vinculada
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="client-data-row">
+
+                                    <span class="client-data-label">
+                                        Nombre
+                                    </span>
+
+                                    <span class="client-data-value">
+                                        {{ company.name }}
+                                    </span>
+
+                                </div>
+
+
+                                {% if company.email %}
+
+                                    <div class="client-data-row">
+
+                                        <span class="client-data-label">
+                                            Correo
+                                        </span>
+
+                                        <span class="client-data-value">
+                                            {{ company.email }}
+                                        </span>
+
+                                    </div>
+
+                                {% endif %}
+
+
+                                {% if company.address %}
+
+                                    <div class="client-data-row">
+
+                                        <span class="client-data-label">
+                                            Dirección
+                                        </span>
+
+                                        <span class="client-data-value">
+                                            {{ company.address }}
+                                        </span>
+
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <div class="row g-4">
+
+                <!-- TIENDA -->
+
+                <div class="col-12 col-md-6">
+
+                    <div class="card client-access-card">
+
+                        <div class="card-body">
+
+                            <div class="client-card-icon client-store-icon">
+                                <i class="ri-store-2-line"></i>
+                            </div>
+
+                            <h4>
+                                Tienda
+                            </h4>
+
+                            <p>
+                                Consulta los productos disponibles y realiza
+                                tus compras desde la opción Tienda del menú.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- SUSCRIPCIÓN -->
+
+                {% if subscription %}
+
+                    <div class="col-12 col-md-6">
+
+                        <div class="card client-access-card">
+
+                            <div class="card-body">
+
+                                <div class="client-card-icon client-plan-icon">
+                                    <i class="ri-vip-crown-line"></i>
+                                </div>
+
+                                <h4>
+                                    Suscripción
+                                </h4>
+
+                                <p class="mb-2">
+
+                                    Plan:
+
+                                    <strong>
+                                        {{ subscription.plan.name }}
+                                    </strong>
+
+                                </p>
+
+                                <p>
+                                    Estado:
+                                    {{ subscription.status|title }}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
 
         <!-- TARJETAS -->
 

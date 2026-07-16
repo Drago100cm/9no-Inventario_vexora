@@ -51,3 +51,298 @@
 .res-nota { font-size: 11px; color: rgba(255,255,255,.3); text-align: center; margin-top: 8px; }
 
 @media(max-width:768px){ .checkout-layout{ grid-template-columns:1fr; } }
+
+/* ==============================
+   CONFIRMACIÓN DEL PEDIDO
+   ============================== */
+
+.pedido-exito-popup {
+  width: min(520px, calc(100% - 30px)) !important;
+  padding: 28px !important;
+  background: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45) !important;
+}
+
+.pedido-exito-titulo {
+  color: #ffffff !important;
+  font-size: 25px !important;
+  font-weight: 800 !important;
+}
+
+.pedido-exito-contenido {
+  text-align: left;
+}
+
+.pedido-pdf-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 66px;
+  height: 66px;
+  margin: 4px auto 18px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-radius: 20px;
+  box-shadow: 0 12px 26px rgba(239, 68, 68, 0.25);
+  font-size: 30px;
+}
+
+.pedido-exito-texto {
+  margin: 0 0 18px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.65;
+  text-align: center;
+}
+
+.pedido-instruccion {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 13px;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 16px;
+}
+
+.pedido-instruccion > i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  color: #ffffff;
+  background: #2563eb;
+  border-radius: 12px;
+  font-size: 17px;
+}
+
+.pedido-instruccion div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pedido-instruccion strong {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.pedido-instruccion span {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.pedido-recomendacion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.09);
+  border: 1px solid rgba(245, 158, 11, 0.18);
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.pedido-exito-boton {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 180px;
+  padding: 12px 24px;
+  margin-top: 8px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.24);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.pedido-exito-boton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.32);
+}
+/* ==================================
+   AVISO DEL PDF EN EL RESUMEN
+   ================================== */
+
+.res-pdf-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  margin-top: 14px;
+  color: rgba(255, 255, 255, 0.64);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: 12px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.res-pdf-aviso i {
+  margin-top: 2px;
+  color: #f87171;
+  font-size: 16px;
+}
+
+/* ==================================
+   MENSAJE FINAL DEL PEDIDO
+   ================================== */
+
+.pedido-exito-popup {
+  width: min(520px, calc(100% - 30px)) !important;
+  padding: 28px !important;
+  background: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45) !important;
+}
+
+.pedido-exito-titulo {
+  color: #ffffff !important;
+  font-size: 25px !important;
+  font-weight: 800 !important;
+}
+
+.pedido-exito-contenido {
+  text-align: left;
+}
+
+.pedido-pdf-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 66px;
+  height: 66px;
+  margin: 4px auto 18px;
+  color: #ffffff;
+  background: linear-gradient(
+    135deg,
+    #ef4444,
+    #dc2626
+  );
+  border-radius: 20px;
+  box-shadow: 0 12px 26px rgba(239, 68, 68, 0.25);
+  font-size: 30px;
+}
+
+.pedido-exito-texto {
+  margin: 0 0 18px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.65;
+  text-align: center;
+}
+
+.pedido-instruccion {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 13px;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 16px;
+}
+
+.pedido-instruccion > i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  color: #ffffff;
+  background: #2563eb;
+  border-radius: 12px;
+  font-size: 17px;
+}
+
+.pedido-instruccion div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pedido-instruccion strong {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.pedido-instruccion span {
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.pedido-recomendacion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.09);
+  border: 1px solid rgba(245, 158, 11, 0.18);
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.pedido-exito-boton {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 180px;
+  padding: 12px 24px;
+  margin-top: 8px;
+  color: #ffffff;
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #3b82f6
+  );
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.24);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.pedido-exito-boton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.32);
+}
+
+.pedido-correo-estado {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 12px 14px;
+  margin-bottom: 13px;
+  color: rgba(255, 255, 255, 0.76);
+  background: rgba(34, 197, 94, 0.09);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pedido-correo-estado i {
+  margin-top: 2px;
+  color: #86efac;
+  font-size: 15px;
+}

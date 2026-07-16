@@ -6,6 +6,7 @@ from config import settings
 from django.utils import timezone
 from django.utils.text import slugify
 import uuid
+from django.core.exceptions import ValidationError
 # models.py
 
 
@@ -431,57 +432,243 @@ class Supplier(models.Model):
         ordering = ['name']
 
 # ========== PRODUCT MODEL ==========
+# ========== PRODUCT MODEL ==========
+
 class Product(models.Model):
-    # Campo para ID secuencial por compañía
     item_number = models.PositiveIntegerField(
-        default=0, 
+        default=0,
         verbose_name="Número de producto",
-        help_text="Número secuencial del producto para esta compañía"
+        help_text="Número secuencial del producto para esta compañía",
     )
-    
-    name = models.CharField(max_length=150, verbose_name="Product name")
-    purchase_date = models.DateField(verbose_name="Purchase date")
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Price")
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='products', verbose_name="Supplier")
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True, related_name='products')
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name="Category")
-    tags = models.ManyToManyField(Tag, blank=True, related_name='products', verbose_name="Tags")
-    stock = models.IntegerField(default=0, verbose_name="Stock")
-    sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Sale price")
-    sku = models.CharField(max_length=50, blank=True, null=True, verbose_name="SKU")
-    description = models.TextField(blank=True, null=True, verbose_name="Description")
-    min_stock = models.IntegerField(default=0, verbose_name="Minimum stock")
-    image = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Product image")
-    is_active = models.BooleanField(default=True, verbose_name="Active")
-    barcode = models.CharField(max_length=100, blank=True, null=True, verbose_name="Barcode", db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
+
+    name = models.CharField(
+        max_length=150,
+        verbose_name="Product name",
+    )
+
+    purchase_date = models.DateField(
+        verbose_name="Purchase date",
+    )
+
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Price",
+    )
+
+    supplier = models.ForeignKey(
+        Supplier,
+        on_delete=models.CASCADE,
+        related_name="products",
+        verbose_name="Supplier",
+    )
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="products",
+    )
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="products",
+        verbose_name="Category",
+    )
+
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name="products",
+        verbose_name="Tags",
+    )
+
+    # Existencias físicas reales
+    stock = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Stock",
+    )
+
+    # Unidades apartadas temporalmente en carritos
+    reserved_stock = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Stock reservado",
+    )
+
+    sale_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Sale price",
+    )
+
+    sku = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="SKU",
+    )
+
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Description",
+    )
+
+    min_stock = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Minimum stock",
+    )
+
+    image = models.ImageField(
+        upload_to="products/",
+        blank=True,
+        null=True,
+        verbose_name="Product image",
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Active",
+    )
+
+    barcode = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Barcode",
+        db_index=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
     def save(self, *args, **kwargs):
-        # Si es un nuevo producto y no tiene item_number, asignar el siguiente número
         if not self.pk and not self.item_number:
-            # Obtener el último item_number para esta compañía
-            last_product = Product.objects.filter(company=self.company).order_by('-item_number').first()
+            last_product = (
+                Product.objects
+                .filter(company=self.company)
+                .order_by("-item_number")
+                .first()
+            )
+
             if last_product:
                 self.item_number = last_product.item_number + 1
             else:
                 self.item_number = 1
+
         super().save(*args, **kwargs)
-    
+
+    @property
+    def current_price(self):
+        """
+        Precio que debe utilizar la tienda.
+        """
+        return self.sale_price or self.price
+
+    @property
+    def has_variants(self):
+        """
+        Indica si el producto maneja tallas o colores.
+        """
+        return self.variants.exists()
+
+    @property
+    def available_stock(self):
+        """
+        Stock disponible para mostrar y vender.
+
+        Si tiene variantes, suma las existencias disponibles
+        de todas las variantes. Si no, usa el stock general.
+        """
+        variants = list(self.variants.all())
+
+        if variants:
+            return sum(
+                max(variant.stock - variant.reserved_stock, 0)
+                for variant in variants
+            )
+
+        return max(self.stock - self.reserved_stock, 0)
+
+    @property
+    def is_in_stock(self):
+        """
+        Verdadero cuando el producto puede agregarse al carrito.
+        """
+        return self.is_active and self.available_stock > 0
+
+    @property
+    def stock_status(self):
+        """
+        Estado para mostrar visualmente en la tienda.
+        """
+        available = self.available_stock
+
+        if not self.is_active:
+            return "inactive"
+
+        if available <= 0:
+            return "out_of_stock"
+
+        if available <= self.min_stock:
+            return "low_stock"
+
+        return "in_stock"
+
+    @property
+    def stock_status_label(self):
+        labels = {
+            "inactive": "No disponible",
+            "out_of_stock": "Agotado",
+            "low_stock": "Pocas unidades",
+            "in_stock": "En stock",
+        }
+
+        return labels[self.stock_status]
+
     def __str__(self):
         return f"{self.name} - {self.supplier.name}"
-    
+
     class Meta:
         verbose_name = "Product"
         verbose_name_plural = "Products"
+
         indexes = [
-            models.Index(fields=['company', 'name']),
-            models.Index(fields=['company', 'sku']),
-            models.Index(fields=['company', 'barcode']),
-            models.Index(fields=['company', 'item_number']),
+            models.Index(fields=["company", "name"]),
+            models.Index(fields=["company", "sku"]),
+            models.Index(fields=["company", "barcode"]),
+            models.Index(fields=["company", "item_number"]),
         ]
-        # Para evitar duplicados de item_number por compañía
-        unique_together = ['company', 'item_number']
-        ordering = ['item_number']
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "item_number"],
+                name="unique_product_number_per_company",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(stock__gte=0),
+                name="product_stock_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(reserved_stock__gte=0),
+                name="product_reserved_stock_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    reserved_stock__lte=models.F("stock")
+                ),
+                name="product_reserved_stock_lte_stock",
+            ),
+        ]
+
+        ordering = ["item_number"]
 
 # ========== SALE MODEL (Ventas) ==========
 
@@ -545,67 +732,304 @@ class SaleItem(models.Model):
         ordering = ['-id']
         
 # ========== PRODUCT VARIANT (Tallas y colores) ==========
+# ========== PRODUCT VARIANT ==========
+# Tallas y colores
+
 class ProductVariant(models.Model):
     SIZE_CHOICES = (
-        ('XS', 'XS'), ('S', 'S'), ('M', 'M'),
-        ('L', 'L'), ('XL', 'XL'), ('XXL', 'XXL'),
+        ("XS", "XS"),
+        ("S", "S"),
+        ("M", "M"),
+        ("L", "L"),
+        ("XL", "XL"),
+        ("XXL", "XXL"),
     )
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
-    size = models.CharField(max_length=5, choices=SIZE_CHOICES)
-    color = models.CharField(max_length=30, verbose_name="Color")
-    color_hex = models.CharField(max_length=7, default='#000000', verbose_name="Color (hex)")
-    stock = models.PositiveIntegerField(default=0)
-    sku = models.CharField(max_length=60, blank=True, null=True)
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="variants",
+    )
+
+    size = models.CharField(
+        max_length=5,
+        choices=SIZE_CHOICES,
+    )
+
+    color = models.CharField(
+        max_length=30,
+        verbose_name="Color",
+    )
+
+    color_hex = models.CharField(
+        max_length=7,
+        default="#000000",
+        verbose_name="Color (hex)",
+    )
+
+    # Stock físico de esta talla y color
+    stock = models.PositiveIntegerField(
+        default=0,
+    )
+
+    # Unidades reservadas en carritos
+    reserved_stock = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Stock reservado",
+    )
+
+    sku = models.CharField(
+        max_length=60,
+        blank=True,
+        null=True,
+    )
+
+    @property
+    def available_stock(self):
+        return max(
+            self.stock - self.reserved_stock,
+            0,
+        )
+
+    @property
+    def is_in_stock(self):
+        return (
+            self.product.is_active
+            and self.available_stock > 0
+        )
+
+    @property
+    def stock_status(self):
+        if not self.product.is_active:
+            return "inactive"
+
+        if self.available_stock <= 0:
+            return "out_of_stock"
+
+        if self.available_stock <= self.product.min_stock:
+            return "low_stock"
+
+        return "in_stock"
+
+    def __str__(self):
+        return (
+            f"{self.product.name} · "
+            f"{self.size} / {self.color}"
+        )
 
     class Meta:
         verbose_name = "Product variant"
         verbose_name_plural = "Product variants"
+
         constraints = [
-            models.UniqueConstraint(fields=['product', 'size', 'color'], name='unique_variant_per_product')
+            models.UniqueConstraint(
+                fields=[
+                    "product",
+                    "size",
+                    "color",
+                ],
+                name="unique_variant_per_product",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(stock__gte=0),
+                name="variant_stock_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(reserved_stock__gte=0),
+                name="variant_reserved_stock_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    reserved_stock__lte=models.F("stock")
+                ),
+                name="variant_reserved_stock_lte_stock",
+            ),
         ]
+    # ========== CARRITO ==========
 
-    def __str__(self):
-        return f"{self.product.name} · {self.size} / {self.color}"
-    
-    # ========== CARRITO (Cart) ==========
 class Cart(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='carts')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='carts')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="carts",
+    )
 
-    class Meta:
-        unique_together = ('company', 'user')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="carts",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
 
     def __str__(self):
-        return f"Carrito de {self.user.email} · {self.company.name}"
+        user_name = (
+            self.user.email
+            or self.user.username
+        )
+
+        return (
+            f"Carrito de {user_name} · "
+            f"{self.company.name}"
+        )
 
     @property
     def total(self):
-        return sum(item.subtotal for item in self.items.all())
+        return sum(
+            item.subtotal
+            for item in self.items.all()
+        )
 
     @property
     def total_items(self):
-        return sum(item.quantity for item in self.items.all())
+        return sum(
+            item.quantity
+            for item in self.items.all()
+        )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "user"],
+                name="unique_cart_per_company_user",
+            )
+        ]
 
 
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cart_items')
-    variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_items')
-    quantity = models.PositiveIntegerField(default=1)
-    added_at = models.DateTimeField(auto_now_add=True)
+    cart = models.ForeignKey(
+        Cart,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
 
-    class Meta:
-        unique_together = ('cart', 'product', 'variant')
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="cart_items",
+    )
+
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cart_items",
+    )
+
+    quantity = models.PositiveIntegerField(
+        default=1,
+    )
+
+    added_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    def clean(self):
+        super().clean()
+
+        if self.quantity < 1:
+            raise ValidationError({
+                "quantity": (
+                    "La cantidad debe ser mayor que cero."
+                )
+            })
+
+        if (
+            self.product_id
+            and self.cart_id
+            and self.product.company_id
+            != self.cart.company_id
+        ):
+            raise ValidationError(
+                "El producto no pertenece a la empresa "
+                "del carrito."
+            )
+
+        if (
+            self.variant_id
+            and self.variant.product_id
+            != self.product_id
+        ):
+            raise ValidationError({
+                "variant": (
+                    "La variante seleccionada no pertenece "
+                    "a este producto."
+                )
+            })
+
+        if (
+            self.product_id
+            and self.product.variants.exists()
+            and not self.variant_id
+        ):
+            raise ValidationError({
+                "variant": (
+                    "Debes seleccionar una talla y un color."
+                )
+            })
+
+        if self.product_id and not self.product.is_active:
+            raise ValidationError(
+                "Este producto no está disponible."
+            )
 
     def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
+        variant_text = ""
+
+        if self.variant:
+            variant_text = (
+                f" · {self.variant.size}"
+                f" / {self.variant.color}"
+            )
+
+        return (
+            f"{self.product.name}"
+            f"{variant_text}"
+            f" x {self.quantity}"
+        )
 
     @property
     def unit_price(self):
-        return self.product.sale_price or self.product.price
+        return self.product.current_price
 
     @property
     def subtotal(self):
         return self.unit_price * self.quantity
+
+    @property
+    def available_stock(self):
+        if self.variant_id:
+            return self.variant.available_stock
+
+        return max(
+            self.product.stock
+            - self.product.reserved_stock,
+            0,
+        )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "cart",
+                    "product",
+                    "variant",
+                ],
+                name="unique_product_variant_per_cart",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1),
+                name="cart_item_quantity_gte_one",
+            ),
+        ]
