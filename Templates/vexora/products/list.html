@@ -249,15 +249,15 @@
                                         <div class="btn-group btn-group-sm">
                                             <button type="button" class="btn btn-outline-info btn-icon" 
                                                     onclick="viewProduct('{{ product.id }}')" title="Ver">
-                                                <i class="ri-eye-fill"></i>
+                                                <i class="ri-eye-fill"></i>Visualizar
                                             </button>
                                             <button type="button" class="btn btn-outline-secondary btn-icon" 
                                                     onclick="editModal('{% url 'vexora:edit_product' product.id %}')" title="Editar">
-                                                <i class="ri-pencil-fill"></i>
+                                                <i class="ri-pencil-fill"></i>Editar
                                             </button>
                                             <button type="button" class="btn btn-outline-danger btn-icon" 
                                                     onclick="deleteProduct('{{ product.id }}', '{{ product.name|escapejs }}', '{{ product.item_number }}')" title="Eliminar">
-                                                <i class="ri-delete-bin-6-fill"></i>
+                                                <i class="ri-delete-bin-6-fill"></i>Eliminar
                                             </button>
                                         </div>
                                     </td>

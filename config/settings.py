@@ -85,17 +85,16 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'pruebas',       # Nombre de tu base de datos
+        'NAME': 'prueba',       # Nombre de tu base de datos
         'USER': 'root',               # Usuario de MySQL
         'PASSWORD': '',       # Contraseña de MySQL
         'HOST': 'localhost',               # o la IP del servidor MySQL
         'PORT': '3306',                    # Puerto por defecto de MySQL
         'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES',  time_zone = '-06:00'"
         }
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -114,7 +113,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

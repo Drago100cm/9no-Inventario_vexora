@@ -31,16 +31,7 @@
                                     <i class="ri-add-line me-1"></i>
                                     Nueva Venta
 
-                                </button>
-
-                                <button type="button"
-                                        class="btn btn-outline-primary ms-2"
-                                        onclick="confirmarNuevoProducto()">
-
-                                    <i class="ri-shopping-bag-3-line me-1"></i>
-                                    Agregar producto
-
-                                </button>
+                                </button>                        
                             </div>
                         </div>
 
@@ -129,13 +120,13 @@
                                                         class="btn btn-sm btn-outline-primary"
                                                         onclick="editModal('{% url 'vexora:sales_main_update' %}?id={{ sale.id }}')"
                                                         title="Editar">
-                                                    <i class="ri-edit-2-line"></i>
+                                                    <i class="ri-edit-2-line"></i>Editar
                                                 </button>
                                                 <button type="button"
                                                         class="btn btn-sm btn-outline-danger"
                                                         onclick="deleteSale('{{ sale.id }}')"
                                                         title="Eliminar">
-                                                    <i class="ri-delete-bin-6-line"></i>
+                                                    <i class="ri-delete-bin-6-line"></i>Eliminar
                                                 </button>
                                             </div>
                                         </td>
@@ -179,21 +170,6 @@
 function editModal(url){
     $('#ModalOptions').load(url, function(){
         $(this).modal('show');
-    });
-}
-
-function confirmarNuevoProducto(){
-    Swal.fire({
-        icon: 'question',
-        title: '¿Agregar un producto nuevo?',
-        text: 'Se guardará en tu inventario y aparecerá en tu tienda.',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, agregar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            editModal("{% url 'vexora:product_quick_create' %}");
-        }
     });
 }
 

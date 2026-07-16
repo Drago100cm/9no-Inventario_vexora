@@ -123,7 +123,58 @@
       {% else %}
 
         {% for group in request.user.groups.all %}
+                <div class="module-content">
+                    {% if request.user.is_superuser %}
+                        <a href="{% url 'vexora:user_list' %}" class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
+                            <i class="fas fa-users"></i>
+                            <span>Usuarios</span>
+                        </a>
+                    {% endif %}
+                    {% if "vexora.view_company" in request.user.get_all_permissions %}
+                        <a href="{% url 'vexora:company_list' %}" class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
+                            <i class="fas fa-building"></i>
+                            <span>Empresas</span>
+                        </a>
+                    {% endif %}
+                    {% if "vexora.view_companymember" in request.user.get_all_permissions %}
+                        <a href="{% url 'vexora:member_list' %}" class="menu-item {% if url_name == 'member_list' %}active{% endif %}">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Miembros</span>
+                        </a>
+                    {% endif %}
+                    {% if "vexora.view_role" in request.user.get_all_permissions %}
+                        <a href="{% url 'vexora:group_list' %}" class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
+                            <i class="fas fa-user-group"></i>
+                            <span>Roles</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
 
+            <!-- Inventario -->
+            <div class="menu-module">
+                <button class="module-btn" type="button">
+                    <i class="fas fa-boxes"></i>
+                    <span>Inventario</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </button>
+                <div class="module-content">
+                    <a href="{% url 'vexora:list_products' %}" class="menu-item {% if url_name == 'list_products' %}active{% endif %}">
+                        <i class="fas fa-box-open"></i>
+                        <span>Productos</span>
+                    </a>
+                    <a href="{% url 'vexora:list_suppliers' %}" class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
+                        <i class="fas fa-truck-field"></i>
+                        <span>Proveedores</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Reportes -->
+            <a href="{% url 'vexora:reports_dashboard' %}" 
+               class="menu-item {% if url_name == 'reports_dashboard' or url_name == 'product_reports' or url_name == 'sales_reports' or url_name == 'financial_reports' %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i>
+                <span>Reportes</span>
+            </a>
           {% if group.name == "Admin" or group.name == "Super Admin" %}
 
             <div class="menu-module">
@@ -162,7 +213,6 @@
               </div>
 
             </div>
-
           {% endif %}
 
         {% endfor %}
