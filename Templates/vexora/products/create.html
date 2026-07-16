@@ -102,7 +102,7 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">Fecha de compra <span class="text-danger">*</span></label>
-                {{ form.purchase_date }}
+                <input type="date" class="form-control" name="purchase_date" id="id_purchase_date" value="{{ form.purchase_date.value|default_if_none:'' }}">
                 {% if form.purchase_date.errors %}
                   <div class="text-danger small mt-1">{{ form.purchase_date.errors }}</div>
                 {% endif %}
