@@ -2608,69 +2608,211 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_company(self):
         return self.request.user.company
 
+    
+    class DashboardView(LoginRequiredMixin, TemplateView):
+        template_name = "partials/dashboard.html"
+    
+    
+
+    def get_company(self):
+        return self.request.user.company
+
+    # REEMPLAZA DESDE AQUÍ
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        user = self.request.user
         company = self.get_company()
+
+        # ==========================================
+        # IDENTIFICAR PERMISOS DEL USUARIO
+        # ==========================================
+
+        is_admin_role = (
+            user.is_superuser
+            or user.is_staff
+            or user.groups.filter(
+                name__in=[
+                    "Admin",
+                    "Administrador",
+                    "Super Admin",
+                    "Superusuario",
+                ]
+            ).exists()
+        )
+
+        context["can_view_products"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_product")
+        )
+
+        context["can_view_categories"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_category")
+        )
+
+        context["can_view_suppliers"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_supplier")
+        )
+
+        context["can_view_members"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_companymember")
+        )
+
+        context["can_view_sales"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_sale")
+        )
+
+        # Será verdadero solamente cuando tenga
+        # al menos un permiso administrativo.
+        context["show_admin_dashboard"] = any([
+            context["can_view_products"],
+            context["can_view_categories"],
+            context["can_view_suppliers"],
+            context["can_view_members"],
+            context["can_view_sales"],
+        ])
+
+        context["show_client_dashboard"] = not context[
+            "show_admin_dashboard"
+        ]
+
+        # ==========================================
+        # EMPRESA
+        # ==========================================
+
+        context["company"] = company
 
         if not company:
             messages.warning(
                 self.request,
-                "Debes crear una empresa o aceptar una invitación."
+                "Debes crear una empresa o aceptar una invitación.",
             )
             return context
+
+        # ==========================================
+        # SUSCRIPCIÓN
+        # ==========================================
 
         try:
             subscription = company.subscription
+
         except Subscription.DoesNotExist:
+            subscription = None
+
             messages.warning(
                 self.request,
-                "Tu empresa no tiene una suscripción activa."
+                "Tu empresa no tiene una suscripción activa.",
             )
-            return context
 
-        today = timezone.now().date()
-
-        context["company"] = company
         context["subscription"] = subscription
-        context["subscription_expired"] = (
-            subscription.status != "active"
-            or subscription.end_date < today
-        )
 
-        context["products"] = Product.objects.filter(company=company)
-        context["categories"] = Category.objects.filter(company=company)
-        context["suppliers"] = Supplier.objects.filter(company=company)
-        context["members"] = CompanyMember.objects.filter(company=company)
-        context["sales"] = Sale.objects.filter(company=company)
+        if subscription:
+            today = timezone.now().date()
 
-        context["products_count"] = context["products"].count()
-        context["categories_count"] = context["categories"].count()
-        context["suppliers_count"] = context["suppliers"].count()
-        context["members_count"] = context["members"].count()
+            context["subscription_expired"] = (
+                subscription.status != "active"
+                or (
+                    subscription.end_date
+                    and subscription.end_date < today
+                )
+            )
 
-        completed_sales = context["sales"].filter(status="completed")
+        else:
+            context["subscription_expired"] = True
 
-        context["sales_count"] = completed_sales.count()
+        # ==========================================
+        # PRODUCTOS
+        # Solo se consultan si tiene permiso
+        # ==========================================
 
-        context["sales_total"] = (
-            completed_sales.aggregate(total=Sum("total"))["total"] or 0
-        )
+        if context["can_view_products"]:
+            products = Product.objects.filter(
+                company=company
+            )
 
-        context["low_stock"] = Product.objects.filter(
-            company=company,
-            stock__lte=models.F("min_stock"),
-            is_active=True,
-        ).count()
+            context["products"] = products
+            context["products_count"] = products.count()
 
-        context["recent_sales"] = completed_sales.order_by("-date")[:5]
+            context["low_stock"] = products.filter(
+                stock__lte=models.F("min_stock"),
+                is_active=True,
+            ).count()
 
-        context["recent_products"] = Product.objects.filter(
-            company=company
-        ).order_by("-created_at")[:5]
+            context["recent_products"] = (
+                products
+                .order_by("-created_at")[:5]
+            )
+
+        # ==========================================
+        # CATEGORÍAS
+        # ==========================================
+
+        if context["can_view_categories"]:
+            categories = Category.objects.filter(
+                company=company
+            )
+
+            context["categories"] = categories
+            context["categories_count"] = categories.count()
+
+        # ==========================================
+        # PROVEEDORES
+        # ==========================================
+
+        if context["can_view_suppliers"]:
+            suppliers = Supplier.objects.filter(
+                company=company
+            )
+
+            context["suppliers"] = suppliers
+            context["suppliers_count"] = suppliers.count()
+
+        # ==========================================
+        # COLABORADORES
+        # ==========================================
+
+        if context["can_view_members"]:
+            members = CompanyMember.objects.filter(
+                company=company
+            )
+
+            context["members"] = members
+            context["members_count"] = members.count()
+
+        # ==========================================
+        # VENTAS
+        # ==========================================
+
+        if context["can_view_sales"]:
+            sales = Sale.objects.filter(
+                company=company
+            )
+
+            completed_sales = sales.filter(
+                status="completed"
+            )
+
+            context["sales"] = sales
+            context["sales_count"] = completed_sales.count()
+
+            context["sales_total"] = (
+                completed_sales.aggregate(
+                    total=Sum("total")
+                )["total"]
+                or 0
+            )
+
+            context["recent_sales"] = (
+                completed_sales
+                .order_by("-date")[:5]
+            )
 
         return context
-    
+    # HASTA AQUÍ
 
 # ============================================
 # REPORTES VIEWS
@@ -2682,7 +2824,6 @@ class ReportsDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         company = self.request.user.company
-        
         if not company:
             context['error'] = 'No tienes una empresa asociada'
             return context
@@ -2707,6 +2848,7 @@ class ReportsDashboardView(LoginRequiredMixin, TemplateView):
             context['error'] = f'Error al generar reportes: {str(e)}'
         
         return context
+    
 
 class ProductReportsView(LoginRequiredMixin, TemplateView):
     template_name = 'vexora/reports/product_reports.html'
