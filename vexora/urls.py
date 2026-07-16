@@ -5,13 +5,8 @@ from .api import *
 from .views import SubscriptionPlanListView, SubscriptionChooseView, SubscriptionDetailView
 app_name = 'vexora'
 urlpatterns = [
-    
-    
-    path(
-    "store/cart/add/",
-    views.cart_add,
-    name="cart_add",
-),
+
+
     #----------------------Home----------------------
     path('', HomeView.as_view(), name='home'),
 
@@ -110,19 +105,70 @@ urlpatterns = [
     
     # ============================================
     # STORE URLs (Tienda pública)
-    # ============================================
-    # ============================================
-    # STORE URLs (Tienda pública)
-    # ============================================
-    path('store/cart/update/<int:item_id>/', views.CartUpdateView.as_view(), name='cart_update'),
-path('store/cart/remove/<int:item_id>/', views.CartRemoveView.as_view(), name='cart_remove'),
-    path('store/', views.StoreHomeView.as_view(), name='store_home'),
-    path('store/product/<int:pk>/', views.StoreProductoView.as_view(), name='store_product'),
-    path('store/cart/', views.StoreCarritoView.as_view(), name='store_cart'),
-    path('store/checkout/', views.StoreCheckoutView.as_view(), name='store_checkout'),
-    path('store/confirmation/<int:pk>/', views.StoreConfirmacionView.as_view(), name='store_confirmation'),
-    path('store/cart/count/', views.CartCountView.as_view(), name='cart_count'),
+    
+# ============================================
+# STORE URLs
+# ============================================
 
+path(
+    "store/",
+    views.StoreHomeView.as_view(),
+    name="store_home",
+),
+
+path(
+    "store/product/<int:pk>/",
+    views.StoreProductoView.as_view(),
+    name="store_product",
+),
+
+path(
+    "store/cart/",
+    views.StoreCarritoView.as_view(),
+    name="store_cart",
+),
+
+path(
+    "store/cart/add/",
+    views.cart_add,
+    name="cart_add",
+),
+
+path(
+    "store/cart/update/<int:item_id>/",
+    views.CartUpdateView.as_view(),
+    name="cart_update",
+),
+
+path(
+    "store/cart/remove/<int:item_id>/",
+    views.CartRemoveView.as_view(),
+    name="cart_remove",
+),
+
+path(
+    "store/cart/count/",
+    views.CartCountView.as_view(),
+    name="cart_count",
+),
+
+path(
+    "store/checkout/",
+    views.StoreCheckoutView.as_view(),
+    name="store_checkout",
+),
+
+path(
+    "store/confirmation/<int:pk>/",
+    views.StoreConfirmacionView.as_view(),
+    name="store_confirmation",
+),
+
+path(
+    "store/order/<int:pk>/pdf/",
+    views.store_order_pdf,
+    name="store_order_pdf",
+),
     # API endpoints
     path('api/register/', api_register, name='api_register'),
     path('api/login/', api_login, name='api_login'),

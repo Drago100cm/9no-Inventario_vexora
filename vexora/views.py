@@ -1,4 +1,3 @@
-from pyexpat.errors import messages
 from django.contrib.auth.decorators import login_required
 from urllib import request
 from django.contrib.auth import  login, logout
@@ -33,8 +32,31 @@ from .forms import SiteConfigurationForm, SMTPConfigurationForm
 from django.db.models import Q
 from datetime import datetime
 from django.views.decorators.http import require_POST
+from io import BytesIO
+from decimal import Decimal
 
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+)
+
+from .models import Sale, SaleItem
 # Create your views here.
+logger = logging.getLogger(__name__)
 class HomeView(TemplateView):
     template_name = 'Home/home.html'
 #======Home de la empresa (con slug)======
@@ -71,8 +93,16 @@ class AIChatView(LoginRequiredMixin, FormView):
 
 
 # views.py
-
-
+from .models import (
+    CustomUser,
+    Company,
+    Role,
+    CompanyMember,
+)
+from .forms import (
+    PublicUserRegistrationForm,
+    CustomUserCreationForm,
+)
 #--------------------Configuración del sitio-------------------
 class SiteConfigurationUpdateView(LoginRequiredMixin,UpdateView):
 
@@ -389,26 +419,67 @@ def delete_group(request, pk):
     group.delete()
     messages.success(request, "✅ Grupo eliminado correctamente!")
     return redirect('vexora:group_list')  # ruta a la lista de grupos
+# --------------------- Registro ----------------------
 
-#---------------------Registro----------------------
 class RegisterView(CreateView):
     model = CustomUser
-    form_class = CustomUserCreationForm
+    form_class = PublicUserRegistrationForm
     template_name = "Accounts/register.html"
     success_url = reverse_lazy("vexora:home")
 
     def form_valid(self, form):
         form.instance.is_active = True
+        form.instance.is_staff = False
+        form.instance.is_superuser = False
 
         response = super().form_valid(form)
 
-        # Usuario creado
         user = self.object
 
-        # Iniciar sesión automáticamente=======
+        # Buscar la empresa activa de la tienda
+        company = Company.objects.filter(
+            is_active=True
+        ).first()
+
+        if company:
+            # Crear o buscar el rol Cliente
+            cliente_role, created = Role.objects.get_or_create(
+                company=company,
+                name="Cliente",
+                defaults={
+                    "description": "Cliente de la tienda",
+                    "active": True,
+                }
+            )
+
+            # Relacionar al usuario con la empresa
+            CompanyMember.objects.get_or_create(
+                company=company,
+                user=user,
+                defaults={
+                    "role": cliente_role
+                }
+            )
+
         login(self.request, user)
 
+        messages.success(
+            self.request,
+            "¡Tu cuenta fue creada correctamente!"
+        )
+
         return response
+
+    def form_invalid(self, form):
+        print("========== ERROR EN EL REGISTRO ==========")
+
+        for campo, errores in form.errors.items():
+            print(f"{campo}: {errores}")
+
+        return self.render_to_response(
+            self.get_context_data(form=form)
+        )
+        
 #---------------------Login----------------------
 class CustomLoginView(FormView):
     form_class = CustomAuthenticationForm
@@ -745,16 +816,11 @@ class UserListView(LoginRequiredMixin, ListView):
 
         return redirect("vexora:home")
 
-#=================================================================
-#=================================================================
-#=================================================================
-#=================================================================
-#=================================================================
-#=================================================================
+
 #--------------------Crear usuario -------------------
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = CustomUser
-    form_class = CustomUserCreationForm
+    form_class = PublicUserRegistrationForm
     template_name = "vexora/users/create.html"
     success_url = reverse_lazy("vexora:user_list")
 
@@ -780,7 +846,6 @@ class UserUpdateView(LoginRequiredMixin,UpdateView):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user   # 👈 se lo pasamos al form
         kwargs["company"] = self.request.user.company   # 👈 se lo pasamos al form
-        
         return kwargs
     
     def form_valid(self, form):
@@ -804,29 +869,22 @@ def delete_user(request, pk):
 #-----------------perfil usuario----------------------
 class ProfileView(LoginRequiredMixin, DetailView):
     model = CustomUser
-    template_name = "accounts/profile/profile.html"
-    context_object_name = "profile"
-
-    def get_object(self, queryset=None):
-        # Siempre devuelve el usuario autenticado
-        return self.request.user
+    template_name = 'Accounts/profile/profile.html'
+    context_object_name = 'profile'
+    pk_url_kwarg = 'pk'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
+        company = self.request.user.company if hasattr(self.request.user, 'company') else None
 
+        context['total_pedidos'] = Sale.objects.filter(
+            company=company
+        ).count() if company else 0
 
+        context['ultimos_pedidos'] = Sale.objects.filter(
+            company=company
+        ).order_by('-date')[:5] if company else []
 
-        # Destinos visitados (por reservas confirmadas)
-
-
-        # Puntos de fidelidad simple (ejemplo: 100 puntos por reserva confirmada)
-
-        context.update({
-
-       
-            # Próximos viajes: reservas pendientes o confirmadas (máx 4)
-        })
         return context
     
 #==================== Company Views (Empresas) ====================
@@ -898,6 +956,8 @@ class CompanyCreateView(LoginRequiredMixin,CreateView):
                 user=request.user,
                 role=admin_role
             )
+            
+            request.session["company_id"] = company.id
 
             messages.success(request, "✅ ¡Empresa creada correctamente!")
 
@@ -1575,68 +1635,642 @@ class StoreCarritoView(LoginRequiredMixin, View):
 
 
 class StoreCheckoutView(LoginRequiredMixin, View):
-    template_name = 'vexora/sales/store-checkout.html'
+    template_name = "vexora/sales/store-checkout.html"
 
     def get(self, request):
-        return render(request, self.template_name)
+        cart = get_or_create_cart(request)
+
+        items = cart.items.select_related(
+            "product",
+            "variant",
+        ).all()
+
+        if not items.exists():
+            messages.warning(
+                request,
+                "Tu carrito está vacío.",
+            )
+            return redirect("vexora:store_cart")
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "cart": cart,
+                "items": items,
+            },
+        )
 
     def post(self, request):
-        import json
-        nombre    = request.POST.get('nombre', '')
-        email     = request.POST.get('email', '')
-        telefono  = request.POST.get('telefono', '')
-        direccion = request.POST.get('direccion', '')
-        notas     = request.POST.get('notas', '')
+        # Indica si el formulario fue enviado con fetch/AJAX.
+        is_ajax = (
+            request.headers.get("X-Requested-With")
+            == "XMLHttpRequest"
+        )
 
-        carrito_json = request.POST.get('carrito', '[]')
-        try:
-            carrito = json.loads(carrito_json)
-        except Exception:
-            carrito = []
+        cart = get_or_create_cart(request)
 
-        if not carrito:
-            messages.error(request, 'Tu carrito está vacío.')
-            return redirect('vexora:store_cart')
+        items = list(
+            cart.items.select_related(
+                "product",
+                "variant",
+            ).all()
+        )
+
+        # Carrito vacío
+        if not items:
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "message": "Tu carrito está vacío.",
+                    },
+                    status=400,
+                )
+
+            messages.error(
+                request,
+                "Tu carrito está vacío.",
+            )
+            return redirect("vexora:store_cart")
+
+        # Datos enviados desde el checkout
+        nombre = request.POST.get(
+            "nombre",
+            "",
+        ).strip()
+
+        email = request.POST.get(
+            "email",
+            "",
+        ).strip()
+
+        telefono = request.POST.get(
+            "telefono",
+            "",
+        ).strip()
+
+        direccion = request.POST.get(
+            "direccion",
+            "",
+        ).strip()
+
+        ciudad = request.POST.get(
+            "ciudad",
+            "",
+        ).strip()
+
+        cp = request.POST.get(
+            "cp",
+            "",
+        ).strip()
+
+        estado = request.POST.get(
+            "estado",
+            "",
+        ).strip()
+
+        notas = request.POST.get(
+            "notas",
+            "",
+        ).strip()
+
+        # Validar campos obligatorios
+        if (
+            not nombre
+            or not email
+            or not telefono
+            or not direccion
+        ):
+            mensaje_error = (
+                "Completa nombre, correo, teléfono "
+                "y dirección."
+            )
+
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "message": mensaje_error,
+                    },
+                    status=400,
+                )
+
+            messages.error(
+                request,
+                mensaje_error,
+            )
+
+            return render(
+                request,
+                self.template_name,
+                {
+                    "cart": cart,
+                    "items": items,
+                },
+            )
 
         company = request.user.company
 
+        # Crear la venta
         sale = Sale.objects.create(
             company=company,
             customer_name=nombre,
             customer_email=email,
             customer_phone=telefono,
-            notes=f"Dirección: {direccion}\n{notas}",
-            status='pending',
+            notes=(
+                f"Dirección: {direccion}\n"
+                f"Ciudad: {ciudad}\n"
+                f"Estado: {estado}\n"
+                f"Código postal: {cp}\n"
+                f"Notas: {notas}"
+            ),
+            status="pending",
             user=request.user,
         )
 
         total = 0
-        for item in carrito:
-            try:
-                producto = Product.objects.get(pk=item['id'], is_active=True, company=company)
-                cantidad = int(item.get('cantidad', 1))
-                precio   = float(item.get('precio', producto.sale_price or producto.price))
-                subtotal = precio * cantidad
 
-                SaleItem.objects.create(
-                    sale=sale,
-                    product=producto,
-                    description=f"Talla: {item.get('talla','-')} | Color: {item.get('color','-')}",
-                    quantity=cantidad,
-                    unit_price=precio,
-                    total_price=subtotal,
+        # Crear los productos de la venta
+        for item in items:
+            product = item.product
+            price = item.unit_price
+            subtotal = item.subtotal
+
+            variant_description = ""
+
+            if item.variant:
+                variant_description = (
+                    f"Talla: {item.variant.size} | "
+                    f"Color: {item.variant.color}"
                 )
-                total += subtotal
-            except Product.DoesNotExist:
-                continue
 
+            SaleItem.objects.create(
+                sale=sale,
+                product=product,
+                description=variant_description,
+                quantity=item.quantity,
+                unit_price=price,
+                total_price=subtotal,
+            )
+
+            total += subtotal
+
+        # Guardar totales
         sale.subtotal = total
-        sale.total    = total
-        sale.save()
+        sale.total = total
 
-        return redirect('vexora:store_confirmation', pk=sale.pk)
+        sale.save(
+            update_fields=[
+                "subtotal",
+                "total",
+            ]
+        )
 
-    
+        # Vaciar el carrito
+        cart.items.all().delete()
+
+        # URL de confirmación
+        confirmation_url = reverse(
+            "vexora:store_confirmation",
+            kwargs={
+                "pk": sale.pk,
+            },
+        )
+
+        # URL del PDF
+        pdf_url = reverse(
+            "vexora:store_order_pdf",
+            kwargs={
+                "pk": sale.pk,
+            },
+        )
+
+        # Intentar enviar el PDF por correo
+        email_sent = False
+
+        try:
+            # Generar el mismo PDF que se abre en el navegador
+            pdf_response = store_order_pdf(
+                request,
+                sale.pk,
+            )
+
+            pdf_content = pdf_response.content
+
+            correo_pedido = EmailMessage(
+                subject=(
+                    f"Comprobante del pedido #{sale.pk}"
+                ),
+                body=(
+                    f"Hola {nombre},\n\n"
+                    f"Tu pedido #{sale.pk} fue registrado "
+                    f"correctamente.\n\n"
+                    f"Total del pedido: ${sale.total}\n\n"
+                    f"Adjuntamos tu comprobante en formato "
+                    f"PDF.\n\n"
+                    f"Guarda, imprime o muestra el PDF en la "
+                    f"tienda para validar tu compra y recibir "
+                    f"tu pedido.\n\n"
+                    f"Conserva el comprobante hasta recibir "
+                    f"todos tus productos.\n\n"
+                    f"Gracias por tu compra."
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email],
+            )
+
+            correo_pedido.attach(
+                filename=f"pedido_{sale.pk}.pdf",
+                content=pdf_content,
+                mimetype="application/pdf",
+            )
+
+            resultado_envio = correo_pedido.send(
+                fail_silently=False,
+            )
+
+            email_sent = resultado_envio == 1
+
+        except Exception:
+            # El pedido no se pierde aunque el correo falle.
+            logger.exception(
+                "No se pudo enviar el correo del pedido %s",
+                sale.pk,
+            )
+
+        # Respuesta para tu JavaScript fetch/AJAX
+        if is_ajax:
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "message": (
+                        "Pedido registrado correctamente."
+                    ),
+                    "confirmation_url": confirmation_url,
+                    "pdf_url": pdf_url,
+                    "email_sent": email_sent,
+                }
+            )
+
+        # Respuesta cuando no se utiliza JavaScript
+        messages.success(
+            request,
+            "Tu pedido fue registrado correctamente.",
+        )
+
+        return redirect(confirmation_url)
+def formato_dinero(valor):
+    try:
+        return f"${Decimal(valor):,.2f}"
+    except (TypeError, ValueError):
+        return "$0.00"
+
+
+@login_required
+def store_order_pdf(request, pk):
+    sale = get_object_or_404(Sale, pk=pk)
+
+    # Evita que un cliente descargue pedidos ajenos.
+    if (
+        not request.user.is_superuser
+        and getattr(sale, "user_id", None) != request.user.id
+    ):
+        raise PermissionDenied(
+            "No tienes permiso para consultar este pedido."
+        )
+
+    items = (
+        SaleItem.objects
+        .filter(sale=sale)
+        .select_related("product")
+    )
+
+    buffer = BytesIO()
+
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=15 * mm,
+        leftMargin=15 * mm,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
+        title=f"Pedido {sale.pk}",
+        author="Vexora",
+    )
+
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "PedidoTitle",
+        parent=styles["Title"],
+        alignment=TA_CENTER,
+        fontSize=20,
+        leading=24,
+        textColor=colors.HexColor("#2563EB"),
+        spaceAfter=14,
+    )
+
+    subtitle_style = ParagraphStyle(
+        "PedidoSubtitle",
+        parent=styles["Heading2"],
+        fontSize=12,
+        textColor=colors.HexColor("#1E293B"),
+        spaceBefore=8,
+        spaceAfter=7,
+    )
+
+    normal_style = ParagraphStyle(
+        "PedidoNormal",
+        parent=styles["BodyText"],
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor("#334155"),
+    )
+
+    story = []
+
+    story.append(
+        Paragraph("Comprobante de pedido", title_style)
+    )
+
+    story.append(
+        Paragraph(
+            f"<b>Número de pedido:</b> #{sale.pk}",
+            normal_style,
+        )
+    )
+
+    fecha = getattr(sale, "created_at", None)
+
+    if fecha:
+        story.append(
+            Paragraph(
+                f"<b>Fecha:</b> "
+                f"{fecha.strftime('%d/%m/%Y %H:%M')}",
+                normal_style,
+            )
+        )
+
+    cliente = getattr(sale, "customer_name", "") or (
+        request.user.get_full_name()
+        or request.user.username
+    )
+
+    correo = getattr(sale, "customer_email", "") or (
+        request.user.email
+    )
+
+    telefono = getattr(sale, "customer_phone", "")
+
+    story.append(Spacer(1, 7))
+    story.append(Paragraph("Datos del cliente", subtitle_style))
+
+    story.append(
+        Paragraph(
+            f"<b>Cliente:</b> {cliente}",
+            normal_style,
+        )
+    )
+
+    if correo:
+        story.append(
+            Paragraph(
+                f"<b>Correo:</b> {correo}",
+                normal_style,
+            )
+        )
+
+    if telefono:
+        story.append(
+            Paragraph(
+                f"<b>Teléfono:</b> {telefono}",
+                normal_style,
+            )
+        )
+
+    notas = getattr(sale, "notes", "")
+
+    if notas:
+        notas_pdf = str(notas).replace("\n", "<br/>")
+
+        story.append(
+            Paragraph(
+                f"<b>Información de envío:</b><br/>{notas_pdf}",
+                normal_style,
+            )
+        )
+
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Detalles del pedido", subtitle_style))
+
+    table_data = [
+        [
+            Paragraph("<b>Producto</b>", normal_style),
+            Paragraph("<b>Cantidad</b>", normal_style),
+            Paragraph("<b>Precio</b>", normal_style),
+            Paragraph("<b>Subtotal</b>", normal_style),
+        ]
+    ]
+
+    total_calculado = Decimal("0.00")
+
+    for item in items:
+        product = getattr(item, "product", None)
+        product_name = getattr(
+            product,
+            "name",
+            "Producto",
+        )
+
+        description = getattr(item, "description", "")
+        quantity = getattr(item, "quantity", 0)
+        unit_price = getattr(
+            item,
+            "unit_price",
+            Decimal("0.00"),
+        )
+
+        subtotal = getattr(item, "total_price", None)
+
+        if subtotal is None:
+            subtotal = Decimal(quantity) * Decimal(unit_price)
+
+        total_calculado += Decimal(subtotal)
+
+        product_text = product_name
+
+        if description:
+            product_text += f"<br/><font size='7'>{description}</font>"
+
+        table_data.append(
+            [
+                Paragraph(product_text, normal_style),
+                str(quantity),
+                formato_dinero(unit_price),
+                formato_dinero(subtotal),
+            ]
+        )
+
+    products_table = Table(
+        table_data,
+        colWidths=[
+            84 * mm,
+            24 * mm,
+            31 * mm,
+            31 * mm,
+        ],
+        repeatRows=1,
+    )
+
+    products_table.setStyle(
+        TableStyle(
+            [
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.HexColor("#2563EB"),
+                ),
+                (
+                    "TEXTCOLOR",
+                    (0, 0),
+                    (-1, 0),
+                    colors.white,
+                ),
+                (
+                    "ALIGN",
+                    (1, 1),
+                    (-1, -1),
+                    "CENTER",
+                ),
+                (
+                    "VALIGN",
+                    (0, 0),
+                    (-1, -1),
+                    "MIDDLE",
+                ),
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -1),
+                    0.5,
+                    colors.HexColor("#CBD5E1"),
+                ),
+                (
+                    "ROWBACKGROUNDS",
+                    (0, 1),
+                    (-1, -1),
+                    [
+                        colors.white,
+                        colors.HexColor("#F8FAFC"),
+                    ],
+                ),
+                (
+                    "TOPPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    7,
+                ),
+                (
+                    "BOTTOMPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    7,
+                ),
+            ]
+        )
+    )
+
+    story.append(products_table)
+    story.append(Spacer(1, 14))
+
+    total = getattr(sale, "total", None)
+
+    if total is None:
+        total = total_calculado
+
+    total_table = Table(
+        [
+            [
+                Paragraph("<b>Total del pedido:</b>", normal_style),
+                Paragraph(
+                    f"<b>{formato_dinero(total)}</b>",
+                    normal_style,
+                ),
+            ]
+        ],
+        colWidths=[130 * mm, 40 * mm],
+    )
+
+    total_table.setStyle(
+        TableStyle(
+            [
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, -1),
+                    colors.HexColor("#E2E8F0"),
+                ),
+                (
+                    "ALIGN",
+                    (1, 0),
+                    (1, 0),
+                    "RIGHT",
+                ),
+                (
+                    "BOX",
+                    (0, 0),
+                    (-1, -1),
+                    0.8,
+                    colors.HexColor("#94A3B8"),
+                ),
+                (
+                    "TOPPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    10,
+                ),
+                (
+                    "BOTTOMPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    10,
+                ),
+            ]
+        )
+    )
+
+    story.append(total_table)
+    story.append(Spacer(1, 18))
+
+    story.append(
+        Paragraph(
+            "Gracias por realizar tu pedido.",
+            ParagraphStyle(
+                "Gracias",
+                parent=normal_style,
+                alignment=TA_CENTER,
+                textColor=colors.HexColor("#64748B"),
+            ),
+        )
+    )
+
+    document.build(story)
+
+    pdf = buffer.getvalue()
+    buffer.close()
+
+    response = HttpResponse(
+        pdf,
+        content_type="application/pdf",
+    )
+
+    response["Content-Disposition"] = (
+        f'inline; filename="pedido_{sale.pk}.pdf"'
+    )
+
+    return response
 class CartUpdateView(LoginRequiredMixin, View):
     def post(self, request, item_id):
         cart = get_or_create_cart(request)
@@ -1672,7 +2306,6 @@ class StoreConfirmacionView(LoginRequiredMixin, View):
         return render(request, self.template_name, {'sale': sale, 'items': items})
     
     from django.utils import timezone
-from django.http import JsonResponse
 
 class ProductQuickCreateView(LoginRequiredMixin, View):
     def get(self, request):

@@ -4,7 +4,7 @@
 {% block title %}- Pedido confirmado{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'vexora/css/store-confirm.css' %}">
+<link rel="stylesheet" href="{% static '/css/store-confirm.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -47,7 +47,6 @@
 
     <div class="btns-conf">
       <a href="{% url 'vexora:store_home' %}" class="btn-cp">Seguir comprando</a>
-      <a href="{% url 'vexora:list_sales' %}" class="btn-cs">Ver mis pedidos</a>
     </div>
   </div>
 </div>

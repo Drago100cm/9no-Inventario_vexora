@@ -44,3 +44,42 @@
   text-decoration: none; text-align: center; transition: .2s;
 }
 .btn-cs:hover { background: rgba(255,255,255,.1); color: white; }
+
+.entrega-pedido-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 18px;
+  margin-top: 20px;
+  color: #ffffff;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 16px;
+}
+
+.entrega-pedido-aviso > i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-radius: 14px;
+  font-size: 20px;
+}
+
+.entrega-pedido-aviso strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.entrega-pedido-aviso p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 13px;
+  line-height: 1.55;
+}
