@@ -200,6 +200,50 @@ class PublicUserRegistrationForm(UserCreationForm):
             )
 
         return email
+    
+#--------------------Crear usuario -------------------
+class CustomUserRegisterForm(UserCreationForm):
+
+    def __init__(self, *args, **kwargs):
+        company = kwargs.pop("company", None)
+        super().__init__(*args, **kwargs)
+
+        self.fields['avatar'].widget.attrs.update({
+            'class': 'form-control'
+        })
+
+        self.fields['email'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        self.fields['username'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        self.fields['first_name'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        self.fields['last_name'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        self.fields['phone'].widget.attrs.update({
+            'class': 'form-control'
+        })
+        self.fields['password1'].widget.attrs.update({   
+            'class': 'form-control'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'form-control'
+        })
+    class Meta:
+        model = CustomUser
+        fields = ["avatar","email", "username", "first_name", "last_name", "phone", "password1", "password2", "is_staff", "is_active"]
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if CustomUser.objects.filter(email=email).exists():
+            raise forms.ValidationError("Este correo ya está registrado.")
+        return email
+    
+#--------------------Actualizar Usuario -------------------
 # -------------------- Crear usuario dentro de una empresa --------------------
 
 class CustomUserCreationForm(UserCreationForm):
@@ -917,7 +961,12 @@ class MemberForm(forms.ModelForm):
                 current_user = self.instance.user
                 # Asegurarse de que el usuario actual esté en el queryset
                 if current_user not in self.fields['user'].queryset:
-                    self.fields['user'].queryset = self.fields['user'].queryset | CustomUser.objects.filter(id=current_user.id)
+                    if self.instance and self.instance.pk:
+                        current_user = self.instance.user
+                        # Usar union() en lugar de |
+                        self.fields['user'].queryset = self.fields['user'].queryset.union(
+                            CustomUser.objects.filter(id=current_user.id)
+                        )
         
         # Marcar el campo 'company' como hidden
         self.fields['company'].widget = forms.HiddenInput()

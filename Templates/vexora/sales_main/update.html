@@ -88,7 +88,6 @@
                 color: #6c757d !important;
             }
             
-            /* Asegurar que el select sea visible */
             .bootstrap-select .dropdown-toggle {
                 background-color: #ffffff !important;
                 border: 1px solid #ced4da !important;
@@ -471,10 +470,16 @@
     function loadProductsFromDjango() {
         console.log('Cargando productos desde Django...');
         
-        const productElements = document.querySelectorAll('.product-data');
+        // Buscar en el contenedor
+        const container = document.getElementById('productsDataContainer');
+        if (!container) {
+            console.error('❌ No se encontró el contenedor de productos');
+            return;
+        }
+        
+        const productElements = container.querySelectorAll('.product-data');
         console.log('Elementos de producto encontrados:', productElements.length);
         
-        // Verificar si hay elementos
         if (productElements.length === 0) {
             console.warn('⚠️ No se encontraron elementos .product-data en el DOM');
             const select = document.getElementById('productSelect');
@@ -609,17 +614,25 @@
             const itemsData = JSON.parse(itemsJsonElement.textContent);
             console.log('Items de la venta cargados:', itemsData);
             
+            // Verificar que itemsData sea un array
+            if (!Array.isArray(itemsData)) {
+                console.error('Los items no son un array:', itemsData);
+                saleItems = [];
+                renderItemsTable();
+                return;
+            }
+            
             saleItems = [];
             
             itemsData.forEach(item => {
                 saleItems.push({
-                    productId: item.product_id,
-                    productName: item.product_name,
+                    productId: item.product_id || item.id,
+                    productName: item.product_name || item.name || 'Producto sin nombre',
                     sku: item.sku || 'Sin SKU',
                     stock: item.stock || 0,
-                    quantity: item.quantity,
-                    unitPrice: item.unit_price,
-                    discount: item.discount || 0
+                    quantity: parseInt(item.quantity) || 1,
+                    unitPrice: parseFloat(item.unit_price || item.price || 0),
+                    discount: parseFloat(item.discount || 0)
                 });
             });
             
@@ -627,6 +640,17 @@
             
         } catch (error) {
             console.error('Error al cargar items de la venta:', error);
+            // Mostrar error en la tabla
+            const tbody = document.querySelector('#saleItemsTable tbody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-danger">
+                            Error al cargar los productos: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
         }
     }
 
@@ -671,6 +695,8 @@
 
     function renderItemsTable() {
         const tbody = document.querySelector('#saleItemsTable tbody');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
 
         if (saleItems.length === 0) {
@@ -1044,7 +1070,14 @@
             console.log('📂 Modal mostrado, recargando productos...');
             setTimeout(function() {
                 loadProductsFromDjango();
+                loadSaleItems();
             }, 300);
         }
     });
+
+    // Función global para eliminar items
+    window.removeItem = function(index) {
+        saleItems.splice(index, 1);
+        renderItemsTable();
+    };
 </script>

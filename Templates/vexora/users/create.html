@@ -8,16 +8,6 @@
       </h5>
       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
     </div>
-      <ul class="nav nav-tabs nav-justified" role="tablist">
-         <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#general_info" role="tab">
-               <i class="ri-information-line me-1"></i> Información General
-            </a>
-         </li>
-
-      </ul>
-
-
     <form method="POST" enctype="multipart/form-data" action="{% url 'vexora:user_create'%}">
       {% csrf_token %}
       <div class="modal-body">
@@ -83,7 +73,6 @@
       </div>
       <div class="modal-footer">
         <div class="hstack gap-2 justify-content-end">
-          <button type="button" class="btn btn-sm btn-secondary" id="next-tab-btn">Siguiente</button>
           <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cerrar</button>
           <button type="submit" class="btn btn-sm btn-success" id="update-btn">Guardar</button>
         </div>

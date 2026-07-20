@@ -1,7 +1,7 @@
 from django.db.models import Sum, Count, Avg, F, Q, Min, Max
-from django.db.models.functions import TruncDate, TruncMonth
+from django.db.models.functions import TruncDate, TruncMonth, TruncWeek, TruncYear
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from decimal import Decimal
 from ..models import Product, Sale, SaleItem, Category, Supplier
 
@@ -133,38 +133,78 @@ class ReportService:
         ).order_by('-count')
     
     # ============================================
-    # REPORTES DE VENTAS
+    # REPORTES DE VENTAS - CORREGIDO
     # ============================================
     
     def get_sales_by_period(self, period='day'):
-        """Ventas por período (día, semana, mes, año)"""
+        """
+        Ventas por período (día, semana, mes, año)
+        CORREGIDO: Usa TruncDate/TruncMonth con manejo de zona horaria
+        """
         today = timezone.now()
         
+        # Definir el truncamiento según el período
         if period == 'day':
-            start = today.replace(hour=0, minute=0, second=0, microsecond=0)
+            # Usar TruncDate para agrupar por día
             trunc = TruncDate('created_at')
         elif period == 'week':
-            start = today - timedelta(days=7)
-            trunc = TruncDate('created_at')
+            # Usar TruncWeek para agrupar por semana
+            trunc = TruncWeek('created_at')
         elif period == 'month':
-            start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            trunc = TruncDate('created_at')
-        elif period == 'year':
-            start = today.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            # Usar TruncMonth para agrupar por mes
             trunc = TruncMonth('created_at')
+        elif period == 'year':
+            # Para año, usamos TruncMonth y luego agrupamos por año manualmente
+            # o usamos TruncYear si está disponible
+            try:
+                from django.db.models.functions import TruncYear
+                trunc = TruncYear('created_at')
+            except:
+                # Si TruncYear no está disponible, usamos TruncMonth y procesamos después
+                trunc = TruncMonth('created_at')
         else:
-            start = today.replace(hour=0, minute=0, second=0, microsecond=0)
             trunc = TruncDate('created_at')
         
-        return Sale.objects.filter(
+        # Consulta principal
+        query = Sale.objects.filter(
             company=self.company,
-            created_at__gte=start,
             status='completed'
         ).annotate(period=trunc).values('period').annotate(
             total_sales=Sum('total'),
             count=Count('id'),
             avg_sale=Avg('total')
-        ).order_by('period')
+        ).order_by('-period')
+        
+        # Convertir a lista para evitar problemas con la zona horaria
+        result = list(query)
+        
+        # Si es 'year' y usamos TruncMonth, agrupar manualmente por año
+        if period == 'year' and result:
+            yearly_data = {}
+            for item in result:
+                if item['period']:
+                    year = item['period'].year
+                    if year not in yearly_data:
+                        yearly_data[year] = {
+                            'period': datetime(year, 1, 1).date(),
+                            'total_sales': Decimal('0.00'),
+                            'count': 0,
+                            'avg_sale': Decimal('0.00')
+                        }
+                    yearly_data[year]['total_sales'] += item['total_sales'] or Decimal('0.00')
+                    yearly_data[year]['count'] += item['count'] or 0
+            
+            # Recalcular promedios
+            for year, data in yearly_data.items():
+                if data['count'] > 0:
+                    data['avg_sale'] = data['total_sales'] / data['count']
+                else:
+                    data['avg_sale'] = Decimal('0.00')
+            
+            result = list(yearly_data.values())
+            result.sort(key=lambda x: x['period'], reverse=True)
+        
+        return result
     
     def get_sales_by_date_range(self, start_date, end_date):
         """Ventas por rango de fechas"""

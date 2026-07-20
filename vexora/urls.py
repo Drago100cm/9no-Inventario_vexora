@@ -9,7 +9,7 @@ urlpatterns = [
 
     #----------------------Home----------------------
     path('', HomeView.as_view(), name='home'),
-    path('Dashboard',DashboardView.as_view(),name='dashboard'),
+    path('Dashboard/',DashboardView.as_view(),name='dashboard'),
 
     #----------------------Autenticación----------------------
     path("login/", CustomLoginView.as_view(), name="login"),
@@ -136,6 +136,7 @@ urlpatterns = [
     path('sales/', views.SalesListView.as_view(), name='list_sales'),
     path('sales/create/', views.SalesCreateView.as_view(), name='create_sale'),
     path('sales/update/<int:id>/', views.SalesUpdateView.as_view(), name='edit_sale'),
+    path('sales/delete/<int:pk>/', views.delete_sale, name='delete_sale'),
 
     # ============================================
     # SALES MAIN URLs (Ventas Frontend)
@@ -143,6 +144,7 @@ urlpatterns = [
     path('sales-main/', views.SalesMainListView.as_view(), name='sales_main_list'),
     path('sales-main/create/', views.SalesMainCreateView.as_view(), name='sales_main_create'),
     path('sales-main/update/', views.SalesMainUpdateView.as_view(), name='sales_main_update'),
+    path('sales-main/delete/<int:pk>/', views.delete_sale, name='sales_main_delete'),
     
     # ============================================
     # STORE URLs (Tienda pública)

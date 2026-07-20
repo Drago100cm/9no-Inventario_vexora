@@ -132,7 +132,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         """Retorna el nombre corto del usuario"""
         return self.first_name or self.username or self.email
-    companies = models.ManyToManyField(Company,related_name="members",blank=True)
     @property
     def company(self):
         # Si es propietario

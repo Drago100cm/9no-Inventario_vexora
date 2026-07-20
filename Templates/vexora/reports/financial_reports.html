@@ -1,412 +1,506 @@
 {% extends 'partials/base.html' %}
 {% load static %}
 
-{% block title %} | Reportes Financieros{% endblock %}
-
-{% block extra_css %}
-<style>
-    .border-left-primary { border-left: 4px solid #4e73df !important; }
-    .border-left-success { border-left: 4px solid #1cc88a !important; }
-    .border-left-danger { border-left: 4px solid #e74a3b !important; }
-    .border-left-info { border-left: 4px solid #36b9cc !important; }
-    
-    .badge {
-        padding: 0.5rem 0.75rem;
-        font-weight: 500;
-    }
-    
-    .badge.bg-success { background-color: #1cc88a !important; }
-    .badge.bg-warning { background-color: #f6c23e !important; color: #000; }
-    .badge.bg-danger { background-color: #e74a3b !important; }
-    
-    .progress {
-        height: 20px;
-        border-radius: 10px;
-        background-color: #eaecf4;
-    }
-    
-    .progress-bar {
-        border-radius: 10px;
-        font-size: 12px;
-        font-weight: 600;
-        line-height: 20px;
-    }
-    
-    .report-card {
-        height: 100%;
-        min-height: 300px;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .report-card .card-body {
-        flex: 1;
-        overflow-y: auto;
-    }
-    
-    .report-card .card-body::-webkit-scrollbar {
-        width: 4px;
-    }
-    
-    .report-card .card-body::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-    }
-    
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    
-    .card-header .btn {
-        white-space: nowrap;
-    }
-    
-    .summary-card {
-        text-align: center;
-        padding: 15px;
-        border-radius: 8px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    @media (max-width: 768px) {
-        .card-header {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        .card-header .btn {
-            width: 100%;
-        }
-    }
-</style>
+{% block title %}
+- Reportes Financieros
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-0">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0" style="color: var(--text-color) !important;">💵 Reportes Financieros</h1>
-        <div>
-            <a href="{% url 'vexora:export_financial_pdf' %}" class="btn btn-sm btn-danger shadow-sm" target="_blank">
-                <i class="fas fa-file-pdf"></i> Exportar Todo
-            </a>
-            <a href="{% url 'vexora:reports_dashboard' %}" class="btn btn-sm btn-secondary shadow-sm">
-                <i class="fas fa-arrow-left"></i> Volver al Dashboard
-            </a>
-            <button class="btn btn-sm btn-primary shadow-sm" onclick="window.location.reload()">
-                <i class="fas fa-sync fa-sm"></i> Actualizar
-            </button>
-        </div>
-    </div>
-    
-    {% if error %}
-    <div class="alert alert-warning">
-        <i class="fas fa-exclamation-triangle"></i> {{ error }}
-    </div>
-    {% else %}
-    
-    <!-- Cards de resumen - 4 columnas iguales -->
-    <div class="row">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Ingresos (30 días)</div>
-                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
-                                ${{ monthly_financial.revenue|floatformat:2|default:"0.00" }}
+<div class="main-content">
+    <div class="page-content">
+        <div class="container-fluid">
+            {% block pagetitle %}
+            {% endblock %}
+
+            <!-- Mensajes -->
+            {% if messages %}
+            {% for m in messages %}
+                <script>
+                Swal.fire({
+                    position: 'center',
+                    icon: '{{ m.level_tag }}' == 'error' ? 'error' : 'success',
+                    title: '{{ m }}',
+                    showConfirmButton: false,
+                    timer: 2500
+                })
+                </script>
+            {% endfor %}
+            {% endif %}
+            <!-- Navegación entre Reportes -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow mb-4">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h1 class="mb-0"><i class="fas fa-coins me-2"></i> Reportes Financieros</h1>
+                        </div>
+                        <div class="card-body">
+                            <nav class="row g-2" aria-label="Navegación de reportes">
+                                <!-- Dashboard -->
+                                <div class="col-md-3 col-sm-6 mb-2">
+                                    <a href="{% url 'vexora:reports_dashboard' %}" 
+                                    class="btn btn-outline-secondary btn-block w-100 text-start {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}"
+                                    style="border-color: #858796;">
+                                        <i class="fas fa-tachometer-alt me-2"></i> Reportes
+                                    </a>
+                                </div>
+                                <!-- Productos -->
+                                <div class="col-md-3 col-sm-6 mb-2">
+                                    <a href="{% url 'vexora:product_reports' %}" 
+                                    class="btn btn-outline-primary btn-block w-100 text-start {% if request.resolver_match.url_name == 'product_reports' %}active{% endif %}"
+                                    style="border-color: #4e73df;">
+                                        <i class="fas fa-boxes me-2"></i> Productos
+                                    </a>
+                                </div>
+                                <!-- Ventas -->
+                                <div class="col-md-3 col-sm-6 mb-2">
+                                    <a href="{% url 'vexora:sales_reports' %}" 
+                                    class="btn btn-outline-success btn-block w-100 text-start {% if request.resolver_match.url_name == 'sales_reports' %}active{% endif %}"
+                                    style="border-color: #1cc88a;">
+                                        <i class="fas fa-cash-register me-2"></i> Ventas
+                                    </a>
+                                </div>
+                                <!-- Financieros -->
+                                <div class="col-md-3 col-sm-6 mb-2">
+                                    <a href="{% url 'vexora:financial_reports' %}" 
+                                    class="btn btn-outline-info btn-block w-100 text-start {% if request.resolver_match.url_name == 'financial_reports' %}active{% endif %}"
+                                    style="border-color: #36b9cc;">
+                                        <i class="fas fa-coins me-2"></i> Financieros
+                                    </a>
+                                </div>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> {{ error }}
+            </div>
+            {% elif not weekly_financial.revenue and not monthly_financial.revenue and not yearly_financial.revenue %}
+            <!-- No hay datos financieros -->
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="fas fa-info-circle me-3 fa-2x"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">No hay datos financieros disponibles</h5>
+                    <p class="mb-2">Para generar reportes financieros primero debes registrar ventas en el sistema.</p>
+                    <button type="button"
+                            class="btn btn-success btn-sm d-flex align-items-center"
+                            onclick="editModal('{% url 'vexora:create_sale' %}')">
+                        <i class="ri-add-line me-1 align-bottom"></i>
+                        <span>Registrar Venta</span>
+                    </button>
+                </div>
+            </div>
+            {% else %}
+
+            <!-- Cards de resumen - 4 columnas iguales -->
+            <div class="row">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Ingresos (30 días)</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                        ${{ monthly_financial.revenue|floatformat:2|default:"0.00" }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-arrow-up fa-2x text-gray-300"></i>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-arrow-up fa-2x text-gray-300"></i>
-                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Costos (30 días)</div>
-                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
-                                ${{ monthly_financial.cost|floatformat:2|default:"0.00" }}
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-danger shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Costos (30 días)</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                        ${{ monthly_financial.cost|floatformat:2|default:"0.00" }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-arrow-down fa-2x text-gray-300"></i>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-arrow-down fa-2x text-gray-300"></i>
-                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Ganancia (30 días)</div>
-                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
-                                ${{ monthly_financial.profit|floatformat:2|default:"0.00" }}
-                            </div>
-                            <small style="color: var(--text-color) !important; opacity: 0.7;">
-                                Margen: {{ monthly_financial.profit_margin|floatformat:1|default:"0" }}%
-                            </small>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Inventario Valorizado</div>
-                            <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
-                                ${{ inventory_value.total_value|floatformat:2|default:"0.00" }}
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Ganancia (30 días)</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                        ${{ monthly_financial.profit|floatformat:2|default:"0.00" }}
+                                    </div>
+                                    <small style="color: var(--text-color) !important; opacity: 0.7;">
+                                        Margen: {{ monthly_financial.profit_margin|floatformat:1|default:"0" }}%
+                                    </small>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Inventario Valorizado</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">
+                                        ${{ inventory_value.total_value|floatformat:2|default:"0.00" }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            <!-- Nav Tabs para los reportes financieros -->
+            <ul class="nav nav-tabs mb-3" id="financialReportsCardsTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="weekly-fin-tab" data-bs-toggle="tab" data-bs-target="#weekly-fin" type="button" role="tab" aria-controls="weekly-fin" aria-selected="true">
+                        <i class="fas fa-calendar-week"></i> Semanal
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="monthly-fin-tab" data-bs-toggle="tab" data-bs-target="#monthly-fin" type="button" role="tab" aria-controls="monthly-fin" aria-selected="false">
+                        <i class="fas fa-calendar-alt"></i> Mensual
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="yearly-fin-tab" data-bs-toggle="tab" data-bs-target="#yearly-fin" type="button" role="tab" aria-controls="yearly-fin" aria-selected="false">
+                        <i class="fas fa-calendar"></i> Anual
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="profit-tab" data-bs-toggle="tab" data-bs-target="#profit" type="button" role="tab" aria-controls="profit" aria-selected="false">
+                        <i class="fas fa-tags"></i> Rentabilidad
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button" role="tab" aria-controls="cancelled" aria-selected="false">
+                        <i class="fas fa-times-circle"></i> Canceladas
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="financialReportsCardsTabContent">
+                <!-- Pestaña 1: Resumen Semanal -->
+                <div class="tab-pane fade show active" id="weekly-fin" role="tabpanel" aria-labelledby="weekly-fin-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow h-100 report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-calendar-week me-2"></i> Resumen Semanal</h6>
+                                    <a href="{% url 'vexora:export_financial_weekly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <div class="summary-card mb-2">
+                                        <h6 style="color: var(--text-color) !important;">Ingresos</h6>
+                                        <h3 class="text-success">${{ weekly_financial.revenue|floatformat:2|default:"0.00" }}</h3>
+                                    </div>
+                                    <div class="summary-card mb-2">
+                                        <h6 style="color: var(--text-color) !important;">Costos</h6>
+                                        <h3 class="text-danger">${{ weekly_financial.cost|floatformat:2|default:"0.00" }}</h3>
+                                    </div>
+                                    <div class="summary-card mb-2" style="background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.2);">
+                                        <h6 style="color: var(--text-color) !important;">Ganancia</h6>
+                                        <h3 class="text-primary">${{ weekly_financial.profit|floatformat:2|default:"0.00" }}</h3>
+                                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                                            Margen: {{ weekly_financial.profit_margin|floatformat:1|default:"0" }}%
+                                        </small>
+                                    </div>
+                                    <hr style="border-color: rgba(255,255,255,0.1);">
+                                    <div class="text-center mt-auto">
+                                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                                            Ventas: {{ weekly_financial.sales_count|default:"0" }} | Items: {{ weekly_financial.items_sold|default:"0" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña 2: Resumen Mensual -->
+                <div class="tab-pane fade" id="monthly-fin" role="tabpanel" aria-labelledby="monthly-fin-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow h-100 report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-success"><i class="fas fa-calendar-alt me-2"></i> Resumen Mensual</h6>
+                                    <a href="{% url 'vexora:export_financial_monthly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <div class="summary-card mb-2">
+                                        <h6 style="color: var(--text-color) !important;">Ingresos</h6>
+                                        <h3 class="text-success">${{ monthly_financial.revenue|floatformat:2|default:"0.00" }}</h3>
+                                    </div>
+                                    <div class="summary-card mb-2">
+                                        <h6 style="color: var(--text-color) !important;">Costos</h6>
+                                        <h3 class="text-danger">${{ monthly_financial.cost|floatformat:2|default:"0.00" }}</h3>
+                                    </div>
+                                    <div class="summary-card mb-2" style="background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.2);">
+                                        <h6 style="color: var(--text-color) !important;">Ganancia</h6>
+                                        <h3 class="text-primary">${{ monthly_financial.profit|floatformat:2|default:"0.00" }}</h3>
+                                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                                            Margen: {{ monthly_financial.profit_margin|floatformat:1|default:"0" }}%
+                                        </small>
+                                    </div>
+                                    <hr style="border-color: rgba(255,255,255,0.1);">
+                                    <div class="text-center mt-auto">
+                                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                                            Ventas: {{ monthly_financial.sales_count|default:"0" }} | Items: {{ monthly_financial.items_sold|default:"0" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña 3: Resumen Anual -->
+                <div class="tab-pane fade" id="yearly-fin" role="tabpanel" aria-labelledby="yearly-fin-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow h-100 report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-info"><i class="fas fa-calendar me-2"></i> Resumen Anual</h6>
+                                    <a href="{% url 'vexora:export_financial_yearly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <div class="summary-card mb-2">
+                                        <h6 style="color: var(--text-color) !important;">Ingresos</h6>
+                                        <h3 class="text-success">${{ yearly_financial.revenue|floatformat:2|default:"0.00" }}</h3>
+                                    </div>
+                                    <div class="summary-card mb-2">
+                                        <h6 style="color: var(--text-color) !important;">Costos</h6>
+                                        <h3 class="text-danger">${{ yearly_financial.cost|floatformat:2|default:"0.00" }}</h3>
+                                    </div>
+                                    <div class="summary-card mb-2" style="background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.2);">
+                                        <h6 style="color: var(--text-color) !important;">Ganancia</h6>
+                                        <h3 class="text-primary">${{ yearly_financial.profit|floatformat:2|default:"0.00" }}</h3>
+                                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                                            Margen: {{ yearly_financial.profit_margin|floatformat:1|default:"0" }}%
+                                        </small>
+                                    </div>
+                                    <hr style="border-color: rgba(255,255,255,0.1);">
+                                    <div class="text-center mt-auto">
+                                        <small style="color: var(--text-color) !important; opacity: 0.7;">
+                                            Ventas: {{ yearly_financial.sales_count|default:"0" }} | Items: {{ yearly_financial.items_sold|default:"0" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña 4: Rentabilidad por Producto -->
+                <div class="tab-pane fade" id="profit" role="tabpanel" aria-labelledby="profit-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-tags me-2"></i> Rentabilidad por Producto</h6>
+                                    <a href="{% url 'vexora:export_financial_profitability_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;" id="tabla-reportes">
+                                            <thead>
+                                                <tr>
+                                                    <th data-sort="name">Producto</th>
+                                                    <th data-sort="name">Categoría</th>
+                                                    <th data-sort="name">Precio</th>
+                                                    <th data-sort="name">Costo</th>
+                                                    <th data-sort="name">Margen/Unidad</th>
+                                                    <th data-sort="name">Margen %</th>
+                                                    <th data-sort="name">Unidades Vendidas</th>
+                                                    <th data-sort="name">Ingresos</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for product in product_profitability %}
+                                                <tr>
+                                                    <td>{{ product.product_name|default:"-"|truncatechars:20 }}</td>
+                                                    <td>{{ product.category|default:"-"|truncatechars:15 }}</td>
+                                                    <td>${{ product.sale_price|floatformat:2|default:"0.00" }}</td>
+                                                    <td>${{ product.price|floatformat:2|default:"0.00" }}</td>
+                                                    <td>
+                                                        {% if product.margin_per_unit > 0 %}
+                                                            <span class="text-success">+${{ product.margin_per_unit|floatformat:2 }}</span>
+                                                        {% else %}
+                                                            <span class="text-danger">${{ product.margin_per_unit|floatformat:2 }}</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <div class="progress" style="height: 20px;">
+                                                            <div class="progress-bar {% if product.margin_percentage > 50 %}bg-success{% elif product.margin_percentage > 25 %}bg-info{% else %}bg-warning{% endif %}" 
+                                                                 role="progressbar" 
+                                                                 style="width: {{ product.margin_percentage|floatformat:0 }}%;" 
+                                                                 aria-valuenow="{{ product.margin_percentage|floatformat:0 }}" 
+                                                                 aria-valuemin="0" aria-valuemax="100">
+                                                                {{ product.margin_percentage|floatformat:1 }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ product.total_sold|default:"0" }}</td>
+                                                    <td>${{ product.total_revenue|floatformat:2|default:"0.00" }}</td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="8" class="text-center text-muted py-3">
+                                                        <i class="fas fa-info-circle"></i> No hay datos disponibles
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña 5: Ventas Canceladas -->
+                <div class="tab-pane fade" id="cancelled" role="tabpanel" aria-labelledby="cancelled-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-danger"><i class="fas fa-times-circle me-2"></i> Ventas Canceladas</h6>
+                                    {% if cancelled_sales %}
+                                    <a href="{% url 'vexora:export_financial_cancelled_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                                            <thead>
+                                                <tr>
+                                                    <th data-sort="name">#</th>
+                                                    <th data-sort="name">Cliente</th>
+                                                    <th data-sort="name">Total</th>
+                                                    <th data-sort="name">Vendedor</th>
+                                                    <th data-sort="name">Fecha</th>
+                                                    <th data-sort="name">Notas</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for sale in cancelled_sales %}
+                                                <tr>
+                                                    <td>#{{ sale.id }}</td>
+                                                    <td>{{ sale.customer_name|default:"-"|truncatechars:20 }}</td>
+                                                    <td class="text-danger">${{ sale.total|floatformat:2|default:"0.00" }}</td>
+                                                    <td>{{ sale.user__username|default:"-" }}</td>
+                                                    <td>{{ sale.created_at|date:"d/m/Y H:i" }}</td>
+                                                    <td>{{ sale.notes|truncatechars:30|default:"-" }}</td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="6" class="text-center text-success py-3">
+                                                        <i class="fas fa-check-circle"></i> No hay ventas canceladas
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% endif %}
         </div>
     </div>
-    
-    <!-- Resumen financiero por período - 3 columnas iguales -->
-    <div class="row">
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow h-100 report-card">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">📊 Resumen Semanal</h6>
-                    <a href="{% url 'vexora:export_financial_weekly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                        <i class="fas fa-file-pdf"></i>
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div class="summary-card mb-2">
-                        <h6 style="color: var(--text-color) !important;">Ingresos</h6>
-                        <h3 class="text-success">${{ weekly_financial.revenue|floatformat:2|default:"0.00" }}</h3>
-                    </div>
-                    <div class="summary-card mb-2">
-                        <h6 style="color: var(--text-color) !important;">Costos</h6>
-                        <h3 class="text-danger">${{ weekly_financial.cost|floatformat:2|default:"0.00" }}</h3>
-                    </div>
-                    <div class="summary-card mb-2" style="background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.2);">
-                        <h6 style="color: var(--text-color) !important;">Ganancia</h6>
-                        <h3 class="text-primary">${{ weekly_financial.profit|floatformat:2|default:"0.00" }}</h3>
-                        <small style="color: var(--text-color) !important; opacity: 0.7;">
-                            Margen: {{ weekly_financial.profit_margin|floatformat:1|default:"0" }}%
-                        </small>
-                    </div>
-                    <hr style="border-color: rgba(255,255,255,0.1);">
-                    <div class="text-center">
-                        <small style="color: var(--text-color) !important; opacity: 0.7;">
-                            Ventas: {{ weekly_financial.sales_count|default:"0" }} | Items: {{ weekly_financial.items_sold|default:"0" }}
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow h-100 report-card">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-success">📊 Resumen Mensual</h6>
-                    <a href="{% url 'vexora:export_financial_monthly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                        <i class="fas fa-file-pdf"></i>
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div class="summary-card mb-2">
-                        <h6 style="color: var(--text-color) !important;">Ingresos</h6>
-                        <h3 class="text-success">${{ monthly_financial.revenue|floatformat:2|default:"0.00" }}</h3>
-                    </div>
-                    <div class="summary-card mb-2">
-                        <h6 style="color: var(--text-color) !important;">Costos</h6>
-                        <h3 class="text-danger">${{ monthly_financial.cost|floatformat:2|default:"0.00" }}</h3>
-                    </div>
-                    <div class="summary-card mb-2" style="background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.2);">
-                        <h6 style="color: var(--text-color) !important;">Ganancia</h6>
-                        <h3 class="text-primary">${{ monthly_financial.profit|floatformat:2|default:"0.00" }}</h3>
-                        <small style="color: var(--text-color) !important; opacity: 0.7;">
-                            Margen: {{ monthly_financial.profit_margin|floatformat:1|default:"0" }}%
-                        </small>
-                    </div>
-                    <hr style="border-color: rgba(255,255,255,0.1);">
-                    <div class="text-center">
-                        <small style="color: var(--text-color) !important; opacity: 0.7;">
-                            Ventas: {{ monthly_financial.sales_count|default:"0" }} | Items: {{ monthly_financial.items_sold|default:"0" }}
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow h-100 report-card">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-info">📊 Resumen Anual</h6>
-                    <a href="{% url 'vexora:export_financial_yearly_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                        <i class="fas fa-file-pdf"></i>
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div class="summary-card mb-2">
-                        <h6 style="color: var(--text-color) !important;">Ingresos</h6>
-                        <h3 class="text-success">${{ yearly_financial.revenue|floatformat:2|default:"0.00" }}</h3>
-                    </div>
-                    <div class="summary-card mb-2">
-                        <h6 style="color: var(--text-color) !important;">Costos</h6>
-                        <h3 class="text-danger">${{ yearly_financial.cost|floatformat:2|default:"0.00" }}</h3>
-                    </div>
-                    <div class="summary-card mb-2" style="background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.2);">
-                        <h6 style="color: var(--text-color) !important;">Ganancia</h6>
-                        <h3 class="text-primary">${{ yearly_financial.profit|floatformat:2|default:"0.00" }}</h3>
-                        <small style="color: var(--text-color) !important; opacity: 0.7;">
-                            Margen: {{ yearly_financial.profit_margin|floatformat:1|default:"0" }}%
-                        </small>
-                    </div>
-                    <hr style="border-color: rgba(255,255,255,0.1);">
-                    <div class="text-center">
-                        <small style="color: var(--text-color) !important; opacity: 0.7;">
-                            Ventas: {{ yearly_financial.sales_count|default:"0" }} | Items: {{ yearly_financial.items_sold|default:"0" }}
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Rentabilidad de productos - Tabla completa -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow report-card">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">🏷️ Rentabilidad por Producto</h6>
-                    <a href="{% url 'vexora:export_financial_profitability_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                        <i class="fas fa-file-pdf"></i>
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th>Categoría</th>
-                                    <th>Precio</th>
-                                    <th>Costo</th>
-                                    <th>Margen/Unidad</th>
-                                    <th>Margen %</th>
-                                    <th>Unidades Vendidas</th>
-                                    <th>Ingresos</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for product in product_profitability %}
-                                <tr>
-                                    <td>{{ product.product_name|default:"-"|truncatechars:20 }}</td>
-                                    <td>{{ product.category|default:"-"|truncatechars:15 }}</td>
-                                    <td>${{ product.sale_price|floatformat:2|default:"0.00" }}</td>
-                                    <td>${{ product.price|floatformat:2|default:"0.00" }}</td>
-                                    <td>
-                                        {% if product.margin_per_unit > 0 %}
-                                            <span class="text-success">+${{ product.margin_per_unit|floatformat:2 }}</span>
-                                        {% else %}
-                                            <span class="text-danger">${{ product.margin_per_unit|floatformat:2 }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar {% if product.margin_percentage > 50 %}bg-success{% elif product.margin_percentage > 25 %}bg-info{% else %}bg-warning{% endif %}" 
-                                                 role="progressbar" 
-                                                 style="width: {{ product.margin_percentage|floatformat:0 }}%;" 
-                                                 aria-valuenow="{{ product.margin_percentage|floatformat:0 }}" 
-                                                 aria-valuemin="0" aria-valuemax="100">
-                                                {{ product.margin_percentage|floatformat:1 }}%
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>{{ product.total_sold|default:"0" }}</td>
-                                    <td>${{ product.total_revenue|floatformat:2|default:"0.00" }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-3">
-                                        <i class="fas fa-info-circle"></i> No hay datos disponibles
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Ventas canceladas -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow report-card">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-danger">❌ Ventas Canceladas</h6>
-                    <a href="{% url 'vexora:export_financial_cancelled_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                        <i class="fas fa-file-pdf"></i>
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Cliente</th>
-                                    <th>Total</th>
-                                    <th>Vendedor</th>
-                                    <th>Fecha</th>
-                                    <th>Notas</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for sale in cancelled_sales %}
-                                <tr>
-                                    <td>#{{ sale.id }}</td>
-                                    <td>{{ sale.customer_name|default:"-"|truncatechars:20 }}</td>
-                                    <td class="text-danger">${{ sale.total|floatformat:2|default:"0.00" }}</td>
-                                    <td>{{ sale.user__username|default:"-" }}</td>
-                                    <td>{{ sale.created_at|date:"d/m/Y H:i" }}</td>
-                                    <td>{{ sale.notes|truncatechars:30|default:"-" }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center text-success py-3">
-                                        <i class="fas fa-check-circle"></i> No hay ventas canceladas
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    {% endif %}
 </div>
+
+<!-- Contenedor necesario para que funcionen los modales (Crear/Editar) -->
+<div class="modal fade" id="ModalOptions" tabindex="-1" aria-labelledby="ModalOptionsLabel" aria-hidden="true"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Si la función editModal no está definida en base.html, la creamos aquí
+    if (typeof editModal !== 'function') {
+        function editModal(url) {
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(data) {
+                    $('#ModalOptions').html(data);
+                    var myModal = new bootstrap.Modal(document.getElementById('ModalOptions'));
+                    myModal.show();
+                },
+                error: function() {
+                    Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+                }
+            });
+        }
+    }
+
+    // Funcionalidad de ordenamiento para la tabla
+    document.addEventListener('DOMContentLoaded', function () {
+        const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent
+        
+        const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx))
+        
+        document.querySelectorAll('th[data-sort]').forEach((th) => {
+            th.addEventListener('click', function () {
+                const table = this.closest('table')
+                const tbody = table.querySelector('tbody')
+                const index = Array.from(this.parentNode.children).indexOf(this)
+                const asc = this.getAttribute('data-sort-direction') === 'asc'
+            
+                // Reset all sort directions
+                table.querySelectorAll('th[data-sort]').forEach((header) => {
+                    header.removeAttribute('data-sort-direction')
+                    header.querySelector('i').className = 'fas fa-sort'
+                })
+            
+                // Set current sort direction
+                this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc')
+                this.querySelector('i').className = asc ? 'fas fa-sort-down' : 'fas fa-sort-up'
+            
+                // Sort the table
+                Array.from(tbody.querySelectorAll('tr'))
+                    .sort(comparer(index, asc))
+                    .forEach((tr) => tbody.appendChild(tr))
+            })
+        })
+    })
+</script>
 {% endblock %}
