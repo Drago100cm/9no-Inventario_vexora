@@ -31,40 +31,43 @@
                 <div class="col-12">
                     <div class="card shadow mb-4">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <h1 class="mb-0">💵 Reportes Financieros</h1>
+                            <h1 class="mb-0"><i class="fas fa-boxes me-2"></i> Reportes de Productos</h1>
                         </div>
                         <div class="card-body">
-                            <div class="row g-2">
+                            <nav class="row g-2" aria-label="Navegación de reportes">
                                 <!-- Dashboard -->
                                 <div class="col-md-3 col-sm-6 mb-2">
                                     <a href="{% url 'vexora:reports_dashboard' %}" 
-                                       class="btn btn-outline-secondary btn-block w-100 text-start">
+                                    class="btn btn-outline-secondary btn-block w-100 text-start {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}"
+                                    style="border-color: #858796;">
                                         <i class="fas fa-tachometer-alt me-2"></i> Reportes
                                     </a>
                                 </div>
                                 <!-- Productos -->
                                 <div class="col-md-3 col-sm-6 mb-2">
                                     <a href="{% url 'vexora:product_reports' %}" 
-                                       class="btn btn-primary btn-block w-100 text-start active">
+                                    class="btn btn-outline-primary btn-block w-100 text-start {% if request.resolver_match.url_name == 'product_reports' %}active{% endif %}"
+                                    style="border-color: #4e73df;">
                                         <i class="fas fa-boxes me-2"></i> Productos
-                                        <span class="badge bg-light text-primary ms-2">Activo</span>
                                     </a>
                                 </div>
                                 <!-- Ventas -->
                                 <div class="col-md-3 col-sm-6 mb-2">
                                     <a href="{% url 'vexora:sales_reports' %}" 
-                                       class="btn btn-outline-success btn-block w-100 text-start">
+                                    class="btn btn-outline-success btn-block w-100 text-start {% if request.resolver_match.url_name == 'sales_reports' %}active{% endif %}"
+                                    style="border-color: #1cc88a;">
                                         <i class="fas fa-cash-register me-2"></i> Ventas
                                     </a>
                                 </div>
                                 <!-- Financieros -->
                                 <div class="col-md-3 col-sm-6 mb-2">
                                     <a href="{% url 'vexora:financial_reports' %}" 
-                                       class="btn btn-outline-info btn-block w-100 text-start">
+                                    class="btn btn-outline-info btn-block w-100 text-start {% if request.resolver_match.url_name == 'financial_reports' %}active{% endif %}"
+                                    style="border-color: #36b9cc;">
                                         <i class="fas fa-coins me-2"></i> Financieros
                                     </a>
                                 </div>
-                            </div>
+                            </nav>
                         </div>
                     </div>
                 </div>
@@ -73,6 +76,21 @@
             {% if error %}
             <div class="alert alert-warning">
                 <i class="fas fa-exclamation-triangle"></i> {{ error }}
+            </div>
+            {% elif not total_products %}
+            <!-- No hay productos registrados -->
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="fas fa-info-circle me-3 fa-2x"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">No hay productos registrados</h5>
+                    <p class="mb-2">Para generar reportes de productos primero debes registrar al menos un producto en el sistema.</p>
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                            onclick="editModal('{% url 'vexora:create_product' %}')">
+                        <i class="ri-add-line me-1 align-bottom"></i>
+                        <span>Agregar Producto</span>
+                    </button>
+                </div>
             </div>
             {% else %}
 
@@ -143,218 +161,272 @@
                 </div>
             </div>
             
-            <!-- Cards de reportes - Todas del mismo tamaño -->
-            <div class="row">
-                <!-- Productos por Categoría -->
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow h-100 report-card">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-primary">📂 Productos por Categoría</h6>
-                            <a href="{% url 'vexora:export_products_category_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-sm" style="color: var(--text-color) !important;" id="tabla-productos">
-                                    <thead>
-                                        <tr>
-                                            <th data-sort="name">Categoría</th>
-                                            <th data-sort="name">Cantidad</th>
-                                            <th data-sort="name">Porcentaje</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for cat in products_by_category %}
-                                        <tr>
-                                            <td>{{ cat.category|default:"Sin categoría" }}</td>
-                                            <td>{{ cat.count|default:"0" }}</td>
-                                            <td>
-                                                <div class="progress">
-                                                    <div class="progress-bar bg-primary" role="progressbar" 
-                                                         style="width: {{ cat.percentage|floatformat:1 }}%;" 
-                                                         aria-valuenow="{{ cat.percentage|floatformat:1 }}" 
-                                                         aria-valuemin="0" aria-valuemax="100">
-                                                        {{ cat.percentage|floatformat:1 }}%
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="3" class="text-center text-muted py-3">
-                                                <i class="fas fa-info-circle"></i> No hay categorías registradas
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+            <!-- Nav Tabs para los reportes de productos -->
+            <ul class="nav nav-tabs mb-3" id="productReportsCardsTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="cat-tab" data-bs-toggle="tab" data-bs-target="#cat" type="button" role="tab" aria-controls="cat" aria-selected="true">
+                        <i class="fas fa-folder-open"></i> Categoría
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sup-tab" data-bs-toggle="tab" data-bs-target="#sup" type="button" role="tab" aria-controls="sup" aria-selected="false">
+                        <i class="fas fa-building"></i> Proveedor
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="best-tab" data-bs-toggle="tab" data-bs-target="#best" type="button" role="tab" aria-controls="best" aria-selected="false">
+                        <i class="fas fa-sort-amount-up"></i> Más Vendidos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="worst-tab" data-bs-toggle="tab" data-bs-target="#worst" type="button" role="tab" aria-controls="worst" aria-selected="false">
+                        <i class="fas fa-sort-amount-down"></i> Menos Vendidos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="out-tab" data-bs-toggle="tab" data-bs-target="#out" type="button" role="tab" aria-controls="out" aria-selected="false">
+                        <i class="fas fa-ban"></i> Sin Stock
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="productReportsCardsTabContent">
+                <!-- Pestaña 1: Productos por Categoría -->
+                <div class="tab-pane fade show active" id="cat" role="tabpanel" aria-labelledby="cat-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow h-100 report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-folder-open me-2"></i> Productos por Categoría</h6>
+                                    {% if products_by_category %}
+                                    <a href="{% url 'vexora:export_products_category_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;" id="tabla-productos">
+                                            <thead>
+                                                <tr>
+                                                    <th data-sort="name">Categoría</th>
+                                                    <th data-sort="name">Cantidad</th>
+                                                    <th data-sort="name">Porcentaje</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for cat in products_by_category %}
+                                                <tr>
+                                                    <td>{{ cat.category|default:"Sin categoría" }}</td>
+                                                    <td>{{ cat.count|default:"0" }}</td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar bg-primary" role="progressbar" 
+                                                                 style="width: {{ cat.percentage|floatformat:1 }}%;" 
+                                                                 aria-valuenow="{{ cat.percentage|floatformat:1 }}" 
+                                                                 aria-valuemin="0" aria-valuemax="100">
+                                                                {{ cat.percentage|floatformat:1 }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted py-3">
+                                                        <i class="fas fa-info-circle"></i> No hay categorías registradas
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Productos por Proveedor -->
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow h-100 report-card">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-info">🏢 Productos por Proveedor</h6>
-                            <a href="{% url 'vexora:export_products_supplier_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
-                                    <thead>
-                                        <tr>
-                                            <th data-sort="name">Proveedor</th>
-                                            <th data-sort="name">Cantidad</th>
-                                            <th data-sort="name">Valor Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for supplier in products_by_supplier %}
-                                        <tr>
-                                            <td>{{ supplier.supplier__name|default:"-"|truncatechars:20 }}</td>
-                                            <td>{{ supplier.count|default:"0" }}</td>
-                                            <td>${{ supplier.total_value|floatformat:2|default:"0.00" }}</td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="3" class="text-center text-muted py-3">
-                                                <i class="fas fa-info-circle"></i> No hay proveedores registrados
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+
+                <!-- Pestaña 2: Productos por Proveedor -->
+                <div class="tab-pane fade" id="sup" role="tabpanel" aria-labelledby="sup-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow h-100 report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-info"><i class="fas fa-building me-2"></i> Productos por Proveedor</h6>
+                                    {% if products_by_supplier %}
+                                    <a href="{% url 'vexora:export_products_supplier_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                                            <thead>
+                                                <tr>
+                                                    <th data-sort="name">Proveedor</th>
+                                                    <th data-sort="name">Cantidad</th>
+                                                    <th data-sort="name">Valor Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for supplier in products_by_supplier %}
+                                                <tr>
+                                                    <td>{{ supplier.supplier__name|default:"-"|truncatechars:20 }}</td>
+                                                    <td>{{ supplier.count|default:"0" }}</td>
+                                                    <td>${{ supplier.total_value|floatformat:2|default:"0.00" }}</td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted py-3">
+                                                        <i class="fas fa-info-circle"></i> No hay proveedores registrados
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="row">
-                <!-- Productos Más Vendidos -->
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow h-100 report-card">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-success">⬆️ Productos Más Vendidos</h6>
-                            <a href="{% url 'vexora:export_products_best_sellers_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
-                                    <thead>
-                                        <tr>
-                                            <th data-sort="name">Producto</th>
-                                            <th data-sort="name">Cantidad</th>
-                                            <th data-sort="name">Ingresos</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for product in best_sellers %}
-                                        <tr>
-                                            <td>{{ product.product__name|default:"-"|truncatechars:25 }}</td>
-                                            <td>{{ product.total_quantity|default:"0" }}</td>
-                                            <td>${{ product.total_revenue|floatformat:2|default:"0.00" }}</td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="3" class="text-center text-muted py-3">
-                                                <i class="fas fa-info-circle"></i> No hay datos disponibles
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+
+                <!-- Pestaña 3: Productos Más Vendidos -->
+                <div class="tab-pane fade" id="best" role="tabpanel" aria-labelledby="best-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow h-100 report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-success"><i class="fas fa-sort-amount-up me-2"></i> Productos Más Vendidos</h6>
+                                    {% if best_sellers %}
+                                    <a href="{% url 'vexora:export_products_best_sellers_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                                            <thead>
+                                                <tr>
+                                                    <th data-sort="name">Producto</th>
+                                                    <th data-sort="name">Cantidad</th>
+                                                    <th data-sort="name">Ingresos</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for product in best_sellers %}
+                                                <tr>
+                                                    <td>{{ product.product__name|default:"-"|truncatechars:25 }}</td>
+                                                    <td>{{ product.total_quantity|default:"0" }}</td>
+                                                    <td>${{ product.total_revenue|floatformat:2|default:"0.00" }}</td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted py-3">
+                                                        <i class="fas fa-info-circle"></i> No hay datos disponibles
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Productos Menos Vendidos -->
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow h-100 report-card">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-danger">⬇️ Productos Menos Vendidos</h6>
-                            <a href="{% url 'vexora:export_products_worst_sellers_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
-                                    <thead>
-                                        <tr>
-                                            <th data-sort="name">Producto</th>
-                                            <th data-sort="name">Stock</th>
-                                            <th data-sort="name">SKU</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for product in worst_sellers %}
-                                        <tr>
-                                            <td>{{ product.name|default:"-"|truncatechars:25 }}</td>
-                                            <td>{{ product.stock|default:"0" }}</td>
-                                            <td>{{ product.sku|default:"-" }}</td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="3" class="text-center text-success py-3">
-                                                <i class="fas fa-check-circle"></i> Todos los productos tienen ventas
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+
+                <!-- Pestaña 4: Productos Menos Vendidos -->
+                <div class="tab-pane fade" id="worst" role="tabpanel" aria-labelledby="worst-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow h-100 report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-danger"><i class="fas fa-sort-amount-down me-2"></i> Productos Menos Vendidos</h6>
+                                    {% if low_sales %}
+                                    <a href="{% url 'vexora:export_products_worst_sellers_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                                            <thead>
+                                                <tr>
+                                                    <th data-sort="name">Producto</th>
+                                                    <th data-sort="name">Stock</th>
+                                                    <th data-sort="name">SKU</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for product in worst_sellers %}
+                                                <tr>
+                                                    <td>{{ product.name|default:"-"|truncatechars:25 }}</td>
+                                                    <td>{{ product.stock|default:"0" }}</td>
+                                                    <td>{{ product.sku|default:"-" }}</td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-success py-3">
+                                                        <i class="fas fa-check-circle"></i> Todos los productos tienen ventas
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Productos sin stock - Ocupa toda la fila -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card shadow h-100 report-card">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-danger">🚫 Productos Sin Stock</h6>
-                            <a href="{% url 'vexora:export_products_out_of_stock_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
-                                    <thead>
-                                        <tr>
-                                            <th data-sort="name">Producto</th>
-                                            <th data-sort="name">Categoría</th>
-                                            <th data-sort="name">SKU</th>
-                                            <th data-sort="name">Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for product in out_of_stock %}
-                                        <tr>
-                                            <td>{{ product.name|default:"-"|truncatechars:25 }}</td>
-                                            <td>{{ product.category__name|default:"-" }}</td>
-                                            <td>{{ product.sku|default:"-" }}</td>
-                                            <td><span class="badge bg-danger">Agotado</span></td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="4" class="text-center text-success py-3">
-                                                <i class="fas fa-check-circle"></i> No hay productos sin stock
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+
+                <!-- Pestaña 5: Productos Sin Stock -->
+                <div class="tab-pane fade" id="out" role="tabpanel" aria-labelledby="out-tab">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card shadow h-100 report-card">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-danger"><i class="fas fa-ban me-2"></i> Productos Sin Stock</h6>
+                                    {% if out_of_stock %}
+                                    <a href="{% url 'vexora:export_products_out_of_stock_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm" style="color: var(--text-color) !important;">
+                                            <thead>
+                                                <tr>
+                                                    <th data-sort="name">Producto</th>
+                                                    <th data-sort="name">Categoría</th>
+                                                    <th data-sort="name">SKU</th>
+                                                    <th data-sort="name">Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for product in out_of_stock %}
+                                                <tr>
+                                                    <td>{{ product.name|default:"-"|truncatechars:25 }}</td>
+                                                    <td>{{ product.category__name|default:"-" }}</td>
+                                                    <td>{{ product.sku|default:"-" }}</td>
+                                                    <td><span class="badge bg-danger">Agotado</span></td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="4" class="text-center text-success py-3">
+                                                        <i class="fas fa-check-circle"></i> No hay productos sin stock
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -365,11 +437,31 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="ModalOptions" tabindex="-1" aria-labelledby="ModalOptionsLabel" aria-hidden="true"></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Funcionalidad de ordenamiento para la tabla
+    // Si la función editModal no está definida en base.html, la creamos aquí
+    if (typeof editModal !== 'function') {
+        function editModal(url) {
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(data) {
+                    $('#ModalOptions').html(data);
+                    // Inicializamos el modal de Bootstrap
+                    var myModal = new bootstrap.Modal(document.getElementById('ModalOptions'));
+                    myModal.show();
+                },
+                error: function() {
+                    Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+                }
+            });
+        }
+    }
+
+    // Tu código de ordenamiento de tablas original
     document.addEventListener('DOMContentLoaded', function () {
         const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent
         
@@ -382,17 +474,14 @@
                 const index = Array.from(this.parentNode.children).indexOf(this)
                 const asc = this.getAttribute('data-sort-direction') === 'asc'
             
-                // Reset all sort directions
                 table.querySelectorAll('th[data-sort]').forEach((header) => {
                     header.removeAttribute('data-sort-direction')
                     header.querySelector('i').className = 'fas fa-sort'
                 })
             
-                // Set current sort direction
                 this.setAttribute('data-sort-direction', asc ? 'desc' : 'asc')
                 this.querySelector('i').className = asc ? 'fas fa-sort-down' : 'fas fa-sort-up'
             
-                // Sort the table
                 Array.from(tbody.querySelectorAll('tr'))
                     .sort(comparer(index, asc))
                     .forEach((tr) => tbody.appendChild(tr))

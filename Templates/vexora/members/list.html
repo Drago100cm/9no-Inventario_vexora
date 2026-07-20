@@ -26,63 +26,66 @@
                 {% endfor %}
             {% endif %}
 
-            <!-- ESTADÍSTICAS - FUERA DEL BG-LIGHT -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
+            <!-- Cards de resumen - 4 columnas iguales -->
+            <div class="row">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <p class="text-muted mb-1">Total Miembros</p>
-                                    <h3 class="mb-0">{{ total_users|default:0 }}</h3>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Miembros</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ total_users|default:0 }}</div>
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <i class="ri-user-3-line fs-1 text-primary"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-danger shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <p class="text-muted mb-1">Administradores</p>
-                                    <h3 class="mb-0 text-danger">{{ total_admins|default:0 }}</h3>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Administradores</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ total_admins|default:0 }}</div>
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <i class="ri-shield-user-line fs-1 text-danger"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-user-shield fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <p class="text-muted mb-1">Gerentes</p>
-                                    <h3 class="mb-0 text-warning">{{ total_managers|default:0 }}</h3>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Gerentes</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ total_managers|default:0 }}</div>
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <i class="ri-user-settings-line fs-1 text-warning"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-user-cog fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <p class="text-muted mb-1">Empleados</p>
-                                    <h3 class="mb-0 text-info">{{ total_employees|default:0 }}</h3>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Empleados</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ total_employees|default:0 }}</div>
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <i class="ri-user-follow-line fs-1 text-info"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-user-tie fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                         </div>

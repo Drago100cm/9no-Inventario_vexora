@@ -25,63 +25,66 @@
                 {% endfor %}
             {% endif %}
 
-            <!-- ESTADÍSTICAS - FUERA DEL BG-LIGHT -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
+            <!-- Cards de resumen - 4 columnas iguales -->
+            <div class="row">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <p class="text-muted mb-1">Total Productos</p>
-                                    <h3 class="mb-0">{{ stats.total }}</h3>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Productos</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ stats.total }}</div>
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <i class="ri-box-3-line fs-1 text-primary"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-boxes fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <p class="text-muted mb-1">Disponibles</p>
-                                    <h3 class="mb-0 text-success">{{ stats.disponibles }}</h3>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Disponibles</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ stats.disponibles }}</div>
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <i class="ri-checkbox-circle-line fs-1 text-success"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-danger shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <p class="text-muted mb-1">Sin Stock</p>
-                                    <h3 class="mb-0 text-danger">{{ stats.no_disponibles }}</h3>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Sin Stock</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ stats.no_disponibles }}</div>
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <i class="ri-close-circle-line fs-1 text-danger"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-times-circle fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
                         <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <p class="text-muted mb-1">Compañía</p>
-                                    <h5 class="mb-0">{{ user.company.name }}</h5>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Compañía</div>
+                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ user.company.name }}</div>
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <i class="ri-building-line fs-1 text-info"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-building fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                         </div>
@@ -119,15 +122,6 @@
                                         <span>Agregar Producto</span>
                                     </button>
                                 {% endif %}
-                                
-                                <!-- ✅ BOTÓN PARA EXPORTAR REPORTE DE PRODUCTOS A PDF -->
-                                <a href="{% url 'vexora:product_reports' %}" 
-                                class="btn btn-danger btn-sm d-flex align-items-center"
-                                target="_blank"
-                                title="Exportar reporte de productos a PDF">
-                                    <i class="fas fa-file-pdf me-1"></i>
-                                    <span>Reporte y PDF</span>
-                                </a>
                             </div>
                         </div>
 
@@ -249,7 +243,7 @@
                                         <div class="btn-group btn-group-sm">
                                             <button type="button" class="btn btn-outline-info btn-icon" 
                                                     onclick="viewProduct('{{ product.id }}')" title="Ver">
-                                                <i class="ri-eye-fill"></i>Visualizar
+                                                <i class="ri-eye-fill"></i>Detalles
                                             </button>
                                             <button type="button" class="btn btn-outline-secondary btn-icon" 
                                                     onclick="editModal('{% url 'vexora:edit_product' product.id %}')" title="Editar">
