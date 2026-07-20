@@ -3304,7 +3304,7 @@ from django.db.models import Count, Sum, Q
 from django.core.cache import cache
 
 
-class DashboardView(LoginRequiredMixin, TemplateView):
+class DashboardView(LoginRequiredMixin, TemplateView,):
     template_name = "partials/dashboard.html"
 
     def get_company(self):
@@ -3320,7 +3320,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # ==========================================
         # IDENTIFICAR PERMISOS DEL USUARIO
         # ==========================================
-
+        #esta mal
         is_admin_role = (
             user.is_superuser
             or user.is_staff
