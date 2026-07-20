@@ -345,7 +345,7 @@
                             <div class="card shadow h-100 report-card">
                                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                                     <h6 class="m-0 font-weight-bold text-danger"><i class="fas fa-sort-amount-down me-2"></i> Productos Menos Vendidos</h6>
-                                    {% if low_sales %}
+                                    {% if worst_sellers %}
                                     <a href="{% url 'vexora:export_products_worst_sellers_pdf' %}" class="btn btn-sm btn-danger" target="_blank" title="Exportar PDF">
                                         <i class="fas fa-file-pdf"></i>
                                     </a>
