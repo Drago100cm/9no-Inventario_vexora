@@ -1369,9 +1369,9 @@ def view_product(request, pk):
     
     return render(request, 'vexora/products/view.html', context)
 
-def delete_product(request, pk):
+def delete_product(request, id):
     company = request.user.company
-    product = get_object_or_404(Product, id=pk, company=company)
+    product = get_object_or_404(Product, id=id, company=company)
     product.delete()
     messages.success(request, "✅ Producto eliminado correctamente!")
     return redirect('vexora:list_products')
@@ -1386,13 +1386,15 @@ def delete_product(request, pk):
 
 class SalesListView(LoginRequiredMixin, ListView):
     model = Sale
-    template_name = 'vexora/sales/store.html'
-    context_object_name = 'sales'
+    template_name = "vexora/sales/store.html"
+    context_object_name = "sales"
 
     def get_queryset(self):
-        return Sale.objects.all().order_by('-date')
-
-
+        return Sale.objects.filter(
+            company=self.request.user.company,
+            is_store=True
+        ).order_by("-date")
+        
 class SalesCreateView(LoginRequiredMixin, CreateView):
     model = Sale
     form_class = SalesForm
@@ -1888,7 +1890,7 @@ class StoreHomeView(LoginRequiredMixin, View):
     def get(self, request):
         productos = Product.objects.filter(
             company=request.user.company,
-            is_active=True
+            is_store=True
         ).select_related('category', 'supplier').prefetch_related('variants')
 
         categoria_id = request.GET.get('categoria')

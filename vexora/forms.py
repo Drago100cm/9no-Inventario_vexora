@@ -580,6 +580,11 @@ class ProductForm(forms.ModelForm):
             'class': 'form-control',
             'placeholder': 'SKU (código único)'
         })
+        #DEBE DE SER UN CAMPO BOOLEANO
+        self.fields['is_store'].widget.attrs.update({
+                'class': 'form-check-input',
+                'placeholder': '¿DESEA QUE ESTE PRODUCTO SE VEA EN LA TIENDA?'
+        })
 
         self.fields['barcode'].widget.attrs.update({
             'class': 'form-control',
@@ -685,7 +690,7 @@ class ProductForm(forms.ModelForm):
             "item_number", "name", "sku", "barcode", "description", "purchase_date",
             "price", "sale_price", "stock", "min_stock", "is_active",
             "supplier", "category", "tags", "company", "image",
-            "stock_addition"  
+            "stock_addition","is_store"
         ]
                  
 #---------------ventas
