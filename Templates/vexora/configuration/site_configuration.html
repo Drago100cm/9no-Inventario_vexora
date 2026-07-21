@@ -7,329 +7,316 @@
 
 {% block content %}
 
-<div class="container-fluid">
+<div class="container-fluid py-4">
 
     <div class="row justify-content-center">
 
-        <div class="col-lg-10">
+        <div class="col-lg-11 col-xl-10">
 
-            <div class="card shadow-lg border-0">
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+                <div>
+                    <h1 class="h2 fw-bold mb-1 d-flex align-items-center gap-2">
+                        <span class="bg-primary bg-opacity-10 p-2 rounded-3">
+                            <i class="ri-settings-4-line text-primary"></i>
+                        </span>
+                        Configuración SaaS
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Personaliza la apariencia de tu plataforma
+                    </p>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm px-4" onclick="toggleLivePreview()">
+                    <i class="ri-eye-line me-2"></i>Vista previa
+                </button>
+            </div>
 
-                <div class="card-body p-4">
+            <form method="POST" enctype="multipart/form-data" id="configForm">
+                {% csrf_token %}
 
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-
-                        <div>
-                            <h2 class="fw-bold mb-1">
-                                <i class="ri-settings-4-line me-2" style="color: {{ config.primary_color|default:'#2563EB' }};"></i>
-                                Configuración SaaS
-                            </h2>
-                            <p class="text-muted mb-0">
-                                Personaliza la apariencia de tu plataforma
-                            </p>
-                        </div>
-
-                        <!-- Vista previa en vivo -->
-                        <button type="button" class="btn btn-outline-primary" onclick="toggleLivePreview()">
-                            <i class="ri-eye-line me-1"></i> Vista previa
+                <!-- ========== NAVEGACIÓN POR TABS ========== -->
+                <ul class="nav nav-pills nav-fill mb-4 gap-2" id="configTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="brand-tab" data-bs-toggle="tab" data-bs-target="#brand" type="button" role="tab">
+                            <i class="ri-image-line me-2"></i>Marca
+                            <span class="badge bg-light text-muted ms-1">Logo</span>
                         </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="themes-tab" data-bs-toggle="tab" data-bs-target="#themes" type="button" role="tab">
+                            <i class="ri-palette-line me-2"></i>Temas
+                            <span class="badge bg-light text-muted ms-1">12</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="colors-tab" data-bs-toggle="tab" data-bs-target="#colors" type="button" role="tab">
+                            <i class="ri-settings-4-line me-2"></i>Colores
+                            <span class="badge bg-light text-muted ms-1">Avanzado</span>
+                        </button>
+                    </li>
+                </ul>
 
+                <!-- ========== CONTENIDO DE TABS ========== -->
+                <div class="tab-content">
+
+                    <!-- ==========================================
+                    TAB 1: MARCA (LOGO Y FAVICON)
+                    ========================================== -->
+                    <div class="tab-pane fade show active" id="brand" role="tabpanel">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-4">
+
+                                <div class="d-flex align-items-center gap-2 mb-4">
+                                    <i class="ri-store-2-line text-primary"></i>
+                                    <h5 class="fw-semibold mb-0">Identidad visual</h5>
+                                    <span class="badge bg-light text-muted fw-normal ms-2">Logo y favicon</span>
+                                </div>
+
+                                <div class="row g-4">
+
+                                    <!-- LOGO -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold mb-3">
+                                            <i class="ri-image-line me-1"></i> Logo de la empresa
+                                            <span class="text-muted fw-normal small">(Recomendado: 200x200px)</span>
+                                        </label>
+
+                                        <div class="logo-container">
+                                            <input type="file" name="logo" id="id_logo" accept="image/*" hidden>
+
+                                            <div id="logo-upload-box" class="border rounded-4 d-flex flex-column justify-content-center align-items-center text-center position-relative overflow-hidden"
+                                                 style="height:260px;cursor:pointer;background:#f8fafc;transition:all 0.3s ease;border:2px dashed #dee2e6;">
+                                                
+                                                <img id="logo-preview" src="{% if config.logo %}{{ config.logo.url }}{% endif %}" alt="Logo preview"
+                                                     style="max-width:100%;max-height:100%;object-fit:contain;display:{% if config.logo %}block{% else %}none{% endif %};padding:20px;">
+
+                                                <div id="logo-placeholder" {% if config.logo %}style="display:none;"{% endif %}>
+                                                    <i class="ri-image-add-line fa-3x mb-3" style="color:#94a3b8;font-size:3rem;"></i>
+                                                    <h6 class="fw-bold text-secondary">Subir logo</h6>
+                                                    <p class="text-muted small mb-0">Haz clic para seleccionar una imagen</p>
+                                                    <p class="text-muted small">Formatos: PNG, JPG, SVG</p>
+                                                </div>
+
+                                                <div id="logo-status" class="position-absolute top-0 end-0 m-2" style="display:{% if config.logo %}block{% else %}none{% endif %};">
+                                                    <span class="badge bg-success"><i class="ri-check-line me-1"></i> Subido</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex gap-2 mt-3">
+                                                <button type="button" id="change-logo-btn" class="btn btn-outline-primary btn-sm flex-grow-1" {% if not config.logo %}style="display:none;"{% endif %}>
+                                                    <i class="ri-pencil-line me-1"></i> Cambiar
+                                                </button>
+                                                <button type="button" id="remove-logo-btn" class="btn btn-outline-danger btn-sm flex-grow-1" {% if not config.logo %}style="display:none;"{% endif %}>
+                                                    <i class="ri-delete-bin-line me-1"></i> Quitar
+                                                </button>
+                                                <button type="button" id="add-logo-btn" class="btn btn-primary btn-sm flex-grow-1" {% if config.logo %}style="display:none;"{% endif %}>
+                                                    <i class="ri-upload-line me-1"></i> Subir
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- FAVICON -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold mb-3">
+                                            <i class="ri-window-line me-1"></i> Favicon
+                                            <span class="text-muted fw-normal small">(Recomendado: 32x32px)</span>
+                                        </label>
+
+                                        <div class="favicon-container">
+                                            <input type="file" name="favicon" id="id_favicon" accept="image/*" hidden>
+
+                                            <div id="favicon-upload-box" class="border rounded-4 d-flex flex-column justify-content-center align-items-center text-center position-relative overflow-hidden"
+                                                 style="height:260px;cursor:pointer;background:#f8fafc;transition:all 0.3s ease;border:2px dashed #dee2e6;">
+                                                
+                                                <img id="favicon-preview" src="{% if config.favicon %}{{ config.favicon.url }}{% endif %}" alt="Favicon preview"
+                                                     style="max-width:100%;max-height:100%;object-fit:contain;display:{% if config.favicon %}block{% else %}none{% endif %};padding:20px;">
+
+                                                <div id="favicon-placeholder" {% if config.favicon %}style="display:none;"{% endif %}>
+                                                    <i class="ri-window-2-line fa-3x mb-3" style="color:#94a3b8;font-size:3rem;"></i>
+                                                    <h6 class="fw-bold text-secondary">Subir favicon</h6>
+                                                    <p class="text-muted small mb-0">Haz clic para seleccionar una imagen</p>
+                                                    <p class="text-muted small">Formatos: PNG, ICO, SVG</p>
+                                                </div>
+
+                                                <div id="favicon-status" class="position-absolute top-0 end-0 m-2" style="display:{% if config.favicon %}block{% else %}none{% endif %};">
+                                                    <span class="badge bg-success"><i class="ri-check-line me-1"></i> Subido</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex gap-2 mt-3">
+                                                <button type="button" id="change-favicon-btn" class="btn btn-outline-primary btn-sm flex-grow-1" {% if not config.favicon %}style="display:none;"{% endif %}>
+                                                    <i class="ri-pencil-line me-1"></i> Cambiar
+                                                </button>
+                                                <button type="button" id="remove-favicon-btn" class="btn btn-outline-danger btn-sm flex-grow-1" {% if not config.favicon %}style="display:none;"{% endif %}>
+                                                    <i class="ri-delete-bin-line me-1"></i> Quitar
+                                                </button>
+                                                <button type="button" id="add-favicon-btn" class="btn btn-primary btn-sm flex-grow-1" {% if config.favicon %}style="display:none;"{% endif %}>
+                                                    <i class="ri-upload-line me-1"></i> Subir
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <form method="POST"
-                          enctype="multipart/form-data"
-                          id="configForm">
+                    <!-- ==========================================
+                    TAB 2: TEMAS PREDEFINIDOS
+                    ========================================== -->
+                    <div class="tab-pane fade" id="themes" role="tabpanel">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-4">
 
-                        {% csrf_token %}
-
-                        <div class="row">
-
-                            <!-- ========== LOGO ========== -->
-                            <div class="col-md-6 mb-4">
-
-                                <label class="form-label fw-bold mb-3">
-                                    <i class="ri-image-line me-1"></i> Logo de la empresa
-                                    <span class="text-muted fw-normal small">(Recomendado: 200x200px)</span>
-                                </label>
-
-                                <div class="logo-container">
-                                    <!-- Input oculto -->
-                                    <input
-                                        type="file"
-                                        name="logo"
-                                        id="id_logo"
-                                        accept="image/*"
-                                        hidden
-                                    >
-
-                                    <!-- Upload box -->
-                                    <div
-                                        id="logo-upload-box"
-                                        class="border rounded-4 d-flex flex-column justify-content-center align-items-center text-center position-relative overflow-hidden"
-                                        style="
-                                            height: 260px;
-                                            cursor: pointer;
-                                            background: #f8fafc;
-                                            transition: all 0.3s ease;
-                                            border: 2px dashed #dee2e6;
-                                        "
-                                    >
-
-                                        <!-- Imagen -->
-                                        <img
-                                            id="logo-preview"
-                                            src="{% if config.logo %}{{ config.logo.url }}{% endif %}"
-                                            alt="Logo preview"
-                                            style="
-                                                max-width: 100%;
-                                                max-height: 100%;
-                                                object-fit: contain;
-                                                display: {% if config.logo %}block{% else %}none{% endif %};
-                                                padding: 20px;
-                                            "
-                                        >
-
-                                        <!-- Placeholder -->
-                                        <div id="logo-placeholder" {% if config.logo %}style="display: none;"{% endif %}>
-                                            <i class="ri-image-add-line fa-3x mb-3" style="color: #94a3b8; font-size: 3rem;"></i>
-                                            <h6 class="fw-bold text-secondary">Subir logo</h6>
-                                            <p class="text-muted small mb-0">Haz clic para seleccionar una imagen</p>
-                                            <p class="text-muted small">Formatos: PNG, JPG, SVG</p>
+                                <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="ri-palette-line text-primary"></i>
+                                            <h5 class="fw-semibold mb-0">Temas predefinidos</h5>
+                                            <span class="badge bg-light text-muted fw-normal ms-2">12 temas</span>
                                         </div>
-
-                                        <!-- Badge de estado -->
-                                        <div id="logo-status" class="position-absolute top-0 end-0 m-2" style="display: {% if config.logo %}block{% else %}none{% endif %};">
-                                            <span class="badge bg-success">
-                                                <i class="ri-check-line me-1"></i> Subido
-                                            </span>
-                                        </div>
-
-                                    </div>
-
-                                    <!-- Botones de acción -->
-                                    <div class="d-flex gap-2 mt-3">
-                                        <button
-                                            type="button"
-                                            id="change-logo-btn"
-                                            class="btn btn-outline-primary btn-sm flex-grow-1"
-                                            {% if not config.logo %}style="display: none;"{% endif %}
-                                        >
-                                            <i class="ri-pencil-line me-1"></i> Cambiar logo
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            id="remove-logo-btn"
-                                            class="btn btn-outline-danger btn-sm flex-grow-1"
-                                            {% if not config.logo %}style="display: none;"{% endif %}
-                                        >
-                                            <i class="ri-delete-bin-line me-1"></i> Quitar logo
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            id="add-logo-btn"
-                                            class="btn btn-primary btn-sm flex-grow-1"
-                                            {% if config.logo %}style="display: none;"{% endif %}
-                                        >
-                                            <i class="ri-upload-line me-1"></i> Subir logo
-                                        </button>
+                                        <p class="text-muted small mb-0 mt-1">Selecciona un tema para aplicar todos los colores automáticamente</p>
                                     </div>
                                 </div>
 
-                            </div>
-
-                            <!-- ========== FAVICON ========== -->
-                            <div class="col-md-6 mb-4">
-
-                                <label class="form-label fw-bold mb-3">
-                                    <i class="ri-window-line me-1"></i> Favicon
-                                    <span class="text-muted fw-normal small">(Recomendado: 32x32px)</span>
-                                </label>
-
-                                <div class="favicon-container">
-                                    <!-- Input oculto -->
-                                    <input
-                                        type="file"
-                                        name="favicon"
-                                        id="id_favicon"
-                                        accept="image/*"
-                                        hidden
-                                    >
-
-                                    <!-- Upload box -->
-                                    <div
-                                        id="favicon-upload-box"
-                                        class="border rounded-4 d-flex flex-column justify-content-center align-items-center text-center position-relative overflow-hidden"
-                                        style="
-                                            height: 260px;
-                                            cursor: pointer;
-                                            background: #f8fafc;
-                                            transition: all 0.3s ease;
-                                            border: 2px dashed #dee2e6;
-                                        "
-                                    >
-
-                                        <!-- Imagen -->
-                                        <img
-                                            id="favicon-preview"
-                                            src="{% if config.favicon %}{{ config.favicon.url }}{% endif %}"
-                                            alt="Favicon preview"
-                                            style="
-                                                max-width: 100%;
-                                                max-height: 100%;
-                                                object-fit: contain;
-                                                display: {% if config.favicon %}block{% else %}none{% endif %};
-                                                padding: 20px;
-                                            "
-                                        >
-
-                                        <!-- Placeholder -->
-                                        <div id="favicon-placeholder" {% if config.favicon %}style="display: none;"{% endif %}>
-                                            <i class="ri-window-2-line fa-3x mb-3" style="color: #94a3b8; font-size: 3rem;"></i>
-                                            <h6 class="fw-bold text-secondary">Subir favicon</h6>
-                                            <p class="text-muted small mb-0">Haz clic para seleccionar una imagen</p>
-                                            <p class="text-muted small">Formatos: PNG, ICO, SVG</p>
-                                        </div>
-
-                                        <!-- Badge de estado -->
-                                        <div id="favicon-status" class="position-absolute top-0 end-0 m-2" style="display: {% if config.favicon %}block{% else %}none{% endif %};">
-                                            <span class="badge bg-success">
-                                                <i class="ri-check-line me-1"></i> Subido
-                                            </span>
-                                        </div>
-
-                                    </div>
-
-                                    <!-- Botones de acción -->
-                                    <div class="d-flex gap-2 mt-3">
-                                        <button
-                                            type="button"
-                                            id="change-favicon-btn"
-                                            class="btn btn-outline-primary btn-sm flex-grow-1"
-                                            {% if not config.favicon %}style="display: none;"{% endif %}
-                                        >
-                                            <i class="ri-pencil-line me-1"></i> Cambiar favicon
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            id="remove-favicon-btn"
-                                            class="btn btn-outline-danger btn-sm flex-grow-1"
-                                            {% if not config.favicon %}style="display: none;"{% endif %}
-                                        >
-                                            <i class="ri-delete-bin-line me-1"></i> Quitar favicon
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            id="add-favicon-btn"
-                                            class="btn btn-primary btn-sm flex-grow-1"
-                                            {% if config.favicon %}style="display: none;"{% endif %}
-                                        >
-                                            <i class="ri-upload-line me-1"></i> Subir favicon
-                                        </button>
-                                    </div>
+                                <div class="row g-3" id="themeGrid">
+                                    <!-- Los temas se generarán con JavaScript -->
                                 </div>
 
                             </div>
-
-                            <!-- ========== COLORES ========== -->
-                            <div class="col-12 mt-3">
-                                <h5 class="fw-bold mb-3">
-                                    <i class="ri-palette-line me-1" style="color: {{ config.primary_color|default:'#2563EB' }};"></i>
-                                    Colores personalizados
-                                </h5>
-                            </div>
-
-                            <div class="col-md-2 mb-4">
-                                <label class="form-label fw-bold">
-                                    Color Primario
-                                </label>
-                                {{ form.primary_color }}
-                                <small class="text-muted d-block mt-1">Principal</small>
-                            </div>
-
-                            <div class="col-md-2 mb-4">
-                                <label class="form-label fw-bold">
-                                    Color Secund.
-                                </label>
-                                {{ form.secondary_color }}
-                                <small class="text-muted d-block mt-1">Secundario</small>
-                            </div>
-
-                            <div class="col-md-2 mb-4">
-                                <label class="form-label fw-bold">
-                                    Color Accent
-                                </label>
-                                {{ form.accent_color }}
-                                <small class="text-muted d-block mt-1">Destacar</small>
-                            </div>
-
-                            <div class="col-md-2 mb-4">
-                                <label class="form-label fw-bold">
-                                    Fondo
-                                </label>
-                                {{ form.background_color }}
-                                <small class="text-muted d-block mt-1">Background</small>
-                            </div>
-
-                            <div class="col-md-2 mb-4">
-                                <label class="form-label fw-bold">
-                                    Card
-                                </label>
-                                {{ form.card_background }}
-                                <small class="text-muted d-block mt-1">Tarjetas</small>
-                            </div>
-
-                            <div class="col-md-2 mb-4">
-                                <label class="form-label fw-bold">
-                                    Texto
-                                </label>
-                                {{ form.text_color }}
-                                <small class="text-muted d-block mt-1">Letras</small>
-                            </div>
-
-                            <!-- ========== MODO OSCURO ========== -->
-                            <div class="col-12 mb-4">
-                                <div class="form-check form-switch">
-                                    <input
-                                        class="form-check-input"
-                                        type="checkbox"
-                                        name="dark_mode"
-                                        id="id_dark_mode"
-                                        {% if config.dark_mode %}checked{% endif %}
-                                        style="width: 3rem; height: 1.5rem;"
-                                    >
-                                    <label class="form-check-label fw-bold ms-2" for="id_dark_mode">
-                                        <i class="ri-moon-line me-1"></i> Modo oscuro
-                                    </label>
-                                    <small class="text-muted d-block ms-2">Activar modo oscuro para toda la plataforma</small>
-                                </div>
-                            </div>
-
                         </div>
+                    </div>
 
-                        <!-- ========== BOTONES DE ACCIÓN ========== -->
-                        <div class="mt-4 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary px-5">
-                                <i class="ri-save-3-line me-2"></i>
-                                Guardar configuración
-                            </button>
+                    <!-- ==========================================
+                    TAB 3: COLORES AVANZADOS
+                    ========================================== -->
+                    <div class="tab-pane fade" id="colors" role="tabpanel">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-4">
 
-                            <button type="reset" class="btn btn-outline-secondary px-4">
-                                <i class="ri-refresh-line me-2"></i>
-                                Restablecer
-                            </button>
+                                <div class="d-flex align-items-center gap-2 mb-4">
+                                    <i class="ri-settings-4-line text-primary"></i>
+                                    <h5 class="fw-semibold mb-0">Ajustes avanzados</h5>
+                                    <span class="badge bg-light text-muted fw-normal ms-2">Personalizado</span>
+                                </div>
 
-                    
+                                <div class="row g-4">
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:{{ config.primary_color|default:'#2563EB' }};"></span>
+                                            Primario
+                                        </label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {{ form.primary_color }}
+                                            <span class="small text-muted font-monospace" id="primaryHex">{{ config.primary_color|default:'#2563EB' }}</span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Botones, enlaces, principal</small>
+                                    </div>
+
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:{{ config.secondary_color|default:'#1E293B' }};"></span>
+                                            Secundario
+                                        </label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {{ form.secondary_color }}
+                                            <span class="small text-muted font-monospace" id="secondaryHex">{{ config.secondary_color|default:'#1E293B' }}</span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Fondos, bordes, secundario</small>
+                                    </div>
+
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:{{ config.accent_color|default:'#F59E0B' }};"></span>
+                                            Acento
+                                        </label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {{ form.accent_color }}
+                                            <span class="small text-muted font-monospace" id="accentHex">{{ config.accent_color|default:'#F59E0B' }}</span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Destacar, badges, alertas</small>
+                                    </div>
+
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:{{ config.background_color|default:'#F8FAFC' }};"></span>
+                                            Fondo
+                                        </label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {{ form.background_color }}
+                                            <span class="small text-muted font-monospace" id="bgHex">{{ config.background_color|default:'#F8FAFC' }}</span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Fondo general de la página</small>
+                                    </div>
+
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:{{ config.card_background|default:'#FFFFFF' }};"></span>
+                                            Tarjeta
+                                        </label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {{ form.card_background }}
+                                            <span class="small text-muted font-monospace" id="cardHex">{{ config.card_background|default:'#FFFFFF' }}</span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Tarjetas, modales, contenedores</small>
+                                    </div>
+
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:{{ config.text_color|default:'#0F172A' }};"></span>
+                                            Texto
+                                        </label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {{ form.text_color }}
+                                            <span class="small text-muted font-monospace" id="textHex">{{ config.text_color|default:'#0F172A' }}</span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Texto principal, títulos</small>
+                                    </div>
+
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <span class="d-inline-block rounded-circle me-1" style="width:10px;height:10px;background:{{ config.text_muted|default:'#64748B' }};"></span>
+                                            Texto secundario
+                                        </label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {{ form.text_muted }}
+                                            <span class="small text-muted font-monospace" id="textMutedHex">{{ config.text_muted|default:'#64748B' }}</span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Textos secundarios, descripciones</small>
+                                    </div>
+
+                                    <div class="col-md-3 col-6 d-flex align-items-end">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="dark_mode" id="id_dark_mode" 
+                                                   {% if config.dark_mode %}checked{% endif %}
+                                                   style="width:3rem;height:1.5rem;">
+                                            <label class="form-check-label fw-semibold ms-2" for="id_dark_mode">
+                                                <i class="ri-moon-line me-1"></i> Oscuro
+                                            </label>
+                                            <small class="text-muted d-block mt-1">Modo oscuro global</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
                         </div>
-
-                    </form>
+                    </div>
 
                 </div>
 
-            </div>
+                <!-- ========== BOTONES DE ACCIÓN ========== -->
+                <div class="mt-4 d-flex gap-3 flex-wrap">
+                    <button type="submit" class="btn btn-primary px-5 py-2">
+                        <i class="ri-save-3-line me-2"></i>Guardar cambios
+                    </button>
+                    <button type="reset" class="btn btn-outline-secondary px-4 py-2">
+                        <i class="ri-refresh-line me-2"></i>Restablecer
+                    </button>
+                </div>
+
+            </form>
 
         </div>
 
@@ -339,114 +326,756 @@
 
 <!-- ========== MODAL DE VISTA PREVIA ========== -->
 <div class="modal fade" id="livePreviewModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="ri-eye-line me-2"></i> Vista previa en vivo
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="ri-eye-line me-2 text-primary"></i>Vista previa en vivo
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div id="previewContent" style="padding: 20px; border-radius: 12px;">
-                    <!-- Vista previa dinámica -->
-                    <div class="preview-card" style="padding: 30px; border-radius: 12px; text-align: center;">
-                        <img id="preview-logo" src="{% if config.logo %}{{ config.logo.url }}{% endif %}" alt="Logo" style="max-height: 80px; margin-bottom: 20px; display: {% if config.logo %}block{% else %}none{% endif %}; margin: 0 auto 20px;">
-                        <h3 style="margin-bottom: 10px;">Título de ejemplo</h3>
-                        <p style="margin-bottom: 20px;">Este es un texto de ejemplo para mostrar los colores</p>
-                        <button class="btn" style="padding: 10px 30px; border: none; border-radius: 8px;">Botón de ejemplo</button>
-                        <div class="mt-3">
-                            <span class="badge" style="padding: 6px 12px;">Etiqueta</span>
-                        </div>
-                    </div>
-                </div>
+            <div class="modal-body p-4" id="previewContent">
+                <!-- Preview dinámico -->
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    /* Estilos mejorados */
-    .logo-container, .favicon-container {
-        position: relative;
-    }
+/* ============================================
+   ESTILOS MEJORADOS PARA TABS Y TEMAS
+   ============================================ */
 
-    #logo-upload-box:hover,
-    #favicon-upload-box:hover {
-        border-color: #2563eb !important;
-        background: #f1f5f9 !important;
-        transform: scale(1.01);
-        box-shadow: 0 4px 20px rgba(37, 99, 235, 0.1);
-    }
+/* Tabs con estilo premium */
+.nav-pills .nav-link {
+    background: transparent;
+    color: #64748B;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+}
 
-    /* Animación de los botones */
-    .btn {
-        transition: all 0.3s ease;
-    }
+.nav-pills .nav-link:hover {
+    background: #F1F5F9;
+    color: #1E293B;
+    transform: translateY(-2px);
+}
 
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
+.nav-pills .nav-link.active {
+    background: #2563EB;
+    color: white;
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
+}
 
-    /* Color pickers más grandes */
+.nav-pills .nav-link .badge {
+    background: rgba(0,0,0,0.08);
+    color: inherit;
+}
+
+.nav-pills .nav-link.active .badge {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+/* Grid de temas */
+#themeGrid .theme-card {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid #E2E8F0;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+}
+
+#themeGrid .theme-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.03), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#themeGrid .theme-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    border-color: rgba(37, 99, 235, 0.2);
+}
+
+#themeGrid .theme-card:hover::before {
+    opacity: 1;
+}
+
+#themeGrid .theme-card.selected {
+    border-color: #2563EB;
+    background: #F8FAFF;
+    box-shadow: 0 8px 30px rgba(37, 99, 235, 0.12);
+}
+
+#themeGrid .theme-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    color: #2563EB;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* Color swatches en temas */
+.theme-swatches {
+    display: flex;
+    gap: 6px;
+    margin: 10px 0 8px 0;
+    flex-wrap: wrap;
+}
+
+.theme-swatches .swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 2px solid rgba(0,0,0,0.06);
+    transition: transform 0.2s ease;
+}
+
+.theme-card:hover .theme-swatches .swatch {
+    transform: scale(1.05);
+}
+
+.theme-swatches .swatch:first-child {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+}
+
+/* Badges en temas */
+.theme-badge {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.theme-badge.popular {
+    background: #DBEAFE;
+    color: #1D4ED8;
+}
+
+.theme-badge.new {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.theme-badge.premium {
+    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+    color: #92400E;
+}
+
+.theme-badge.dark {
+    background: #1E293B;
+    color: #E2E8F0;
+}
+
+/* Color pickers mejorados */
+input[type="color"] {
+    width: 44px;
+    height: 44px;
+    padding: 3px;
+    border: 2px solid #E2E8F0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+input[type="color"]:hover {
+    border-color: #2563EB;
+    transform: scale(1.05);
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 8px;
+}
+
+/* Etiquetas de color */
+.color-hex {
+    font-size: 0.75rem;
+    font-weight: 500;
+    min-width: 65px;
+    color: #64748B;
+    letter-spacing: 0.3px;
+}
+
+/* Logo upload boxes */
+#logo-upload-box:hover,
+#favicon-upload-box:hover {
+    border-color: #2563eb !important;
+    background: #f1f5f9 !important;
+    transform: scale(1.01);
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.1);
+}
+
+/* Vista previa en modal */
+#previewContent {
+    background: var(--preview-bg, #F8FAFC);
+    min-height: 280px;
+    border-radius: 12px;
+    transition: background 0.3s ease;
+}
+
+.preview-card-demo {
+    background: var(--preview-card, #FFFFFF);
+    color: var(--preview-text, #0F172A);
+    padding: 40px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    transition: all 0.3s ease;
+}
+
+.preview-card-demo .demo-btn {
+    background: var(--preview-primary, #2563EB);
+    color: white;
+    border: none;
+    padding: 10px 40px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.preview-card-demo .demo-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+}
+
+.preview-card-demo .demo-badge {
+    background: var(--preview-accent, #F59E0B);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.preview-card-demo .demo-secondary {
+    color: var(--preview-secondary, #1E293B);
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#themeGrid .theme-card {
+    animation: fadeInUp 0.5s ease forwards;
+    opacity: 0;
+}
+
+#themeGrid .theme-card:nth-child(1) { animation-delay: 0.05s; }
+#themeGrid .theme-card:nth-child(2) { animation-delay: 0.10s; }
+#themeGrid .theme-card:nth-child(3) { animation-delay: 0.15s; }
+#themeGrid .theme-card:nth-child(4) { animation-delay: 0.20s; }
+#themeGrid .theme-card:nth-child(5) { animation-delay: 0.25s; }
+#themeGrid .theme-card:nth-child(6) { animation-delay: 0.30s; }
+#themeGrid .theme-card:nth-child(7) { animation-delay: 0.35s; }
+#themeGrid .theme-card:nth-child(8) { animation-delay: 0.40s; }
+#themeGrid .theme-card:nth-child(9) { animation-delay: 0.45s; }
+#themeGrid .theme-card:nth-child(10) { animation-delay: 0.50s; }
+#themeGrid .theme-card:nth-child(11) { animation-delay: 0.55s; }
+#themeGrid .theme-card:nth-child(12) { animation-delay: 0.60s; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nav-pills .nav-link {
+        font-size: 0.85rem;
+        padding: 10px 12px;
+    }
+    .nav-pills .nav-link .badge {
+        display: none;
+    }
+    #themeGrid .theme-card {
+        padding: 0.75rem;
+    }
+    .theme-swatches .swatch {
+        width: 22px;
+        height: 22px;
+    }
+    .theme-swatches .swatch:first-child {
+        width: 26px;
+        height: 26px;
+    }
     input[type="color"] {
-        width: 100%;
-        height: 50px;
-        padding: 4px;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s ease;
+        width: 38px;
+        height: 38px;
     }
-
-    input[type="color"]:hover {
-        border-color: #2563eb;
-        transform: scale(1.02);
-    }
-
-    input[type="color"]::-webkit-color-swatch-wrapper {
-        padding: 0;
-    }
-
-    input[type="color"]::-webkit-color-swatch {
-        border: none;
-        border-radius: 6px;
-    }
-
-    /* Vista previa en modal */
-    .preview-card {
-        background: var(--card-bg, #ffffff);
-        color: var(--text-color, #000000);
-        border: 1px solid #e2e8f0;
-    }
-
-    .preview-card .btn {
-        background: var(--primary-color, #2563EB);
-        color: white;
-    }
-
-    .preview-card .badge {
-        background: var(--secondary-color, #1E293B);
-        color: white;
-    }
-
-    /* Badge de estado */
-    .badge {
-        font-size: 0.75rem;
-        padding: 4px 10px;
-    }
+}
 </style>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-
 document.addEventListener('DOMContentLoaded', function() {
 
     // ============================================
-    // LOGO
+    // DEFINICIÓN DE TEMAS PROFESIONALES
+    // ============================================
+    const themes = [
+        {
+            id: 'default',
+            name: 'Default',
+            description: 'Clásico y profesional',
+            badge: 'Popular',
+            badgeType: 'popular',
+            colors: {
+                primary: '#2563EB',
+                secondary: '#1E293B',
+                accent: '#F59E0B',
+                background: '#F8FAFC',
+                card: '#FFFFFF',
+                text: '#0F172A',
+                textMuted: '#64748B'
+            }
+        },
+        {
+            id: 'ocean',
+            name: 'Ocean',
+            description: 'Calma y confianza',
+            badge: 'Premium',
+            badgeType: 'premium',
+            colors: {
+                primary: '#0EA5E9',
+                secondary: '#0C4A6E',
+                accent: '#22D3EE',
+                background: '#F0F9FF',
+                card: '#FFFFFF',
+                text: '#0C4A6E',
+                textMuted: '#38BDF8'
+            }
+        },
+        {
+            id: 'forest',
+            name: 'Forest',
+            description: 'Naturaleza y frescura',
+            colors: {
+                primary: '#059669',
+                secondary: '#064E3B',
+                accent: '#FCD34D',
+                background: '#ECFDF5',
+                card: '#FFFFFF',
+                text: '#064E3B',
+                textMuted: '#6B7280'
+            }
+        },
+        {
+            id: 'sunset',
+            name: 'Sunset',
+            description: 'Cálido y acogedor',
+            badge: 'New',
+            badgeType: 'new',
+            colors: {
+                primary: '#F97316',
+                secondary: '#9A3412',
+                accent: '#FBBF24',
+                background: '#FFF7ED',
+                card: '#FFFFFF',
+                text: '#7C2D12',
+                textMuted: '#D97706'
+            }
+        },
+        {
+            id: 'purple',
+            name: 'Nebula',
+            description: 'Creativo y moderno',
+            colors: {
+                primary: '#7C3AED',
+                secondary: '#5B21B6',
+                accent: '#F472B6',
+                background: '#F5F3FF',
+                card: '#FFFFFF',
+                text: '#4C1D95',
+                textMuted: '#8B5CF6'
+            }
+        },
+        {
+            id: 'dark',
+            name: 'Dark',
+            description: 'Elegante y sofisticado',
+            badge: 'Premium',
+            badgeType: 'premium',
+            colors: {
+                primary: '#0F172A',
+                secondary: '#1E293B',
+                accent: '#FBBF24',
+                background: '#0F172A',
+                card: '#1E293B',
+                text: '#F8FAFC',
+                textMuted: '#94A3B8'
+            }
+        },
+        {
+            id: 'rose',
+            name: 'Rose',
+            description: 'Femenino y delicado',
+            colors: {
+                primary: '#EC4899',
+                secondary: '#BE185D',
+                accent: '#FBBF24',
+                background: '#FDF2F8',
+                card: '#FFFFFF',
+                text: '#831843',
+                textMuted: '#9CA3AF'
+            }
+        },
+        {
+            id: 'teal',
+            name: 'Teal',
+            description: 'Profesional y moderno',
+            colors: {
+                primary: '#14B8A6',
+                secondary: '#0F766E',
+                accent: '#FCD34D',
+                background: '#F0FDFA',
+                card: '#FFFFFF',
+                text: '#0F766E',
+                textMuted: '#5EEAD4'
+            }
+        },
+        {
+            id: 'indigo',
+            name: 'Indigo',
+            description: 'Confianza y autoridad',
+            badge: 'Popular',
+            badgeType: 'popular',
+            colors: {
+                primary: '#4F46E5',
+                secondary: '#312E81',
+                accent: '#F59E0B',
+                background: '#EEF2FF',
+                card: '#FFFFFF',
+                text: '#312E81',
+                textMuted: '#818CF8'
+            }
+        },
+        {
+            id: 'coral',
+            name: 'Coral',
+            description: 'Energía y pasión',
+            colors: {
+                primary: '#EF4444',
+                secondary: '#991B1B',
+                accent: '#FCD34D',
+                background: '#FEF2F2',
+                card: '#FFFFFF',
+                text: '#7F1D1D',
+                textMuted: '#FCA5A5'
+            }
+        },
+        {
+            id: 'mint',
+            name: 'Mint',
+            description: 'Fresco y limpio',
+            badge: 'New',
+            badgeType: 'new',
+            colors: {
+                primary: '#34D399',
+                secondary: '#065F46',
+                accent: '#FCD34D',
+                background: '#F0FDF4',
+                card: '#FFFFFF',
+                text: '#065F46',
+                textMuted: '#6EE7B7'
+            }
+        },
+        {
+            id: 'slate',
+            name: 'Slate',
+            description: 'Minimalista y elegante',
+            colors: {
+                primary: '#64748B',
+                secondary: '#334155',
+                accent: '#94A3B8',
+                background: '#F1F5F9',
+                card: '#FFFFFF',
+                text: '#0F172A',
+                textMuted: '#94A3B8'
+            }
+        }
+    ];
+
+    // ============================================
+    // RENDERIZAR TEMAS
+    // ============================================
+    const themeGrid = document.getElementById('themeGrid');
+    const selectedTheme = localStorage.getItem('selectedTheme') || 'default';
+
+    themes.forEach((theme, index) => {
+        const col = document.createElement('div');
+        col.className = 'col-xl-3 col-lg-4 col-md-6 col-6';
+
+        const swatches = Object.values(theme.colors).slice(0, 6);
+
+        col.innerHTML = `
+            <div class="theme-card ${theme.id === selectedTheme ? 'selected' : ''}" 
+                 data-theme="${theme.id}"
+                 onclick="applyTheme('${theme.id}')">
+                ${theme.badge ? `<span class="theme-badge ${theme.badgeType}">${theme.badge}</span>` : ''}
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <h6 class="fw-bold mb-1">${theme.name}</h6>
+                        <span class="small text-muted">${theme.description}</span>
+                    </div>
+                </div>
+                <div class="theme-swatches">
+                    ${swatches.map(color => `
+                        <span class="swatch" style="background: ${color};"></span>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        themeGrid.appendChild(col);
+    });
+
+    // ============================================
+    // APLICAR TEMA
+    // ============================================
+    window.applyTheme = function(themeId) {
+        const theme = themes.find(t => t.id === themeId);
+        if (!theme) return;
+
+        const colors = theme.colors;
+
+        // Actualizar inputs de color
+        const colorMap = {
+            'primary_color': colors.primary,
+            'secondary_color': colors.secondary,
+            'accent_color': colors.accent,
+            'background_color': colors.background,
+            'card_background': colors.card,
+            'text_color': colors.text,
+            'text_muted': colors.textMuted
+        };
+
+        Object.entries(colorMap).forEach(([fieldName, colorValue]) => {
+            const input = document.querySelector(`input[name="${fieldName}"]`);
+            if (input) {
+                input.value = colorValue;
+                input.dispatchEvent(new Event('input'));
+                input.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Marcar tema seleccionado
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.theme === themeId) {
+                card.classList.add('selected');
+            }
+        });
+
+        // Guardar selección
+        localStorage.setItem('selectedTheme', themeId);
+
+        // Actualizar previews
+        updateColorPreviews();
+        updateLivePreview();
+
+        // Feedback
+        showToast(`Tema "${theme.name}" aplicado`, 'success');
+    };
+
+    // ============================================
+    // TOAST NOTIFICATIONS
+    // ============================================
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        const icon = type === 'success' ? 'ri-check-line' : 'ri-information-line';
+        const bgColor = type === 'success' ? 'bg-success' : 'bg-info';
+        toast.innerHTML = `
+            <div class="toast show border-0 shadow-lg" role="alert">
+                <div class="toast-body d-flex align-items-center gap-3">
+                    <span class="badge ${bgColor} rounded-circle p-2">
+                        <i class="${icon}"></i>
+                    </span>
+                    <div>
+                        <strong>${message}</strong>
+                        <div class="small text-muted">Los colores se han actualizado correctamente</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.querySelector('.toast')?.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // ============================================
+    // ACTUALIZAR PREVIEWS DE COLOR
+    // ============================================
+    function updateColorPreviews() {
+        const colorMap = {
+            'primary_color': 'primary',
+            'secondary_color': 'secondary',
+            'accent_color': 'accent',
+            'background_color': 'bg',
+            'card_background': 'card',
+            'text_color': 'text',
+            'text_muted': 'textMuted'
+        };
+
+        Object.entries(colorMap).forEach(([inputName, prefix]) => {
+            const input = document.querySelector(`input[name="${inputName}"]`);
+            if (!input) return;
+
+            // Actualizar círculo en label
+            const label = document.querySelector(`label[for="${input.id}"]`);
+            if (label) {
+                const circle = label.querySelector('.rounded-circle');
+                if (circle) {
+                    circle.style.background = input.value;
+                }
+            }
+
+            // Actualizar hex
+            const hexSpan = document.getElementById(`${prefix}Hex`);
+            if (hexSpan) {
+                hexSpan.textContent = input.value.toUpperCase();
+            }
+        });
+    }
+
+    // ============================================
+    // VISTA PREVIA EN VIVO
+    // ============================================
+    let previewModal = null;
+
+    window.toggleLivePreview = function() {
+        if (!previewModal) {
+            previewModal = new bootstrap.Modal(document.getElementById('livePreviewModal'));
+        }
+        updateLivePreview();
+        previewModal.show();
+    };
+
+    function updateLivePreview() {
+        const getColor = (name) => {
+            const input = document.querySelector(`input[name="${name}"]`);
+            return input ? input.value : '#2563EB';
+        };
+
+        const primary = getColor('primary_color');
+        const secondary = getColor('secondary_color');
+        const accent = getColor('accent_color');
+        const background = getColor('background_color');
+        const card = getColor('card_background');
+        const text = getColor('text_color');
+        const textMuted = getColor('text_muted');
+        const darkMode = document.getElementById('id_dark_mode')?.checked || false;
+
+        const previewContent = document.getElementById('previewContent');
+        previewContent.style.setProperty('--preview-bg', darkMode ? '#0F172A' : background);
+        previewContent.style.setProperty('--preview-card', darkMode ? '#1E293B' : card);
+        previewContent.style.setProperty('--preview-text', darkMode ? '#F8FAFC' : text);
+        previewContent.style.setProperty('--preview-primary', primary);
+        previewContent.style.setProperty('--preview-secondary', darkMode ? '#334155' : secondary);
+        previewContent.style.setProperty('--preview-accent', accent);
+
+        previewContent.innerHTML = `
+            <div class="preview-card-demo">
+                <div class="d-flex align-items-center justify-content-center gap-4 mb-4">
+                    <div class="bg-primary bg-opacity-10 p-2 rounded-3">
+                        <i class="ri-shield-check-line" style="font-size:2rem;color:var(--preview-primary);"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0" style="color:var(--preview-text);">Panel de control</h4>
+                        <span style="color:var(--preview-secondary);font-size:0.9rem;">Bienvenido de vuelta, usuario</span>
+                    </div>
+                </div>
+                <div class="row g-3 mb-4 text-start">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3" style="background:var(--preview-card);border:1px solid rgba(0,0,0,0.05);">
+                            <span class="small" style="color:var(--preview-secondary);">Ventas</span>
+                            <h5 class="fw-bold" style="color:var(--preview-text);">$12,430</h5>
+                            <span class="badge" style="background:var(--preview-accent);color:white;">+12%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3" style="background:var(--preview-card);border:1px solid rgba(0,0,0,0.05);">
+                            <span class="small" style="color:var(--preview-secondary);">Usuarios</span>
+                            <h5 class="fw-bold" style="color:var(--preview-text);">2,847</h5>
+                            <span class="badge" style="background:var(--preview-primary);color:white;">+5%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3" style="background:var(--preview-card);border:1px solid rgba(0,0,0,0.05);">
+                            <span class="small" style="color:var(--preview-secondary);">Conversión</span>
+                            <h5 class="fw-bold" style="color:var(--preview-text);">3.2%</h5>
+                            <span class="badge" style="background:#22C55E;color:white;">+0.8%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <button class="demo-btn">Botón principal</button>
+                    <button class="demo-btn" style="background:transparent;color:var(--preview-primary);border:2px solid var(--preview-primary);">Secundario</button>
+                    <span class="demo-badge">Etiqueta</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============================================
+    // EVENTOS EN TIEMPO REAL
+    // ============================================
+    document.querySelectorAll('input[type="color"]').forEach(input => {
+        input.addEventListener('input', function() {
+            updateColorPreviews();
+
+            // Desmarcar tema seleccionado
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            localStorage.removeItem('selectedTheme');
+
+            updateLivePreview();
+        });
+    });
+
+    document.getElementById('id_dark_mode')?.addEventListener('change', updateLivePreview);
+
+    // ============================================
+    // LOGO - MANTENIENDO CÓDIGO EXISTENTE
     // ============================================
     const logoUploadBox = document.getElementById('logo-upload-box');
     const logoInput = document.getElementById('id_logo');
@@ -457,7 +1086,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const removeLogoBtn = document.getElementById('remove-logo-btn');
     const addLogoBtn = document.getElementById('add-logo-btn');
 
-    // Función para actualizar UI del logo
     function updateLogoUI(hasLogo) {
         if (hasLogo) {
             logoPreview.style.display = 'block';
@@ -476,28 +1104,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Abrir selector - clic en la caja
-    logoUploadBox.addEventListener('click', () => {
-        logoInput.click();
-    });
+    logoUploadBox.addEventListener('click', () => logoInput.click());
+    addLogoBtn.addEventListener('click', (e) => { e.stopPropagation(); logoInput.click(); });
+    changeLogoBtn.addEventListener('click', (e) => { e.stopPropagation(); logoInput.click(); });
 
-    // Abrir selector - botón "Subir logo"
-    addLogoBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        logoInput.click();
-    });
-
-    // Abrir selector - botón "Cambiar logo"
-    changeLogoBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        logoInput.click();
-    });
-
-    // Mostrar preview
     logoInput.addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
-            // Validar tamaño (máx 2MB)
             if (file.size > 2 * 1024 * 1024) {
                 Swal.fire({
                     icon: 'error',
@@ -509,7 +1122,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Validar formato
             const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
             if (!validTypes.includes(file.type)) {
                 Swal.fire({
@@ -531,7 +1143,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Quitar logo
     removeLogoBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         Swal.fire({
@@ -549,7 +1160,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 logoPreview.src = '';
                 updateLogoUI(false);
                 
-                // Crear input oculto para indicar que se eliminó
                 const hiddenInput = document.createElement('input');
                 hiddenInput.type = 'hidden';
                 hiddenInput.name = 'clear_logo';
@@ -560,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ============================================
-    // FAVICON
+    // FAVICON - MANTENIENDO CÓDIGO EXISTENTE
     // ============================================
     const faviconUploadBox = document.getElementById('favicon-upload-box');
     const faviconInput = document.getElementById('id_favicon');
@@ -571,7 +1181,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const removeFaviconBtn = document.getElementById('remove-favicon-btn');
     const addFaviconBtn = document.getElementById('add-favicon-btn');
 
-    // Función para actualizar UI del favicon
     function updateFaviconUI(hasFavicon) {
         if (hasFavicon) {
             faviconPreview.style.display = 'block';
@@ -590,28 +1199,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Abrir selector - clic en la caja
-    faviconUploadBox.addEventListener('click', () => {
-        faviconInput.click();
-    });
+    faviconUploadBox.addEventListener('click', () => faviconInput.click());
+    addFaviconBtn.addEventListener('click', (e) => { e.stopPropagation(); faviconInput.click(); });
+    changeFaviconBtn.addEventListener('click', (e) => { e.stopPropagation(); faviconInput.click(); });
 
-    // Abrir selector - botón "Subir favicon"
-    addFaviconBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        faviconInput.click();
-    });
-
-    // Abrir selector - botón "Cambiar favicon"
-    changeFaviconBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        faviconInput.click();
-    });
-
-    // Mostrar preview
     faviconInput.addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
-            // Validar tamaño (máx 500KB)
             if (file.size > 500 * 1024) {
                 Swal.fire({
                     icon: 'error',
@@ -623,7 +1217,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Validar formato
             const validTypes = ['image/png', 'image/x-icon', 'image/svg+xml', 'image/vnd.microsoft.icon'];
             if (!validTypes.includes(file.type) && !file.name.endsWith('.ico')) {
                 Swal.fire({
@@ -645,7 +1238,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Quitar favicon
     removeFaviconBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         Swal.fire({
@@ -663,7 +1255,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 faviconPreview.src = '';
                 updateFaviconUI(false);
                 
-                // Crear input oculto para indicar que se eliminó
                 const hiddenInput = document.createElement('input');
                 hiddenInput.type = 'hidden';
                 hiddenInput.name = 'clear_favicon';
@@ -674,108 +1265,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ============================================
-    // VISTA PREVIA EN VIVO
-    // ============================================
-    let previewModal = null;
-
-    window.toggleLivePreview = function() {
-        if (!previewModal) {
-            previewModal = new bootstrap.Modal(document.getElementById('livePreviewModal'));
-        }
-        
-        // Actualizar preview con los valores actuales
-        updateLivePreview();
-        previewModal.show();
-    };
-
-    function updateLivePreview() {
-        const primaryColor = document.querySelector('[name="primary_color"]')?.value || '#2563EB';
-        const secondaryColor = document.querySelector('[name="secondary_color"]')?.value || '#1E293B';
-        const accentColor = document.querySelector('[name="accent_color"]')?.value || '#F59E0B';
-        const bgColor = document.querySelector('[name="background_color"]')?.value || '#ffffff';
-        const cardBg = document.querySelector('[name="card_background"]')?.value || '#f8fafc';
-        const textColor = document.querySelector('[name="text_color"]')?.value || '#000000';
-        const darkMode = document.getElementById('id_dark_mode')?.checked || false;
-
-        const previewCard = document.querySelector('.preview-card');
-        const previewLogo = document.getElementById('preview-logo');
-        
-        // Aplicar colores
-        previewCard.style.background = darkMode ? '#1a1a2e' : (cardBg || '#f8fafc');
-        previewCard.style.color = darkMode ? '#ffffff' : (textColor || '#000000');
-        
-        const title = previewCard.querySelector('h3');
-        if (title) title.style.color = darkMode ? '#ffffff' : (textColor || '#000000');
-        
-        const paragraph = previewCard.querySelector('p');
-        if (paragraph) paragraph.style.color = darkMode ? '#94a3b8' : '#475569';
-        
-        const button = previewCard.querySelector('.btn');
-        if (button) {
-            button.style.background = darkMode ? primaryColor : primaryColor;
-            button.style.color = '#ffffff';
-        }
-        
-        const badge = previewCard.querySelector('.badge');
-        if (badge) {
-            badge.style.background = darkMode ? accentColor : accentColor;
-            badge.style.color = '#ffffff';
-        }
-
-        // Logo
-        const logoImg = document.getElementById('logo-preview');
-        if (logoImg && logoImg.src && logoImg.src !== window.location.origin + '/') {
-            previewLogo.src = logoImg.src;
-            previewLogo.style.display = 'block';
-        } else {
-            previewLogo.style.display = 'none';
-        }
-
-        // Fondo del modal
-        document.querySelector('#livePreviewModal .modal-content').style.background = darkMode ? '#0f172a' : '#ffffff';
-        document.querySelector('#livePreviewModal .modal-header').style.background = darkMode ? '#1e293b' : '#f8fafc';
-        document.querySelector('#livePreviewModal .modal-header').style.color = darkMode ? '#ffffff' : '#000000';
-    }
-
-    // Actualizar preview al cambiar colores
-    document.querySelectorAll('input[type="color"]').forEach(input => {
-        input.addEventListener('input', updateLivePreview);
-    });
-
-    document.getElementById('id_dark_mode')?.addEventListener('change', updateLivePreview);
-
-    // ============================================
-    // VALIDACIÓN ANTES DE ENVIAR
-    // ============================================
-    document.getElementById('configForm').addEventListener('submit', function(e) {
-        const submitBtn = this.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin me-2"></i> Guardando...';
-    });
-
-    // ============================================
-    // RESETEAR FORMULARIO
-    // ============================================
-    document.querySelector('button[type="reset"]')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        Swal.fire({
-            title: '¿Restablecer configuración?',
-            text: 'Se perderán todos los cambios no guardados',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, restablecer',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                location.reload();
-            }
-        });
-    });
-
-    // ============================================
-    // DRAG & DROP PARA LOGO Y FAVICON
+    // DRAG & DROP
     // ============================================
     [logoUploadBox, faviconUploadBox].forEach(box => {
         box.addEventListener('dragover', (e) => {
@@ -803,11 +1293,50 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Estado inicial
+    // ============================================
+    // FORMULARIO - VALIDACIÓN Y ENVÍO
+    // ============================================
+    document.getElementById('configForm').addEventListener('submit', function(e) {
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ri-loader-4-line ri-spin me-2"></i>Guardando...';
+    });
+
+    // ============================================
+    // RESTABLECER
+    // ============================================
+    document.querySelector('button[type="reset"]')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        Swal.fire({
+            title: '¿Restablecer configuración?',
+            text: 'Se perderán todos los cambios no guardados',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, restablecer',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                location.reload();
+            }
+        });
+    });
+
+    // ============================================
+    // INICIALIZAR
+    // ============================================
     updateLogoUI({{ config.logo|yesno:"true,false" }});
     updateFaviconUI({{ config.favicon|yesno:"true,false" }});
+    updateColorPreviews();
+    updateLivePreview();
+
+    // Si hay un tema guardado, aplicarlo
+    const savedTheme = localStorage.getItem('selectedTheme');
+    if (savedTheme && themes.some(t => t.id === savedTheme)) {
+        applyTheme(savedTheme);
+    }
 
 });
-
 </script>
 {% endblock %}

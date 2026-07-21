@@ -3419,63 +3419,6 @@ class DashboardView(LoginRequiredMixin, TemplateView,):
 
         company = self.get_company()
 
-
-        # ==========================================
-        # IDENTIFICAR PERMISOS DEL USUARIO
-        # ==========================================
-        #esta mal
-        is_admin_role = (
-            user.is_superuser
-            or user.is_staff
-            or user.groups.filter(
-                name__in=[
-                    "Admin",
-                    "Administrador",
-                    "Super Admin",
-                    "Superusuario",
-                ]
-            ).exists()
-        )
-
-        context["can_view_products"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_product")
-        )
-
-        context["can_view_categories"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_category")
-        )
-
-        context["can_view_suppliers"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_supplier")
-        )
-
-        context["can_view_members"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_companymember")
-        )
-
-        context["can_view_sales"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_sale")
-        )
-
-        # Será verdadero solamente cuando tenga
-        # al menos un permiso administrativo.
-        context["show_admin_dashboard"] = any([
-            context["can_view_products"],
-            context["can_view_categories"],
-            context["can_view_suppliers"],
-            context["can_view_members"],
-            context["can_view_sales"],
-        ])
-
-        context["show_client_dashboard"] = not context[
-            "show_admin_dashboard"
-        ]
-
         # ==========================================
         # EMPRESA
         # ==========================================
