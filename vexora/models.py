@@ -434,10 +434,7 @@ class Supplier(models.Model):
 # ========== PRODUCT MODEL ==========
 
 class Product(models.Model):
-    item_number = models.PositiveIntegerField(
-        default=0,
-        verbose_name="Número de producto",
-        help_text="Número secuencial del producto para esta compañía",
+    item_number = models.PositiveIntegerField(default=0,verbose_name="Número de producto",help_text="Número secuencial del producto para esta compañía",
     )
 
     name = models.CharField(
@@ -542,6 +539,9 @@ class Product(models.Model):
         null=True,
         verbose_name="Barcode",
         db_index=True,
+    )
+    is_store = models.BooleanField(
+        default=False,
     )
 
     created_at = models.DateTimeField(
