@@ -879,7 +879,7 @@ class UserListView(LoginRequiredMixin, ListView):
 #--------------------Crear usuario -------------------
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = CustomUser
-    form_class = PublicUserRegistrationForm
+    form_class = CustomUserRegisterForm
     template_name = "vexora/users/create.html"
     success_url = reverse_lazy("vexora:user_list")
 
