@@ -165,11 +165,7 @@ urlpatterns = [
     path('store/cart/count/', views.CartCountView.as_view(), name='cart_count'),
 
 
-path(
-    "store/",
-    views.StoreHomeView.as_view(),
-    name="store_home",
-),
+path("store/",views.StoreHomeView.as_view(),name="store_home",),
 
 path(
     "store/product/<int:pk>/",

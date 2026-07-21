@@ -737,6 +737,10 @@ class PlanesForm(forms.ModelForm):
             'class': 'form-control',
             'required': 'required'
         })
+        self.fields['max_collaborators'].widget.attrs.update({
+            'class': 'form-control',
+            'required': 'required'
+        })
         self.fields['max_products'].widget.attrs.update({
             'class': 'form-control',
             'required': 'required'
@@ -763,7 +767,7 @@ class PlanesForm(forms.ModelForm):
     
     class Meta:
         model = Plan
-        fields = ["name", "price", "max_users","description", "max_products", "max_groups", "max_providers", "custom_domain", "priority_support", "active"]
+        fields = ["name", "price", "max_users","description", "max_products", "max_groups", "max_providers", "custom_domain", "priority_support", "active","max_collaborators"]
 
 # ============================================
 # MEMBERS FORMS
