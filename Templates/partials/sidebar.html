@@ -471,40 +471,7 @@
     <!-- USUARIO -->
     <div class="sidebar-footer">
 
-      <a
-        href="{% url 'vexora:profil' pk=request.user.id %}"
-        class="sidebar-user"
-        data-sidebar-title="Mi perfil"
-      >
 
-        <div class="sidebar-user-avatar">
-
-          {% if request.user.avatar %}
-            <img
-              src="{{ request.user.avatar.url }}"
-              alt="{{ request.user.username }}"
-            >
-          {% else %}
-            <span>
-              {{ request.user.first_name|default:request.user.username|slice:":1"|upper }}
-            </span>
-          {% endif %}
-
-        </div>
-
-        <div class="sidebar-user-info">
-
-          <strong>
-            {{ request.user.first_name|default:request.user.username }}
-          </strong>
-
-          <small>
-            Ver perfil
-          </small>
-
-        </div>
-
-      </a>
 
     </div>
 
@@ -537,8 +504,8 @@
     background:
       linear-gradient(
         180deg,
-        var(--secondary-color),
-        var(--background-color)
+        var(--secondary-color)60%,
+        var(--background-color)100%
       );
 
     border-right: 1px solid var(--border-color);
