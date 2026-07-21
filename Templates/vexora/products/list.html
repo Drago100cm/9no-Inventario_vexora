@@ -215,7 +215,8 @@
                             {% for product in products %}
                                 <tr class="{% if product.stock <= product.min_stock and product.stock > 0 %}table-warning{% endif %}">
                                     <td>
-                                        <span class="badge bg-primary">{{ product.item_number }}</span>
+                                        <!-- Se reemplaza product.item_number por forloop.counter -->
+                                        <span class="badge bg-primary">{{ forloop.counter }}</span>
                                     </td>
                                     <td>
                                         <strong>{{ product.name }}</strong>
@@ -244,15 +245,15 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <button type="button" class="btn btn-outline-info btn-icon" 
-                                                    onclick="viewProduct('{{ product.id }}')" title="Ver">
+                                                    onclick="viewProduct('{{ product.id }}', '{{ forloop.counter }}')" title="Ver">
                                                 <i class="ri-eye-fill"></i>Detalles
                                             </button>
                                             <button type="button" class="btn btn-outline-secondary btn-icon" 
-                                                    onclick="editModal('{% url 'vexora:edit_product' product.id %}')" title="Editar">
+                                                    onclick="editModal('{% url 'vexora:edit_product' product.id %}?item_num={{ forloop.counter }}')" title="Editar">
                                                 <i class="ri-pencil-fill"></i>Editar
                                             </button>
                                             <button type="button" class="btn btn-outline-danger btn-icon" 
-                                                    onclick="deleteProduct('{{ product.id }}', '{{ product.name|escapejs }}', '{{ product.item_number }}')" title="Eliminar">
+                                                    onclick="deleteProduct('{{ product.id }}', '{{ product.name|escapejs }}', '{{ forloop.counter }}')" title="Eliminar">
                                                 <i class="ri-delete-bin-6-fill"></i>Eliminar
                                             </button>
                                         </div>

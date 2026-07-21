@@ -436,68 +436,15 @@ def delete_group(request, pk):
 
 class RegisterView(CreateView):
     model = CustomUser
-    form_class = CustomUserRegisterForm
     form_class = PublicUserRegistrationForm
     template_name = "Accounts/register.html"
     success_url = reverse_lazy("vexora:home")
 
     def form_valid(self, form):
-        print("FORMULARIO VÁLIDO")
-        form.instance.is_active = True
-        form.instance.is_staff = False
-        form.instance.is_superuser = False
+        user = form.save(commit=False)
+        user.save()
 
-        response = super().form_valid(form)
-
-        login(self.request, self.object)
-        user = self.object
-
-        # Buscar la empresa activa de la tienda
-        company = Company.objects.filter(
-            is_active=True
-        ).first()
-
-        if company:
-            # Crear o buscar el rol Cliente
-            cliente_role, created = Role.objects.get_or_create(
-                company=company,
-                name="Cliente",
-                defaults={
-                    "description": "Cliente de la tienda",
-                    "active": True,
-                }
-            )
-
-            # Relacionar al usuario con la empresa
-            CompanyMember.objects.get_or_create(
-                company=company,
-                user=user,
-                defaults={
-                    "role": cliente_role
-                }
-            )
-
-        login(self.request, user)
-
-        messages.success(
-            self.request,
-            "¡Tu cuenta fue creada correctamente!"
-        )
-
-        return response
-
-    def form_invalid(self, form):
-        print(form.errors)
-        print(form.non_field_errors())
-        return super().form_invalid(form)
-        print("========== ERROR EN EL REGISTRO ==========")
-
-        for campo, errores in form.errors.items():
-            print(f"{campo}: {errores}")
-
-        return self.render_to_response(
-            self.get_context_data(form=form)
-        )
+        return super().form_valid(form)
         
 #---------------------Login----------------------
 class CustomLoginView(FormView):
@@ -562,6 +509,78 @@ class CustomLoginView(FormView):
         context['title'] = 'Iniciar sesión'
         print("📝 Contexto agregado:", context)
         return context
+    
+# --------------------- Registro ----------------------
+
+class CustomerRegisterView(CreateView):
+    model = CustomUser
+    form_class = CustomerRegisterForm
+    template_name = "Accounts/customer_register.html"
+    success_url = settings.LOGIN_REDIRECT_URL
+
+    def dispatch(self, request, *args, **kwargs):
+        self.company = get_object_or_404(
+            Company,
+            slug=self.kwargs["slug"]
+        )
+
+        return super().dispatch(request, *args, **kwargs)
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["company"] = self.company
+        return context
+
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+
+        user.user_type = "customer"
+        user.is_client = True
+        user.save()
+
+        customer_role, _ = Role.objects.get_or_create(
+            name="Cliente"
+        )
+
+        CompanyMember.objects.create(
+            company=self.company,
+            user=user,
+            role=customer_role
+        )
+
+        return super().form_valid(form)
+
+class ClientsListView(LoginRequiredMixin, ListView):
+    template_name = "vexora/users/client_list.html"
+
+    def get(self, request):
+
+        if request.user.is_superuser:
+            list_user = CustomUser.objects.filter(
+                is_client=True
+            )
+
+        else:
+            companies = Company.objects.filter(
+                Q(owner=request.user) |
+                Q(members=request.user)
+            ).distinct()
+
+            list_user = CustomUser.objects.filter(
+                companies__in=companies,
+                is_client=True
+            ).distinct()
+
+        data = {
+            "list_user": list_user
+        }
+
+        if request.user.is_superuser or request.user.has_perm("vexora.view_customuser"):
+            return render(request, self.template_name, data)
+
+        return redirect("vexora:home")
 #---------------------Logout----------------------
 class LogoutRedirectView(RedirectView):
     pattern_name = 'vexora:login'  # URL a la que se redirige después de cerrar sesión
@@ -1377,7 +1396,6 @@ def delete_product(request, id):
     return redirect('vexora:list_products')
 
 
-
 # =====================================
 # SALES VIEWS (Ventas)
 # =====================================
@@ -1933,7 +1951,7 @@ class StoreHomeView(LoginRequiredMixin, View):
         return render(request, self.template_name, context)
 
 
-class StoreProductoView(LoginRequiredMixin, View):
+class StoreProductoView(View):
     template_name = 'vexora/sales/store-detail.html'
 
     def get(self, request, pk):
@@ -3420,63 +3438,6 @@ class DashboardView(LoginRequiredMixin, TemplateView,):
         context = super().get_context_data(**kwargs)
 
         company = self.get_company()
-
-
-        # ==========================================
-        # IDENTIFICAR PERMISOS DEL USUARIO
-        # ==========================================
-        #esta mal
-        is_admin_role = (
-            user.is_superuser
-            or user.is_staff
-            or user.groups.filter(
-                name__in=[
-                    "Admin",
-                    "Administrador",
-                    "Super Admin",
-                    "Superusuario",
-                ]
-            ).exists()
-        )
-
-        context["can_view_products"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_product")
-        )
-
-        context["can_view_categories"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_category")
-        )
-
-        context["can_view_suppliers"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_supplier")
-        )
-
-        context["can_view_members"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_companymember")
-        )
-
-        context["can_view_sales"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_sale")
-        )
-
-        # Será verdadero solamente cuando tenga
-        # al menos un permiso administrativo.
-        context["show_admin_dashboard"] = any([
-            context["can_view_products"],
-            context["can_view_categories"],
-            context["can_view_suppliers"],
-            context["can_view_members"],
-            context["can_view_sales"],
-        ])
-
-        context["show_client_dashboard"] = not context[
-            "show_admin_dashboard"
-        ]
 
         # ==========================================
         # EMPRESA

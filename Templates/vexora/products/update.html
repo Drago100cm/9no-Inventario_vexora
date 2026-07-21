@@ -5,7 +5,7 @@
     <div class="modal-header bg-light p-3">
       <h5 class="modal-title">
         <i class="ri-edit-box-line me-2"></i>
-        Editar Producto #{{ product.item_number }} - {{ product.name }}
+        Editar Producto #{{ request.GET.item_num|default:product.item_number }} - {{ product.name }}
       </h5>
       <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
@@ -40,8 +40,8 @@
         <div class="row mb-3">
           <div class="col-md-6">
             <label class="form-label">N° Producto</label>
-            <input type="text" class="form-control" value="{{ product.item_number }}" disabled>
-            <small class="text-muted">Número secuencial asignado automáticamente</small>
+            <input type="text" class="form-control" value="{{ request.GET.item_num|default:product.item_number }}" disabled>
+            <small class="text-muted">Número de fila en la tabla</small>
           </div>
         </div>
 
@@ -245,7 +245,7 @@
           </div>
         </div>
 
-        <!-- Campo oculto para company y item_number -->
+        <!-- Campo oculto para company e item_number -->
         {{ form.company.as_hidden }}
         {{ form.item_number.as_hidden }}
       </div>

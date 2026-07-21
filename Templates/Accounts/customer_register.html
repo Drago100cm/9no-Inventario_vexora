@@ -1,0 +1,882 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% if company %}{{ company.name }}{% else %}Crear cuenta{% endif %}</title>
+
+    <!-- Favicon personalizado -->
+    {% if site_config.favicon %}
+        <link rel="icon" href="{{ site_config.favicon.url }}" type="image/x-icon" />
+    {% endif %}
+
+    <!-- Bootstrap 5 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Fuente profesional -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet" />
+
+    <style>
+        /* ============================================
+           RESET Y BASE
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: {{ site_config.background_color|default:"#f4f7fc" }};
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 1.5rem;
+            transition: background 0.3s ease;
+        }
+
+        /* ============================================
+           TARJETA PRINCIPAL
+           ============================================ */
+        .register-card {
+            max-width: 900px;
+            width: 100%;
+            border-radius: 32px;
+            background: {{ site_config.card_background|default:"#ffffff" }};
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* ============================================
+           HEADER - BRANDING DE LA EMPRESA
+           ============================================ */
+        .register-header {
+            padding: 2.5rem 3rem 2rem 3rem;
+            background: linear-gradient(145deg, 
+                {{ site_config.primary_color|default:"#0b1c2f" }} 0%, 
+                {{ site_config.secondary_color|default:"#1a3349" }} 100%
+            );
+            color: {{ site_config.text_color|default:"#ffffff" }};
+            position: relative;
+            overflow: hidden;
+        }
+
+        .register-header::after {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .register-header::before {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Branding Container */
+        .branding-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 1.5rem;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(4px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Logo */
+        .brand-logo-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brand-logo {
+            max-height: 60px;
+            max-width: 140px;
+            width: auto;
+            height: auto;
+            border-radius: 10px;
+            object-fit: contain;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            transition: all 0.3s ease;
+        }
+
+        .brand-icon-fallback {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 215, 0, 0.12);
+            border-radius: 14px;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 215, 0, 0.08);
+        }
+
+        .brand-icon-fallback i {
+            font-size: 2rem;
+            color: {{ site_config.accent_color|default:"#f5b342" }};
+            margin-right: 0.5rem;
+        }
+
+        .brand-icon-fallback span {
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: -0.3px;
+            color: {{ site_config.text_color|default:"#ffffff" }};
+        }
+
+        /* Información de la empresa */
+        .brand-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .brand-info .company-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: {{ site_config.text_color|default:"#ffffff" }};
+            margin: 0;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+        }
+
+        .brand-info .company-description {
+            font-size: 0.9rem;
+            opacity: 0.85;
+            color: {{ site_config.text_color|default:"#ffffff" }};
+            margin: 4px 0 0 0;
+            font-weight: 400;
+        }
+
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(34, 197, 94, 0.15);
+            color: #22C55E;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            margin-left: 8px;
+        }
+
+        .verified-badge i {
+            font-size: 0.6rem;
+        }
+
+        /* Mensaje de bienvenida */
+        .welcome-message {
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-message h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            margin-bottom: 0.25rem;
+            color: {{ site_config.text_color|default:"#ffffff" }};
+        }
+
+        .welcome-message p {
+            opacity: 0.85;
+            font-weight: 400;
+            font-size: 0.95rem;
+            margin-bottom: 0;
+            color: {{ site_config.text_color|default:"#ffffff" }};
+        }
+
+        /* ============================================
+           CUERPO DEL FORMULARIO
+           ============================================ */
+        .register-body {
+            padding: 2.5rem 3rem 3rem 3rem;
+            background: {{ site_config.card_background|default:"#ffffff" }};
+            color: {{ site_config.text_color|default:"#1e293b" }};
+        }
+
+        /* Sección informativa */
+        .info-section {
+            background: {{ site_config.background_color|default:"#f8fafc" }};
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid {{ site_config.accent_color|default:"#f5b342" }};
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .info-section i {
+            color: {{ site_config.accent_color|default:"#f5b342" }};
+            font-size: 1.25rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .info-section p {
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: {{ site_config.text_color|default:"#1e293b" }};
+            opacity: 0.9;
+        }
+
+        /* Campos del formulario */
+        .form-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: {{ site_config.text_color|default:"#334155" }};
+            margin-bottom: 0.25rem;
+        }
+
+        .form-control {
+            border-radius: 12px;
+            border: 1.5px solid #e9edf4;
+            padding: 0.7rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            background: #fafcff;
+            color: {{ site_config.text_color|default:"#1e293b" }};
+        }
+
+        .form-control:focus {
+            border-color: {{ site_config.accent_color|default:"#f5b342" }};
+            box-shadow: 0 0 0 4px rgba(245, 179, 66, 0.12);
+            background: #fff;
+        }
+
+        .form-control::placeholder {
+            color: #aab4c9;
+            font-size: 0.9rem;
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .form-control.is-invalid:focus {
+            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.12);
+        }
+
+        .invalid-feedback {
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .password-hint {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .password-hint i {
+            margin-right: 4px;
+            color: #94a3b8;
+        }
+
+        /* Botón principal */
+        .btn-register {
+            background: linear-gradient(145deg, 
+                {{ site_config.primary_color|default:"#0b1c2f" }} 0%, 
+                {{ site_config.secondary_color|default:"#1a3349" }} 100%
+            );
+            border: none;
+            border-radius: 14px;
+            padding: 0.9rem;
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            color: {{ site_config.text_color|default:"#ffffff" }};
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 10px rgba(11, 28, 47, 0.15);
+            width: 100%;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -8px rgba(11, 28, 47, 0.25);
+            opacity: 0.92;
+            color: {{ site_config.text_color|default:"#ffffff" }};
+        }
+
+        .btn-register:active {
+            transform: translateY(0);
+        }
+
+        .btn-register i {
+            margin-right: 8px;
+        }
+
+        /* Enlaces */
+        .text-link {
+            color: {{ site_config.primary_color|default:"#1a3349" }};
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .text-link:hover {
+            color: {{ site_config.accent_color|default:"#f5b342" }};
+            text-decoration: underline;
+        }
+
+        /* Alertas */
+        .alert {
+            border-radius: 14px;
+            border: none;
+            font-size: 0.9rem;
+            padding: 0.8rem 1rem;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #b91c1c;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            color: #065f46;
+            border-left: 4px solid #22c55e;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 768px) {
+            .register-header {
+                padding: 1.5rem;
+            }
+            .register-body {
+                padding: 1.5rem;
+            }
+            .branding-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 12px 16px;
+            }
+            .brand-logo {
+                max-height: 44px;
+                max-width: 100px;
+            }
+            .brand-info .company-name {
+                font-size: 1.1rem;
+            }
+            .brand-icon-fallback i {
+                font-size: 1.6rem;
+            }
+            .brand-icon-fallback span {
+                font-size: 1.2rem;
+            }
+            .welcome-message h1 {
+                font-size: 1.4rem;
+            }
+            .verified-badge {
+                font-size: 0.55rem;
+                padding: 1px 8px;
+            }
+            .info-section {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .info-section i {
+                margin-top: 0;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .register-header {
+                padding: 1.25rem;
+            }
+            .register-body {
+                padding: 1.25rem;
+            }
+            .branding-container {
+                padding: 10px 12px;
+            }
+            .brand-logo {
+                max-height: 38px;
+                max-width: 80px;
+            }
+            .brand-info .company-name {
+                font-size: 1rem;
+            }
+            .brand-info .company-description {
+                font-size: 0.8rem;
+            }
+            .welcome-message h1 {
+                font-size: 1.2rem;
+            }
+            .welcome-message p {
+                font-size: 0.85rem;
+            }
+            .form-control {
+                font-size: 0.9rem;
+                padding: 0.6rem 0.8rem;
+            }
+            .btn-register {
+                font-size: 0.9rem;
+                padding: 0.75rem;
+            }
+        }
+
+        /* ============================================
+           MODO OSCURO
+           ============================================ */
+        {% if site_config.dark_mode %}
+            body {
+                background: {{ site_config.background_color|default:"#0f172a" }};
+            }
+            .register-card {
+                background: {{ site_config.card_background|default:"#1e293b" }};
+                border-color: rgba(255,255,255,0.05);
+            }
+            .register-body {
+                background: {{ site_config.card_background|default:"#1e293b" }};
+                color: {{ site_config.text_color|default:"#f8fafc" }};
+            }
+            .form-control {
+                background: {{ site_config.background_color|default:"#0f172a" }};
+                color: {{ site_config.text_color|default:"#f8fafc" }};
+                border-color: #334155;
+            }
+            .form-control:focus {
+                background: {{ site_config.background_color|default:"#0f172a" }};
+                border-color: {{ site_config.accent_color|default:"#f5b342" }};
+            }
+            .form-control::placeholder {
+                color: #64748b;
+            }
+            .form-label {
+                color: {{ site_config.text_color|default:"#94a3b8" }};
+            }
+            .text-muted {
+                color: {{ site_config.text_muted|default:"#94a3b8" }} !important;
+            }
+            .info-section {
+                background: {{ site_config.background_color|default:"#0f172a" }};
+            }
+            .info-section p {
+                color: {{ site_config.text_color|default:"#f8fafc" }};
+            }
+            .register-header h1,
+            .register-header p,
+            .brand-info .company-name,
+            .brand-info .company-description {
+                color: {{ site_config.text_color|default:"#ffffff" }};
+            }
+            .branding-container {
+                background: rgba(255, 255, 255, 0.04);
+                border-color: rgba(255, 255, 255, 0.05);
+            }
+            .brand-icon-fallback span {
+                color: {{ site_config.text_color|default:"#ffffff" }};
+            }
+            .alert {
+                background: {{ site_config.background_color|default:"#0f172a" }};
+                color: {{ site_config.text_color|default:"#f8fafc" }};
+            }
+            .alert-error {
+                border-left-color: #dc3545;
+                background: rgba(220, 53, 69, 0.1);
+                color: #fca5a5;
+            }
+            .alert-success {
+                border-left-color: #22c55e;
+                background: rgba(34, 197, 94, 0.1);
+                color: #86efac;
+            }
+            .alert-info {
+                border-left-color: #3b82f6;
+                background: rgba(59, 130, 246, 0.1);
+                color: #93c5fd;
+            }
+            .text-link {
+                color: {{ site_config.accent_color|default:"#f5b342" }};
+            }
+            .text-link:hover {
+                color: {{ site_config.primary_color|default:"#ffffff" }};
+            }
+            .password-hint {
+                color: #94a3b8;
+            }
+            .password-hint i {
+                color: #64748b;
+            }
+        {% endif %}
+
+        /* ============================================
+           ANIMACIONES
+           ============================================ */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .register-card {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .branding-container {
+            animation: fadeInUp 0.6s ease 0.1s both;
+        }
+
+        .welcome-message {
+            animation: fadeInUp 0.6s ease 0.2s both;
+        }
+
+        .register-body {
+            animation: fadeInUp 0.6s ease 0.3s both;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="register-card">
+
+        <!-- ==========================================
+        HEADER - BRANDING DE LA EMPRESA
+        ========================================== -->
+        <div class="register-header">
+            
+            <!-- Branding Container -->
+            <div class="branding-container">
+                <!-- Logo -->
+                <div class="brand-logo-wrapper">
+                    {% if site_config.logo %}
+                        <img src="{{ site_config.logo.url }}" alt="{{ company.name }}" class="brand-logo" />
+                    {% else %}
+                        <div class="brand-icon-fallback">
+                            <i class="fas fa-store"></i>
+                            <span>{% if company %}{{ company.name|slice:":2"|upper }}{% else %}CP{% endif %}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Información de la empresa -->
+                <div class="brand-info">
+                    <div class="d-flex align-items-center flex-wrap gap-1">
+                        <h2 class="company-name">
+                            {% if company %}
+                                {{ company.name }}
+                            {% else %}
+                                Portal de Clientes
+                            {% endif %}
+                        </h2>
+                        {% if company %}
+                            <span class="verified-badge">
+                                <i class="fas fa-check-circle"></i> Oficial
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% if company.description %}
+                        <p class="company-description">{{ company.description|truncatechars:80 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Mensaje de bienvenida -->
+            <div class="welcome-message">
+                <h1>
+                    {% if company %}
+                        Bienvenido a {{ company.name }}
+                    {% else %}
+                        Crear mi cuenta
+                    {% endif %}
+                </h1>
+                <p>Completa tus datos para comenzar</p>
+            </div>
+
+        </div>
+
+        <!-- ==========================================
+        CUERPO DEL FORMULARIO
+        ========================================== -->
+        <div class="register-body">
+
+            <!-- Sección informativa -->
+            <div class="info-section">
+                <i class="fas fa-info-circle"></i>
+                <p>
+                    Con tu cuenta podrás realizar pedidos, consultar productos 
+                    y revisar tus compras de forma rápida y sencilla.
+                </p>
+            </div>
+
+            <!-- Mensajes Django -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} py-2 small mb-3">
+                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- FORMULARIO -->
+            <form method="post" action="{% url 'vexora:customer_register' slug=company.slug %}">
+                {% csrf_token %}
+
+                <div class="row g-3">
+
+                    <!-- Nombre -->
+                    <div class="col-12 col-md-6">
+                        <label for="id_first_name" class="form-label">
+                            <i class="fas fa-user me-1"></i>Nombre
+                        </label>
+                        <input type="text" name="first_name" id="id_first_name" 
+                               class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+                               placeholder="Tu nombre" 
+                               value="{{ form.first_name.value|default:'' }}"
+                               required>
+                        {% if form.first_name.errors %}
+                            <div class="invalid-feedback">{{ form.first_name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Apellido -->
+                    <div class="col-12 col-md-6">
+                        <label for="id_last_name" class="form-label">
+                            <i class="fas fa-user me-1"></i>Apellido
+                        </label>
+                        <input type="text" name="last_name" id="id_last_name" 
+                               class="form-control {% if form.last_name.errors %}is-invalid{% endif %}"
+                               placeholder="Tu apellido" 
+                               value="{{ form.last_name.value|default:'' }}"
+                               required>
+                        {% if form.last_name.errors %}
+                            <div class="invalid-feedback">{{ form.last_name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-12 col-md-6">
+                        <label for="id_email" class="form-label">
+                            <i class="fas fa-envelope me-1"></i>Correo electrónico
+                        </label>
+                        <input type="email" name="email" id="id_email" 
+                               class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                               placeholder="tu@email.com" 
+                               value="{{ form.email.value|default:'' }}"
+                               required>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback">{{ form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="col-12 col-md-6">
+                        <label for="id_phone" class="form-label">
+                            <i class="fas fa-phone me-1"></i>Teléfono
+                        </label>
+                        <input type="tel" name="phone" id="id_phone" 
+                               class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                               placeholder="+34 600 000 000" 
+                               value="{{ form.phone.value|default:'' }}">
+                        {% if form.phone.errors %}
+                            <div class="invalid-feedback">{{ form.phone.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted" style="font-size:0.7rem;">Opcional</small>
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="col-12 col-md-6">
+                        <label for="id_password1" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Contraseña
+                        </label>
+                        <input type="password" name="password1" id="id_password1" 
+                               class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+                               placeholder="Mínimo 8 caracteres"
+                               required>
+                        <div class="password-hint">
+                            <i class="fas fa-circle-info"></i> Mínimo 8 caracteres
+                        </div>
+                        {% if form.password1.errors %}
+                            <div class="invalid-feedback">{{ form.password1.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Confirmar contraseña -->
+                    <div class="col-12 col-md-6">
+                        <label for="id_password2" class="form-label">
+                            <i class="fas fa-check-circle me-1"></i>Confirmar contraseña
+                        </label>
+                        <input type="password" name="password2" id="id_password2" 
+                               class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+                               placeholder="Repite tu contraseña"
+                               required>
+                        {% if form.password2.errors %}
+                            <div class="invalid-feedback">{{ form.password2.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Campo oculto para username (generado automáticamente) -->
+                    <input type="hidden" name="username" id="id_username" value="">
+
+                    <!-- Botón -->
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn-register">
+                            <i class="fas fa-user-plus"></i> Crear mi cuenta
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+
+            <!-- Enlace a login -->
+            <div class="text-center mt-4 small">
+                ¿Ya tienes cuenta?
+                <a href="{% url 'vexora:login' %}" class="text-link">
+                    <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
+                </a>
+            </div>
+
+        </div><!-- /register-body -->
+    </div><!-- /register-card -->
+
+    <!-- ==========================================
+    SCRIPTS
+    ========================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const p1 = document.getElementById('id_password1');
+            const p2 = document.getElementById('id_password2');
+            const email = document.getElementById('id_email');
+            const username = document.getElementById('id_username');
+
+            // Generar username automáticamente a partir del email
+            if (email && username) {
+                email.addEventListener('input', function() {
+                    const emailValue = this.value.trim();
+                    if (emailValue) {
+                        // Tomar la parte antes del @ y limpiar caracteres especiales
+                        let baseUsername = emailValue.split('@')[0]
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]/g, '');
+                        
+                        // Añadir un sufijo aleatorio si es necesario
+                        if (baseUsername.length < 3) {
+                            baseUsername = baseUsername + Math.random().toString(36).substring(2, 5);
+                        }
+                        
+                        username.value = baseUsername;
+                    }
+                });
+
+                // Si ya hay email, generar username
+                if (email.value) {
+                    email.dispatchEvent(new Event('input'));
+                }
+            }
+
+            // Validación de contraseñas
+            if (form && p1 && p2) {
+                form.addEventListener('submit', function(e) {
+                    const val1 = p1.value.trim();
+                    const val2 = p2.value.trim();
+
+                    if (val1 !== val2) {
+                        e.preventDefault();
+                        p2.classList.add('is-invalid');
+                        const feedback = p2.nextElementSibling;
+                        if (feedback && feedback.classList.contains('invalid-feedback')) {
+                            feedback.textContent = 'Las contraseñas no coinciden.';
+                        } else {
+                            const div = document.createElement('div');
+                            div.className = 'invalid-feedback';
+                            div.textContent = 'Las contraseñas no coinciden.';
+                            p2.parentNode.appendChild(div);
+                        }
+                        p2.focus();
+                        return;
+                    }
+
+                    if (val1.length > 0 && val1.length < 8) {
+                        e.preventDefault();
+                        p1.classList.add('is-invalid');
+                        const feedback = p1.nextElementSibling;
+                        if (feedback && feedback.classList.contains('invalid-feedback')) {
+                            feedback.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+                        } else {
+                            const div = document.createElement('div');
+                            div.className = 'invalid-feedback';
+                            div.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+                            p1.parentNode.appendChild(div);
+                        }
+                        p1.focus();
+                        return;
+                    }
+
+                    // Si todo está bien, remover clases de error
+                    p1.classList.remove('is-invalid');
+                    p2.classList.remove('is-invalid');
+                });
+
+                // Limpiar errores al escribir
+                p1.addEventListener('input', function() {
+                    this.classList.remove('is-invalid');
+                    const feedback = this.nextElementSibling;
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = '';
+                    }
+                });
+
+                p2.addEventListener('input', function() {
+                    this.classList.remove('is-invalid');
+                    const feedback = this.nextElementSibling;
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = '';
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

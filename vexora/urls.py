@@ -50,6 +50,9 @@ urlpatterns = [
     path("company_create/", CompanyCreateView.as_view(), name="company_create"),
     path("company_edit/<int:pk>", CompanyUpdateView.as_view(), name="company_edit"),
     path("company_delete/<int:pk>", views.delete_company, name="company_delete"),
+    #----------------------RegistroClientes----------------------
+    path("customer_register/<slug:slug>/", CustomerRegisterView.as_view(), name="customer_register"),
+    path("client_List/", ClientsListView.as_view(), name="client_list"),
 
 
     # ============================================

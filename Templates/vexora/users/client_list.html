@@ -79,7 +79,6 @@
                 <th data-sort="questions">Primer apellido</th>
                 <th data-sort="status">Segundo apellido</th>
                 <th data-sort="status">Telefono</th>
-                <th data-sort="status">Empresa</th>
                 <th data-sort="status">¿Es admin?</th>
 
                 <th data-sort="status">Acciones</th>
@@ -93,7 +92,6 @@
                   <td>{{ user.last_name }}</td>
                   <td>{{ user.first_name }}</td>
                   <td>{{ user.phone|default:'sin telefono' }}</td>
-                  <td>{{ user.company.name|default:'sin empresa' }}</td>
                   <td>{{ user.is_superuser|yesno:'Sí,No' }}</td>
    
                   <td>

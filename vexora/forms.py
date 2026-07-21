@@ -187,6 +187,21 @@ class PublicUserRegistrationForm(UserCreationForm):
             "password1",
             "password2",
         ]
+class CustomerRegisterForm(UserCreationForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        campos = ["avatar","email","username","first_name","last_name","phone","password1","password2",]
+
+        for field_name in campos:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    "class": "form-control"
+                })
+    class Meta:
+        model = CustomUser
+        fields = ["avatar","email","username","first_name","last_name","phone","password1","password2",]
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
@@ -418,48 +433,29 @@ class CustomUserUpdateForm(forms.ModelForm):
 
 class CompanyForm(forms.ModelForm):
 
-    class Meta:
-        model = Company
-        fields = [
-            "name",
-            "address",
-            "phone",
-            "email",
-            "slug",
-        ]
-
-        widgets = {
-            "name": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "required": True,
-                }
-            ),
-            "address": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "required": True,
-                }
-            ),
-            "phone": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "required": True,
-                }
-            ),
-            "email": forms.EmailInput(
-                attrs={
-                    "class": "form-control",
-                    "required": True,
-                }
-            ),
-            "slug": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                }
-            ),
-        }
-        
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        self.fields['name'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Nombre de la empresa'
+        })
+        self.fields['address'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Dirección de la empresa'
+        })
+        self.fields['phone'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Teléfono de la empresa'
+        })
+        self.fields['email'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Correo electrónico de la empresa'
+        })
+        self.fields['slug'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Slug de la empresa'
+        })
     class Meta:
         model = Company
         fields = ["name", "address", "phone", "email", "slug"]
