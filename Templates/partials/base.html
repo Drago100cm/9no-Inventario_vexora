@@ -71,6 +71,53 @@
             --text-color:
                 {{ site_config.text_color|default:'#ffffff' }};
 
+            --text-muted:
+    {{ site_config.text_muted|default:'#94a3b8' }};
+
+            /* Variaciones de color para perfil y tienda.
+            No cambian tamaños, grid ni estructura. */
+            --palette-border:
+                color-mix(
+                    in srgb,
+                    var(--text-color) 14%,
+                    transparent
+                );
+
+            --palette-surface:
+                color-mix(
+                    in srgb,
+                    var(--card-bg) 92%,
+                    var(--background-color)
+                );
+
+            --palette-hover:
+                color-mix(
+                    in srgb,
+                    var(--primary-color) 12%,
+                    var(--card-bg)
+                );
+
+            --palette-primary-soft:
+                color-mix(
+                    in srgb,
+                    var(--primary-color) 17%,
+                    var(--card-bg)
+                );
+
+            --palette-secondary-soft:
+                color-mix(
+                    in srgb,
+                    var(--secondary-color) 17%,
+                    var(--card-bg)
+                );
+
+            --palette-accent-soft:
+                color-mix(
+                    in srgb,
+                    var(--accent-color) 18%,
+                    var(--card-bg)
+                );
+
             --border-color:
                 {{ site_config.border_color|default:'rgba(255,255,255,.08)' }};
 
@@ -341,11 +388,15 @@
             }
 
         }
-
     </style>
 
     {% block extra_css %}
     {% endblock %}
+
+    <link
+    rel="stylesheet"
+    href="{% static 'css/palette-pages.css' %}?v=1"
+>
 
 </head>
 
