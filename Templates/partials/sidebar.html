@@ -248,7 +248,34 @@
           </div>
         </div>
       {% endif %}
+<!---====================================
+Tienda
+==========================-->
+        <div class="menu-module">
+          <button
+            class="module-btn"
+            type="button"
+            aria-expanded="false"
+          >
+            <span class="module-label">
+              <i class="fas fa-store"></i>
+              <span>Tienda</span>
+            </span>
+            <i class="fas fa-chevron-down arrow"></i>
+          </button>
+          <!-- Carrito -->
+          <div class="module-content">
+              <a href="{% url 'vexora:store_cart' %}" class="menu-item {% if url_name == 'store_cart' %}active{% endif %}">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Carrito</span>
+              </a>
+              <a href="{% url 'vexora:store_home' %}" class="menu-item {% if url_name == 'store_home' %}active{% endif %}">
+                <i class="fas fa-store"></i>
+                <span>Tienda</span>
+              </a>
 
+          </div>
+        </div>
       <!-- =====================================
       CONFIGURACIÓN
       ====================================== -->

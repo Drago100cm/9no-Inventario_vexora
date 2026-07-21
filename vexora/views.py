@@ -31,7 +31,7 @@ from vexora.services.email_service import (send_welcome_email)
 from .services.ai_service import get_ai_response
 from .models import SiteConfiguration, SMTPConfiguration
 from .forms import SiteConfigurationForm, SMTPConfigurationForm
-from django.db.models import Q
+from django.db.models import F, Q
 from datetime import datetime
 from django.views.decorators.http import require_POST
 from io import BytesIO
@@ -3401,102 +3401,38 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_company(self):
         return self.request.user.company
 
-    # REEMPLAZA DESDE AQUÍ
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        user = self.request.user
         company = self.get_company()
-
-        # ==========================================
-        # IDENTIFICAR PERMISOS DEL USUARIO
-        # ==========================================
-
-        is_admin_role = (
-            user.is_superuser
-            or user.is_staff
-            or user.groups.filter(
-                name__in=[
-                    "Admin",
-                    "Administrador",
-                    "Super Admin",
-                    "Superusuario",
-                ]
-            ).exists()
-        )
-
-        context["can_view_products"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_product")
-        )
-
-        context["can_view_categories"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_category")
-        )
-
-        context["can_view_suppliers"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_supplier")
-        )
-
-        context["can_view_members"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_companymember")
-        )
-
-        context["can_view_sales"] = (
-            is_admin_role
-            or user.has_perm("vexora.view_sale")
-        )
-
-        # Será verdadero solamente cuando tenga
-        # al menos un permiso administrativo.
-        context["show_admin_dashboard"] = any([
-            context["can_view_products"],
-            context["can_view_categories"],
-            context["can_view_suppliers"],
-            context["can_view_members"],
-            context["can_view_sales"],
-        ])
-
-        context["show_client_dashboard"] = not context[
-            "show_admin_dashboard"
-        ]
-
-        # ==========================================
-        # EMPRESA
-        # ==========================================
-
         context["company"] = company
 
+        # Si el usuario no tiene empresa, mostrar únicamente el botón para crearla
         if not company:
-            messages.warning(
-                self.request,
-                "Debes crear una empresa o aceptar una invitación.",
-            )
+            context["subscription"] = None
+            context["products_count"] = 0
+            context["members_count"] = 0
+            context["suppliers_count"] = 0
+            context["sales_count"] = 0
+            context["sales_total"] = 0
+            context["categories_count"] = 0
+            context["low_stock"] = 0
+            context["recent_products"] = []
+            context["recent_sales"] = []
             return context
 
         # ==========================================
         # SUSCRIPCIÓN
         # ==========================================
-
         try:
             subscription = company.subscription
-
         except Subscription.DoesNotExist:
             subscription = None
-
-            messages.warning(
-                self.request,
-                "Tu empresa no tiene una suscripción activa.",
-            )
 
         context["subscription"] = subscription
 
         if subscription:
             today = timezone.now().date()
-
             context["subscription_expired"] = (
                 subscription.status != "active"
                 or (
@@ -3504,99 +3440,55 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                     and subscription.end_date < today
                 )
             )
-
         else:
             context["subscription_expired"] = True
 
         # ==========================================
         # PRODUCTOS
-        # Solo se consultan si tiene permiso
         # ==========================================
+        products = Product.objects.filter(company=company)
 
-        if context["can_view_products"]:
-            products = Product.objects.filter(
-                company=company
-            )
-
-            context["products"] = products
-            context["products_count"] = products.count()
-
-            context["low_stock"] = products.filter(
-                stock__lte=models.F("min_stock"),
-                is_active=True,
-            ).count()
-
-            context["recent_products"] = (
-                products
-                .order_by("-created_at")[:5]
-            )
+        context["products_count"] = products.count()
+        context["low_stock"] = products.filter(
+            stock__lte=F("min_stock"),
+            is_active=True
+        ).count()
+        context["recent_products"] = products.order_by("-created_at")[:5]
 
         # ==========================================
         # CATEGORÍAS
         # ==========================================
+        categories = Category.objects.filter(company=company)
 
-        if context["can_view_categories"]:
-            categories = Category.objects.filter(
-                company=company
-            )
-
-            context["categories"] = categories
-            context["categories_count"] = categories.count()
+        context["categories_count"] = categories.count()
 
         # ==========================================
         # PROVEEDORES
         # ==========================================
+        suppliers = Supplier.objects.filter(company=company)
 
-        if context["can_view_suppliers"]:
-            suppliers = Supplier.objects.filter(
-                company=company
-            )
-
-            context["suppliers"] = suppliers
-            context["suppliers_count"] = suppliers.count()
+        context["suppliers_count"] = suppliers.count()
 
         # ==========================================
-        # COLABORADORES
+        # MIEMBROS
         # ==========================================
+        members = CompanyMember.objects.filter(company=company)
 
-        if context["can_view_members"]:
-            members = CompanyMember.objects.filter(
-                company=company
-            )
-
-            context["members"] = members
-            context["members_count"] = members.count()
+        context["members_count"] = members.count()
 
         # ==========================================
         # VENTAS
         # ==========================================
+        sales = Sale.objects.filter(company=company)
+        completed_sales = sales.filter(status="completed")
 
-        if context["can_view_sales"]:
-            sales = Sale.objects.filter(
-                company=company
-            )
-
-            completed_sales = sales.filter(
-                status="completed"
-            )
-
-            context["sales"] = sales
-            context["sales_count"] = completed_sales.count()
-
-            context["sales_total"] = (
-                completed_sales.aggregate(
-                    total=Sum("total")
-                )["total"]
-                or 0
-            )
-
-            context["recent_sales"] = (
-                completed_sales
-                .order_by("-date")[:5]
-            )
+        context["sales_count"] = completed_sales.count()
+        context["sales_total"] = (
+            completed_sales.aggregate(total=Sum("total"))["total"] or 0
+        )
+        context["recent_sales"] = completed_sales.order_by("-date")[:5]
 
         return context
-    # HASTA AQUÍ
 
 # ============================================
 # REPORTES VIEWS
