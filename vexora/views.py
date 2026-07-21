@@ -1428,6 +1428,13 @@ class SalesUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Edit Sale'
         return context
+
+def delete_sale(request, pk):
+    company = request.user.company
+    sale = get_object_or_404(Sale, id=pk, company=company)
+    sale.delete()
+    messages.success(request, "✅ Venta eliminada correctamente!")
+    return redirect('vexora:sales_list')
     
 # ============================================
 # MEMBERS VIEWS
@@ -1834,6 +1841,12 @@ class SalesMainUpdateView(LoginRequiredMixin, View):
             
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
+def delete_sale(request, pk):
+    company = request.user.company
+    sale = get_object_or_404(Sale, id=pk, company=company)
+    sale.delete()
+    messages.success(request, "✅ Venta eliminada correctamente!")
+    return redirect('vexora:sales_main_list')
 # ============================================
 # STORE PÚBLICA
 # ============================================
@@ -3395,7 +3408,7 @@ from django.db.models import Count, Sum, Q
 from django.core.cache import cache
 
 
-class DashboardView(LoginRequiredMixin, TemplateView):
+class DashboardView(LoginRequiredMixin, TemplateView,):
     template_name = "partials/dashboard.html"
 
     def get_company(self):
@@ -3405,6 +3418,68 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         company = self.get_company()
+
+
+        # ==========================================
+        # IDENTIFICAR PERMISOS DEL USUARIO
+        # ==========================================
+        #esta mal
+        is_admin_role = (
+            user.is_superuser
+            or user.is_staff
+            or user.groups.filter(
+                name__in=[
+                    "Admin",
+                    "Administrador",
+                    "Super Admin",
+                    "Superusuario",
+                ]
+            ).exists()
+        )
+
+        context["can_view_products"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_product")
+        )
+
+        context["can_view_categories"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_category")
+        )
+
+        context["can_view_suppliers"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_supplier")
+        )
+
+        context["can_view_members"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_companymember")
+        )
+
+        context["can_view_sales"] = (
+            is_admin_role
+            or user.has_perm("vexora.view_sale")
+        )
+
+        # Será verdadero solamente cuando tenga
+        # al menos un permiso administrativo.
+        context["show_admin_dashboard"] = any([
+            context["can_view_products"],
+            context["can_view_categories"],
+            context["can_view_suppliers"],
+            context["can_view_members"],
+            context["can_view_sales"],
+        ])
+
+        context["show_client_dashboard"] = not context[
+            "show_admin_dashboard"
+        ]
+
+        # ==========================================
+        # EMPRESA
+        # ==========================================
+
         context["company"] = company
 
         # Si el usuario no tiene empresa, mostrar únicamente el botón para crearla
@@ -3625,7 +3700,16 @@ class FinancialReportsView(LoginRequiredMixin, TemplateView):
 # ============================================
 
 class ExportReportsPDFView(LoginRequiredMixin, View):
-    """Vista base para exportar reportes a PDF usando ReportLab"""
+    """Vista base para exportar reportes a PDF usando ReportLab con diseño profesional"""
+    
+    # Paleta de colores corporativa (Estilo SaaS Moderno)
+    PRIMARY_COLOR = colors.HexColor('#1E293B')  # Slate 800 (Textos oscuros)
+    ACCENT_COLOR = colors.HexColor('#2563EB')   # Blue 600 (Títulos, botones)
+    SUCCESS_COLOR = colors.HexColor('#16A34A')  # Green 600 (Ingresos)
+    DANGER_COLOR = colors.HexColor('#DC2626')   # Red 600 (Costos/Pérdidas)
+    LIGHT_BG = colors.HexColor('#F8FAFC')       # Slate 50 (Fondo de tarjetas)
+    BORDER_COLOR = colors.HexColor('#E2E8F0')   # Slate 200 (Bordes sutiles)
+    TEXT_MUTED = colors.HexColor('#64748B')     # Slate 500 (Textos secundarios)
     
     def get_filename(self):
         return f"reporte_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -3636,68 +3720,94 @@ class ExportReportsPDFView(LoginRequiredMixin, View):
     def get_title(self):
         raise NotImplementedError("Debes implementar get_title")
     
+    def _draw_header_footer(self, canvas, doc, company, title):
+        """Dibuja el encabezado y pie de página en cada página del PDF"""
+        canvas.saveState()
+        width, height = A4
+        
+        # --- Encabezado ---
+        # Línea de acento superior
+        canvas.setFillColor(self.ACCENT_COLOR)
+        canvas.rect(0, height - 10, width, 10, fill=1, stroke=0)
+        
+        # Nombre de la empresa (Izquierda)
+        canvas.setFillColor(self.PRIMARY_COLOR)
+        canvas.setFont('Helvetica-Bold', 11)
+        canvas.drawString(72, height - 35, company.name.upper())
+        
+        # Título del reporte (Derecha)
+        canvas.setFillColor(self.TEXT_MUTED)
+        canvas.setFont('Helvetica', 10)
+        canvas.drawRightString(width - 72, height - 35, title)
+        
+        # Línea separadora del encabezado
+        canvas.setStrokeColor(self.BORDER_COLOR)
+        canvas.setLineWidth(0.5)
+        canvas.line(72, height - 45, width - 72, height - 45)
+
+        # --- Pie de Página ---
+        # Línea separadora del pie
+        canvas.line(72, 50, width - 72, 50)
+        
+        # Texto de generador (Izquierda)
+        canvas.setFont('Helvetica', 8)
+        canvas.setFillColor(self.TEXT_MUTED)
+        canvas.drawString(72, 35, f"Generado por Vexora | {timezone.now().strftime('%d/%m/%Y %H:%M')}")
+        
+        # Número de página (Derecha)
+        page_num = canvas.getPageNumber()
+        canvas.drawRightString(width - 72, 35, f"Página {page_num}")
+        
+        canvas.restoreState()
+
     def create_pdf(self, data, title, company, user):
-        """Crear el PDF usando ReportLab"""
+        """Crear el PDF usando ReportLab con diseño profesional"""
         buffer = BytesIO()
         doc = SimpleDocTemplate(
             buffer,
             pagesize=A4,
-            rightMargin=72,
-            leftMargin=72,
-            topMargin=72,
-            bottomMargin=72,
+            rightMargin=60,
+            leftMargin=60,
+            topMargin=70, # Más espacio para el header
+            bottomMargin=60,
         )
         
         styles = getSampleStyleSheet()
         
-        # Estilos personalizados
+        # Estilos tipográficos modernos
         title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=22,
-            textColor=colors.HexColor('#2563EB'),
-            alignment=TA_CENTER,
-            spaceAfter=20
+            'CustomTitle', parent=styles['Heading1'], fontSize=22,
+            textColor=self.PRIMARY_COLOR, alignment=TA_LEFT, spaceAfter=6, fontName='Helvetica-Bold'
         )
-        
         subtitle_style = ParagraphStyle(
-            'Subtitle',
-            parent=styles['Normal'],
-            fontSize=11,
-            textColor=colors.HexColor('#666666'),
-            alignment=TA_CENTER,
-            spaceAfter=10
+            'Subtitle', parent=styles['Normal'], fontSize=10,
+            textColor=self.TEXT_MUTED, alignment=TA_LEFT, spaceAfter=2
         )
-        
         heading_style = ParagraphStyle(
-            'CustomHeading',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor=colors.HexColor('#1E293B'),
-            spaceAfter=10,
-            spaceBefore=15
+            'CustomHeading', parent=styles['Heading2'], fontSize=13,
+            textColor=self.ACCENT_COLOR, spaceAfter=8, spaceBefore=20, fontName='Helvetica-Bold',
+            borderPadding=0
         )
-        
-        footer_style = ParagraphStyle(
-            'Footer',
-            parent=styles['Normal'],
-            fontSize=8,
-            textColor=colors.HexColor('#999999'),
-            alignment=TA_CENTER
+        card_label_style = ParagraphStyle(
+            'CardLabel', parent=styles['Normal'], fontSize=8,
+            textColor=self.TEXT_MUTED, fontName='Helvetica-Bold', alignment=TA_LEFT
+        )
+        card_value_style = ParagraphStyle(
+            'CardValue', parent=styles['Normal'], fontSize=13,
+            textColor=self.PRIMARY_COLOR, fontName='Helvetica-Bold', alignment=TA_LEFT
         )
         
         elements = []
         
-        # Header
+        # Título principal y metadatos
         elements.append(Paragraph(title, title_style))
-        elements.append(Paragraph(f"{company.name}", subtitle_style))
-        elements.append(Paragraph(f"Generado: {timezone.now().strftime('%d/%m/%Y %H:%M')}", subtitle_style))
-        elements.append(Paragraph(f"Usuario: {user.get_full_name() or user.email}", subtitle_style))
-        elements.append(Spacer(1, 0.3*inch))
+        elements.append(Paragraph(f"<b>Empresa:</b> {company.name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Usuario:</b> {user.get_full_name() or user.email}", subtitle_style))
+        elements.append(Paragraph(f"<b>Fecha de generación:</b> {timezone.now().strftime('%d/%m/%Y %H:%M')}", subtitle_style))
+        elements.append(Spacer(1, 0.2*inch))
         
-        # Resumen (cards)
+        # Resumen (estilo Cards)
         if 'summary' in data and data['summary']:
-            elements.append(Paragraph("📊 Resumen General", heading_style))
+            elements.append(Paragraph("Resumen General", heading_style))
             
             summary_items = list(data['summary'].items())
             rows = []
@@ -3707,30 +3817,43 @@ class ExportReportsPDFView(LoginRequiredMixin, View):
                     if i + j < len(summary_items):
                         key, value = summary_items[i + j]
                         label = key.replace('_', ' ').title()
+                        
+                        # Formatear valores
                         if isinstance(value, float) or isinstance(value, int):
-                            if any(word in label.lower() for word in ['ingresos', 'ganancia', 'total', 'costo', 'valor']):
-                                row.append(f"{label}: ${value:,.2f}")
+                            if any(word in label.lower() for word in ['ingresos', 'ganancia', 'total', 'costo', 'valor', 'precio']):
+                                val_str = f"${value:,.2f}"
                             else:
-                                row.append(f"{label}: {value}")
+                                val_str = f"{value:,}"
                         else:
-                            row.append(f"{label}: {value}")
+                            val_str = str(value)
+
+                        # Crear mini-tabla para la tarjeta (Card)
+                        card_data = [[Paragraph(label, card_label_style)], [Paragraph(val_str, card_value_style)]]
+                        card = Table(card_data, colWidths=[3.2*inch])
+                        card.setStyle(TableStyle([
+                            ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_BG),
+                            ('BOX', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
+                            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                            ('TOPPADDING', (0, 0), (-1, -1), 8),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                            ('LINEBEFORE', (0, 0), (0, -1), 3, self.ACCENT_COLOR), # Barra lateral azul
+                        ]))
+                        row.append(card)
                     else:
                         row.append("")
                 rows.append(row)
             
-            summary_table = Table(rows, colWidths=[3.5*inch, 3.5*inch])
+            summary_table = Table(rows, colWidths=[3.4*inch, 3.4*inch])
             summary_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F8F9FA')),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E5E7EB')),
-                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('PADDING', (0, 0), (-1, -1), 6),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('ROWBACKGROUNDS', (0, 0), (-1, -1), [colors.white, colors.HexColor('#F5F7FA')]),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
             ]))
             elements.append(summary_table)
-            elements.append(Spacer(1, 0.3*inch))
+            elements.append(Spacer(1, 0.2*inch))
         
         # Tablas de datos
         for table_name, table_data in data.items():
@@ -3741,67 +3864,81 @@ class ExportReportsPDFView(LoginRequiredMixin, View):
                 # Título de la tabla
                 elements.append(Paragraph(table_name.replace('_', ' ').title(), heading_style))
                 
-                # Preparar datos para la tabla
                 headers = list(table_data[0].keys())
                 table_rows = []
                 
-                # Agregar encabezados
-                header_row = []
+                # Determinar qué columnas son numéricas para alinearlas a la derecha
+                is_numeric_col = []
                 for h in headers:
-                    header_row.append(h.replace('_', ' ').title())
+                    is_numeric = True
+                    for row in table_data:
+                        val = row.get(h, '')
+                        if not isinstance(val, (int, float)):
+                            is_numeric = False
+                            break
+                    is_numeric_col.append(is_numeric)
+
+                # Encabezados
+                header_row = [Paragraph(f"<b>{h.replace('_', ' ').title()}</b>", ParagraphStyle('h', parent=styles['Normal'], textColor=colors.white, fontSize=9, fontName='Helvetica-Bold', alignment=(TA_RIGHT if is_numeric else TA_LEFT))) for h in headers]
                 table_rows.append(header_row)
                 
-                # Agregar datos
+                # Filas de datos
                 for row in table_data:
                     row_data = []
-                    for header in headers:
+                    for i, header in enumerate(headers):
                         value = row.get(header, '')
                         if value is None:
-                            row_data.append('-')
+                            val_str = '-'
                         elif isinstance(value, float):
                             if any(word in header.lower() for word in ['total', 'ingreso', 'ganancia', 'costo', 'valor', 'precio', 'revenue']):
-                                row_data.append(f'${value:,.2f}')
+                                val_str = f'${value:,.2f}'
                             else:
-                                row_data.append(f'{value:,.2f}')
+                                val_str = f'{value:,.2f}'
                         elif isinstance(value, int):
-                            row_data.append(str(value))
+                            val_str = f'{value:,}'
                         else:
-                            row_data.append(str(value))
+                            val_str = str(value)
+                        
+                        # Colorear márgenes positivos/negativos si existe la palabra "Margen"
+                        if 'margen' in header.lower() or 'ganancia' in header.lower():
+                            color = self.SUCCESS_COLOR if not val_str.startswith('-') else self.DANGER_COLOR
+                            p_style = ParagraphStyle('num', parent=styles['Normal'], fontSize=8, alignment=(TA_RIGHT if is_numeric_col[i] else TA_LEFT), textColor=color, fontName='Helvetica-Bold')
+                        else:
+                            p_style = ParagraphStyle('cell', parent=styles['Normal'], fontSize=8, alignment=(TA_RIGHT if is_numeric_col[i] else TA_LEFT), textColor=self.PRIMARY_COLOR)
+                        
+                        row_data.append(Paragraph(val_str, p_style))
                     table_rows.append(row_data)
                 
-                # Crear tabla
-                table = Table(table_rows, repeatRows=1)
-                table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563EB')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 9),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-                    ('TOPPADDING', (0, 0), (-1, 0), 8),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E5E7EB')),
-                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                    ('FONTSIZE', (0, 1), (-1, -1), 8),
-                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F7FA')]),
+                # Crear tabla con diseño minimalista (solo bordes inferiores)
+                col_widths = [6.8*inch / len(headers)] * len(headers)
+                table = Table(table_rows, colWidths=col_widths, repeatRows=1)
+                
+                style_cmds = [
+                    # Encabezado
+                    ('BACKGROUND', (0, 0), (-1, 0), self.PRIMARY_COLOR),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                    ('TOPPADDING', (0, 0), (-1, 0), 10),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                    
+                    # Cuerpo
                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                    ('PADDING', (0, 0), (-1, -1), 4),
-                ]))
+                    ('LINEBELOW', (0, 0), (-1, 0), 1, self.ACCENT_COLOR), # Línea gruesa bajo el encabezado
+                    ('LINEBELOW', (0, 1), (-1, -1), 0.25, self.BORDER_COLOR), # Líneas finas entre filas
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, self.LIGHT_BG]), # Filas alternadas
+                    ('TOPPADDING', (0, 1), (-1, -1), 6),
+                    ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+                ]
+                
+                table.setStyle(TableStyle(style_cmds))
                 elements.append(table)
-                elements.append(Spacer(1, 0.2*inch))
+                elements.append(Spacer(1, 0.15*inch))
         
-        # Footer
-        elements.append(Spacer(1, 0.5*inch))
-        elements.append(Paragraph(
-            f"Reporte generado automáticamente por Vexora - {timezone.now().strftime('%d/%m/%Y %H:%M:%S')}",
-            footer_style
-        ))
-        elements.append(Paragraph(
-            f"© {timezone.now().strftime('%Y')} {company.name}. Todos los derechos reservados.",
-            footer_style
-        ))
+        # Construir documento con Header y Footer dinámicos
+        # Usamos una función lambda para pasar company y title al callback
+        doc.build(elements, onFirstPage=lambda c, d: self._draw_header_footer(c, d, company, title), 
+                           onLaterPages=lambda c, d: self._draw_header_footer(c, d, company, title))
         
-        doc.build(elements)
         pdf = buffer.getvalue()
         buffer.close()
         return pdf
@@ -3814,7 +3951,6 @@ class ExportReportsPDFView(LoginRequiredMixin, View):
                 return redirect('vexora:reports_dashboard')
             
             data, title = self.get_data()
-            
             pdf = self.create_pdf(data, title, company, request.user)
             
             response = HttpResponse(pdf, content_type='application/pdf')
@@ -3824,7 +3960,6 @@ class ExportReportsPDFView(LoginRequiredMixin, View):
         except Exception as e:
             messages.error(request, f"Error al generar PDF: {str(e)}")
             return redirect('vexora:reports_dashboard')
-
 
 class ExportDashboardPDFView(ExportReportsPDFView):
     """Exportar Dashboard a PDF"""

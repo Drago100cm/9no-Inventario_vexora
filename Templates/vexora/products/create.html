@@ -234,6 +234,12 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <!-- Selector de cámara -->
+                <div class="mb-3">
+                    <label for="cameraSelect" class="form-label">Selecciona la cámara a utilizar:</label>
+                    <select id="cameraSelect" class="form-select"></select>
+                </div>
+
                 <div id="deviceStatus" class="alert alert-info">
                     <i class="ri-information-line me-2"></i>
                     <span id="statusText">Preparando cámara...</span>
@@ -243,7 +249,7 @@
                     <strong>Código detectado:</strong> <span id="scannedBarcode"></span>
                 </div>
                 <div class="mt-2 text-center">
-                    <small class="text-muted" id="cameraHint">Apunta la cámara al código de barras del producto</small>
+                    <small class="text-muted" id="cameraHint">Si usas USB, selecciona la cámara de tu app (ej. Iriun, DroidCam)</small>
                 </div>
             </div>
             <div class="modal-footer">
@@ -346,272 +352,178 @@
     let html5QrCode = null;
     let lastScannedCode = '';
     let isScanning = false;
-    let isUsingUSB = false;
 
-    // Detectar si estamos usando depuración USB
-    function checkUSBConnection() {
-        // Intentar detectar múltiples dispositivos de entrada de video
-        navigator.mediaDevices.enumerateDevices().then(function(devices) {
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
-            if (videoDevices.length > 1) {
-                isUsingUSB = true;
-                $('#statusText').text('Múltiples cámaras detectadas - usando cámara del teléfono');
-                $('#cameraHint').text('Usando la cámara de tu teléfono');
-                $('#deviceStatus').removeClass('alert-info').addClass('alert-success');
-            } else {
-                $('#statusText').text('Cámara del dispositivo detectada');
-                $('#deviceStatus').removeClass('alert-info').addClass('alert-success');
-            }
-        }).catch(function(err) {
-            console.log("No se pudieron enumerar dispositivos:", err);
-        });
-    }
-
-    // Abrir modal del escáner
+    // Abrir modal
     $('#scanBarcodeBtn').on('click', function() {
         if (!isScanning) {
-            checkUSBConnection();
             $('#barcodeScannerModal').modal('show');
             setTimeout(function() {
-                startScanner();
+                loadCameras();
             }, 500);
         }
     });
 
-    // Cerrar modal del escáner y detener la cámara
+    // Cerrar modal y limpiar todo
     $('#barcodeScannerModal').on('hidden.bs.modal', function() {
-        stopScanner();
+        stopScanner().then(() => {
+            // Solo limpiamos el resultado cuando se CIERRA el modal
+            $('#barcodeResult').hide();
+            $('#useScannedBarcode').prop('disabled', true);
+            lastScannedCode = '';
+        });
     });
 
-    function startScanner() {
-        // Verificar soporte para cámara
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Tu navegador no soporta el acceso a la cámara.'
-            });
+    // Función para listar las cámaras
+    function loadCameras() {
+        $('#statusText').text('Buscando cámaras disponibles...');
+        
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+            Swal.fire('Error', 'Tu navegador no soporta la enumeración de dispositivos.', 'error');
             return;
         }
 
-        // Verificar si el elemento existe
+        Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length > 0) {
+                $('#cameraSelect').empty();
+                devices.forEach(device => {
+                    $('#cameraSelect').append(`<option value="${device.id}">${device.label || 'Cámara ' + device.id}</option>`);
+                });
+                startScanner(devices[0].id);
+            } else {
+                Swal.fire('Error', 'No se encontraron cámaras conectadas.', 'error');
+            }
+        }).catch(err => {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Permiso de cámara',
+                text: 'No se pudo acceder a las cámaras. Asegúrate de dar permiso en el navegador.',
+            });
+        });
+    }
+
+    // Cambiar de cámara
+    $('#cameraSelect').on('change', function() {
+        if (isScanning) {
+            stopScanner().then(() => {
+                startScanner($(this).val());
+            });
+        } else {
+            startScanner($(this).val());
+        }
+    });
+
+    // Iniciar escáner
+    function startScanner(cameraId) {
         const readerElement = document.getElementById('barcodeReader');
         if (!readerElement) return;
-
-        // Limpiar el elemento antes de iniciar
         readerElement.innerHTML = '';
 
-        // Inicializar el lector
         try {
             html5QrCode = new Html5Qrcode("barcodeReader");
-            
-            const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            };
+            const config = { fps: 10, qrbox: { width: 250, height: 150 } };
 
-            // Configuración para depuración USB
-            const cameraConfig = {
-                facingMode: "environment" // Usar cámara trasera
-            };
-
-            // Iniciar la cámara
-            html5QrCode.start(
-                cameraConfig,
-                config,
-                onScanSuccess,
-                onScanError
-            ).then(() => {
+            html5QrCode.start(cameraId, config, onScanSuccess, onScanError).then(() => {
                 isScanning = true;
                 $('#barcodeReader').addClass('scanner-frame');
                 $('#statusText').text('Cámara activa - Escaneando...');
-                $('#deviceStatus').removeClass('alert-info').addClass('alert-success');
-                
-                if (isUsingUSB) {
-                    $('#statusText').text('Cámara del teléfono activa - Escaneando...');
-                }
+                $('#deviceStatus').removeClass('alert-info alert-danger').addClass('alert-success');
             }).catch(function(err) {
-                console.error("Error al iniciar la cámara:", err);
-                
-                // Intentar con configuración alternativa para depuración USB
-                if (err.message && err.message.includes('NotFoundError')) {
-                    navigator.mediaDevices.enumerateDevices().then(function(devices) {
-                        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                        if (videoDevices.length > 1) {
-                            // Usar la segunda cámara (generalmente la del teléfono en depuración USB)
-                            const cameraId = videoDevices[1].deviceId;
-                            html5QrCode.start(
-                                { deviceId: cameraId },
-                                config,
-                                onScanSuccess,
-                                onScanError
-                            ).then(() => {
-                                isScanning = true;
-                                $('#barcodeReader').addClass('scanner-frame');
-                                $('#statusText').text('Cámara del teléfono activa');
-                                $('#deviceStatus').removeClass('alert-info').addClass('alert-success');
-                            }).catch(function(err2) {
-                                showCameraError(err2);
-                            });
-                        } else {
-                            showCameraError(err);
-                        }
-                    });
-                } else {
-                    showCameraError(err);
-                }
+                showCameraError(err);
             });
         } catch (error) {
-            console.error("Error al crear el escáner:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No se pudo iniciar el escáner.'
-            });
+            showCameraError(error);
         }
     }
 
     function showCameraError(error) {
-        console.error("Error de cámara:", error);
-        let errorMessage = 'No se pudo acceder a la cámara. ';
-        
-        if (isUsingUSB) {
-            errorMessage += 'Verifica que: \n';
-            errorMessage += '1. Tu teléfono esté conectado por USB\n';
-            errorMessage += '2. La depuración USB esté activada\n';
-            errorMessage += '3. Hayas aceptado el permiso en el teléfono';
-        } else {
-            errorMessage += 'Asegúrate de permitir el acceso a la cámara.';
-        }
-        
-        Swal.fire({
-            icon: 'warning',
-            title: 'Error de cámara',
-            text: errorMessage,
-            confirmButtonText: 'Entendido'
-        });
-        
-        $('#statusText').text('Error: ' + error.message);
+        let errorMessage = 'No se pudo iniciar la cámara seleccionada. ';
+        errorMessage += 'Asegúrate de que no esté siendo usada por otra aplicación.';
+        Swal.fire({ icon: 'warning', title: 'Error de cámara', text: errorMessage });
+        $('#statusText').text('Error: ' + (error.message || 'No se pudo acceder'));
         $('#deviceStatus').removeClass('alert-info alert-success').addClass('alert-danger');
     }
 
+    // Detener cámara SIN borrar el resultado
     function stopScanner() {
-        if (html5QrCode) {
-            try {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
+        return new Promise((resolve) => {
+            if (html5QrCode) {
+                try {
+                    html5QrCode.stop().then(() => {
+                        html5QrCode.clear();
+                        html5QrCode = null;
+                        isScanning = false;
+                        $('#barcodeReader').removeClass('scanner-frame');
+                        $('#statusText').text('Cámara detenida');
+                        $('#deviceStatus').removeClass('alert-success alert-danger').addClass('alert-info');
+                        resolve();
+                    }).catch(err => {
+                        html5QrCode = null;
+                        isScanning = false;
+                        resolve();
+                    });
+                } catch (error) {
                     html5QrCode = null;
                     isScanning = false;
-                    $('#barcodeReader').removeClass('scanner-frame');
-                    $('#statusText').text('Cámara detenida');
-                    $('#deviceStatus').removeClass('alert-success alert-danger').addClass('alert-info');
-                }).catch(err => {
-                    console.error("Error al detener el escáner:", err);
-                    html5QrCode = null;
-                    isScanning = false;
-                });
-            } catch (error) {
-                console.error("Error al detener el escáner:", error);
-                html5QrCode = null;
-                isScanning = false;
+                    resolve();
+                }
+            } else {
+                resolve();
             }
-        }
-        // Ocultar resultado
-        $('#barcodeResult').hide();
-        $('#useScannedBarcode').prop('disabled', true);
-        lastScannedCode = '';
+        });
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-        console.log("Código escaneado:", decodedText);
-        
         if (decodedText && decodedText.length > 0) {
-            // Reproducir sonido de éxito
             playBeep();
+            if (navigator.vibrate) navigator.vibrate(200);
             
-            // Vibración para dispositivos móviles
-            if (navigator.vibrate) {
-                navigator.vibrate(200);
-            }
-            
-            // Mostrar el resultado
+            // Mostrar resultado
             $('#scannedBarcode').text(decodedText);
             $('#barcodeResult').show();
             $('#useScannedBarcode').prop('disabled', false);
             lastScannedCode = decodedText;
 
-            // Detener automáticamente después de escanear exitosamente
+            // Detener cámara pero mantener el resultado en pantalla
             setTimeout(() => {
                 stopScanner();
             }, 1000);
         }
     }
 
-    function onScanError(errorMessage) {
-        // Solo para depuración, ignorar errores de escaneo
-        // console.warn("Error de escaneo:", errorMessage);
-    }
+    function onScanError(errorMessage) { }
 
     function playBeep() {
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
-            
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
-            
             oscillator.frequency.value = 800;
             oscillator.type = 'sine';
-            
             gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-            
             oscillator.start();
             oscillator.stop(audioContext.currentTime + 0.2);
-        } catch (error) {
-            console.log("Error al reproducir beep:", error);
-        }
+        } catch (error) { }
     }
 
-    // Usar el código escaneado en el campo de formulario
+    // Usar el código en el formulario
     $('#useScannedBarcode').on('click', function() {
         if (lastScannedCode) {
             $('#id_barcode').val(lastScannedCode);
             $('#id_barcode').trigger('change');
             $('#barcodeScannerModal').modal('hide');
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Código agregado',
-                text: 'El código de barras ha sido agregado correctamente',
-                timer: 1500,
-                showConfirmButton: false
-            });
+            Swal.fire({ icon: 'success', title: 'Código agregado', timer: 1500, showConfirmButton: false });
         }
     });
 
-    // Permitir pegar desde el portapapeles
-    $('#id_barcode').on('paste', function(e) {
-        const pastedData = e.originalEvent.clipboardData.getData('text');
-        if (pastedData) {
-            const cleanData = pastedData.trim();
-            if (cleanData.length > 0) {
-                $(this).val(cleanData);
-                e.preventDefault();
-            }
-        }
-    });
-
-    // Limpiar al abrir el modal de escáner
+    // Limpiar al abrir el modal
     $('#barcodeScannerModal').on('shown.bs.modal', function() {
         $('#barcodeResult').hide();
         $('#useScannedBarcode').prop('disabled', true);
         lastScannedCode = '';
     });
-
-    // --- FIN FUNCIONALIDAD DE ESCÁNER ---
   });
 
   // Cerrar modales con ESC

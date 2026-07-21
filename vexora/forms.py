@@ -965,7 +965,12 @@ class MemberForm(forms.ModelForm):
                 current_user = self.instance.user
                 # Asegurarse de que el usuario actual esté en el queryset
                 if current_user not in self.fields['user'].queryset:
-                    self.fields['user'].queryset = self.fields['user'].queryset | CustomUser.objects.filter(id=current_user.id)
+                    if self.instance and self.instance.pk:
+                        current_user = self.instance.user
+                        # Usar union() en lugar de |
+                        self.fields['user'].queryset = self.fields['user'].queryset.union(
+                            CustomUser.objects.filter(id=current_user.id)
+                        )
         
         # Marcar el campo 'company' como hidden
         self.fields['company'].widget = forms.HiddenInput()

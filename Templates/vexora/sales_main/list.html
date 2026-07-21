@@ -173,54 +173,31 @@ function editModal(url){
     });
 }
 
-function deleteSale(saleId) {
+function deleteSale(id, name, itemNumber) {
+    const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+            confirmButton: 'btn btn-success',
+            cancelButton: 'btn btn-danger m-3'
+        },
+        buttonsStyling: false
+    });
+
+    // Si name o itemNumber son undefined, usar valores por defecto
+    const displayName = name || 'Venta';
+    const displayNumber = itemNumber || id;
+
     Swal.fire({
-        title: '¿Eliminar venta?',
-        text: 'Esta acción no se puede deshacer.',
-        icon: 'warning',
+        html: '<div class="mt-3"><lord-icon src="https://cdn.lordicon.com/wpyrrmcq.json" trigger="loop" delay="700" colors="primary:#c71f16" style="width:100px;height:100px"></lord-icon><div class="mt-4 pt-2 fs-15 mx-5"><h4>¿Estás seguro?</h4><p class="text-muted mx-4 mb-0">Estás a punto de eliminar la venta <strong>#' + displayNumber + ' - ' + displayName + '</strong><br>Esta acción no se puede deshacer!</p></div></div>',
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
+        confirmButtonText: 'Confirmar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
     }).then((result) => {
         if (result.isConfirmed) {
-            // Aquí iría la lógica para eliminar la venta
-            fetch(`/sales-main/delete/${saleId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Eliminada',
-                        text: 'La venta fue eliminada exitosamente.'
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.error || 'No se pudo eliminar la venta.'
-                    });
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Ocurrió un error al eliminar la venta.'
-                });
-            });
+            window.location.href = "{% url 'vexora:delete_sale' 0 %}".replace('0', id);
         }
     });
 }
-
 document.getElementById("searchInput").addEventListener("keyup", function(){
     let value = this.value.toLowerCase();
     let rows = document.querySelectorAll("#salesTable tbody tr");

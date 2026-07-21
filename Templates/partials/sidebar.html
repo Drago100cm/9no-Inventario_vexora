@@ -126,7 +126,7 @@
             {% endif %}
             {% if request.user.is_superuser or "vexora.view_supplier" in request.user.get_all_permissions %}
               <a href="{% url 'vexora:list_suppliers' %}" class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
-                <i class="fas fa-truck-field"></i>
+                <i class="fas fa-truck"></i>
                 <span>Proveedores</span>
               </a>
             {% endif %}
