@@ -2,396 +2,780 @@
 
 {% with url_name=request.resolver_match.url_name %}
 
-<div class="sidebar-container" id="sidebarContainer">
+<!-- FONDO OSCURO PARA MÓVIL -->
+<div
+  class="sidebar-overlay"
+  id="sidebarOverlay"
+></div>
 
+<!-- SIDEBAR -->
+<div
+  class="sidebar-container"
+  id="sidebarContainer"
+>
   <aside class="sidebar">
 
-    <!-- =====================================
-    ENCABEZADO
-    ====================================== -->
+    <!-- ENCABEZADO -->
     <div class="sidebar-header">
 
-      {% if site_config.logo %}
-        <img
-          src="{{ site_config.logo.url }}"
-          class="sidebar-logo"
-          alt="Logo de {{ site_config.company.name|default:'Vexora' }}"
-        >
-      {% else %}
-        <img
-          src="{% static 'images/default-logo.png' %}"
-          class="sidebar-logo"
-          alt="Logo de Vexora"
-        >
-      {% endif %}
+      <!-- BOTÓN CERRAR EN MÓVIL -->
+      <button
+        class="sidebar-close-btn"
+        id="sidebarClose"
+        type="button"
+        aria-label="Cerrar menú"
+      >
+        <i class="fas fa-times"></i>
+      </button>
 
-      <h2 class="sidebar-title">
-        {{ site_config.company.name|default:"Vexora" }}
-      </h2>
+      <!-- LOGO Y EMPRESA -->
+      <div class="sidebar-brand-content">
 
-      <p class="sidebar-subtitle">
-        SaaS Platform
-      </p>
+        <div class="sidebar-logo-wrapper">
+
+          <div class="sidebar-logo-glow"></div>
+
+          {% if site_config.logo %}
+            <img
+              src="{{ site_config.logo.url }}"
+              class="sidebar-logo"
+              alt="Logo de {{ site_config.company.name|default:'Vexora' }}"
+            >
+          {% else %}
+            <img
+              src="{% static 'images/default-logo.png' %}"
+              class="sidebar-logo"
+              alt="Logo de Vexora"
+            >
+          {% endif %}
+
+        </div>
+
+        <div class="sidebar-brand-text">
+
+          <h2 class="sidebar-title">
+            {{ site_config.company.name|default:"Vexora" }}
+          </h2>
+
+          <p class="sidebar-subtitle">
+            Gestión empresarial
+          </p>
+
+        </div>
+
+      </div>
 
     </div>
 
-
-    <!-- =====================================
-    MENÚ
-    ====================================== -->
-    <nav class="sidebar-menu">
+    <!-- MENÚ -->
+    <nav
+      class="sidebar-menu"
+      id="sidebarMenu"
+    >
 
       <!-- DASHBOARD -->
       <a
         href="{% url 'vexora:dashboard' %}"
         class="menu-item {% if url_name == 'dashboard' %}active{% endif %}"
+        data-sidebar-title="Dashboard"
       >
         <i class="fas fa-gauge-high"></i>
         <span>Dashboard</span>
       </a>
 
-      <!-- =====================================
-      ADMINISTRACIÓN (SOLO SUPERUSUARIO)
-      ====================================== -->
-{% if request.user.is_superuser or perms.vexora.view_customuser or perms.vexora.view_company or perms.vexora.view_companymember or perms.vexora.view_role %}
-<div class="menu-module">
-    <button
-        class="module-btn"
-        type="button"
-        aria-expanded="false"
-    >
-        <span class="module-label">
-            <i class="fas fa-shield-alt"></i>
-            <span>Administración</span>
-        </span>
-        <i class="fas fa-chevron-down arrow"></i>
-    </button>
+      <!-- ADMINISTRACIÓN -->
+      {% if request.user.is_superuser or perms.vexora.view_customuser or perms.vexora.view_company or perms.vexora.view_companymember or perms.vexora.view_role %}
 
-    <div class="module-content">
-
-        {% if request.user.is_superuser or perms.vexora.view_customuser %}
-        <a href="{% url 'vexora:user_list' %}" class="menu-item {% if url_name == 'user_list' %}active{% endif %}">
-            <i class="fas fa-users"></i>
-            <span>Usuarios</span>
-        </a>
-        {% endif %}
-
-        {% if request.user.is_superuser or perms.vexora.view_company %}
-        <a href="{% url 'vexora:company_list' %}" class="menu-item {% if url_name == 'company_list' %}active{% endif %}">
-            <i class="fas fa-building"></i>
-            <span>Empresas</span>
-        </a>
-        {% endif %}
-
-        {% if request.user.is_superuser or perms.vexora.view_companymember %}
-        <a href="{% url 'vexora:member_list' %}" class="menu-item {% if url_name == 'member_list' %}active{% endif %}">
-            <i class="fas fa-user-friends"></i>
-            <span>Miembros</span>
-        </a>
-        {% endif %}
-        {% if request.user.is_superuser or perms.vexora.view_companymember %}
-        <a href="{% url 'vexora:client_list' %}" class="menu-item {% if url_name == 'client_list' %}active{% endif %}">
-            <i class="fas fa-user-friends"></i>
-            <span>Clientes</span>
-        </a>
-        {% endif %}
-
-        {% if request.user.is_superuser or perms.vexora.view_role %}
-        <a href="{% url 'vexora:group_list' %}" class="menu-item {% if url_name == 'group_list' %}active{% endif %}">
-            <i class="fas fa-user-group"></i>
-            <span>Roles</span>
-        </a>
-        {% endif %}
-
-    </div>
-</div>
-{% endif %}
-
-      <!-- =====================================
-      INVENTARIO
-      ====================================== -->
-      {% if request.user.is_superuser or "vexora.view_product" in request.user.get_all_permissions or "vexora.view_supplier" in request.user.get_all_permissions %}
         <div class="menu-module">
+
           <button
             class="module-btn"
             type="button"
             aria-expanded="false"
+            data-sidebar-title="Administración"
           >
+
+            <span class="module-label">
+              <i class="fas fa-shield-alt"></i>
+              <span>Administración</span>
+            </span>
+
+            <i class="fas fa-chevron-down arrow"></i>
+
+          </button>
+
+          <div class="module-content">
+
+            {% if request.user.is_superuser or perms.vexora.view_customuser %}
+              <a
+                href="{% url 'vexora:user_list' %}"
+                class="menu-item {% if url_name == 'user_list' %}active{% endif %}"
+              >
+                <i class="fas fa-users"></i>
+                <span>Usuarios</span>
+              </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or perms.vexora.view_company %}
+              <a
+                href="{% url 'vexora:company_list' %}"
+                class="menu-item {% if url_name == 'company_list' %}active{% endif %}"
+              >
+                <i class="fas fa-building"></i>
+                <span>Empresas</span>
+              </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or perms.vexora.view_companymember %}
+              <a
+                href="{% url 'vexora:member_list' %}"
+                class="menu-item {% if url_name == 'member_list' %}active{% endif %}"
+              >
+                <i class="fas fa-user-friends"></i>
+                <span>Miembros</span>
+              </a>
+
+              <a
+                href="{% url 'vexora:client_list' %}"
+                class="menu-item {% if url_name == 'client_list' %}active{% endif %}"
+              >
+                <i class="fas fa-user-tag"></i>
+                <span>Clientes</span>
+              </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or perms.vexora.view_role %}
+              <a
+                href="{% url 'vexora:group_list' %}"
+                class="menu-item {% if url_name == 'group_list' %}active{% endif %}"
+              >
+                <i class="fas fa-user-group"></i>
+                <span>Roles</span>
+              </a>
+            {% endif %}
+
+          </div>
+
+        </div>
+
+      {% endif %}
+
+      <!-- INVENTARIO -->
+      {% if request.user.is_superuser or "vexora.view_product" in request.user.get_all_permissions or "vexora.view_supplier" in request.user.get_all_permissions %}
+
+        <div class="menu-module">
+
+          <button
+            class="module-btn"
+            type="button"
+            aria-expanded="false"
+            data-sidebar-title="Inventario"
+          >
+
             <span class="module-label">
               <i class="fas fa-boxes"></i>
               <span>Inventario</span>
             </span>
+
             <i class="fas fa-chevron-down arrow"></i>
+
           </button>
+
           <div class="module-content">
+
             {% if request.user.is_superuser or "vexora.view_product" in request.user.get_all_permissions %}
-              <a href="{% url 'vexora:list_products' %}" class="menu-item {% if url_name == 'list_products' %}active{% endif %}">
+              <a
+                href="{% url 'vexora:list_products' %}"
+                class="menu-item {% if url_name == 'list_products' %}active{% endif %}"
+              >
                 <i class="fas fa-box-open"></i>
                 <span>Productos</span>
               </a>
             {% endif %}
+
             {% if request.user.is_superuser or "vexora.view_supplier" in request.user.get_all_permissions %}
-              <a href="{% url 'vexora:list_suppliers' %}" class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}">
+              <a
+                href="{% url 'vexora:list_suppliers' %}"
+                class="menu-item {% if url_name == 'list_suppliers' %}active{% endif %}"
+              >
                 <i class="fas fa-truck"></i>
                 <span>Proveedores</span>
               </a>
             {% endif %}
+
           </div>
+
         </div>
+
       {% endif %}
 
-      <!-- =====================================
-      VENTAS
-      ====================================== -->
+      <!-- VENTAS -->
       {% if request.user.is_superuser or "vexora.view_sale" in request.user.get_all_permissions or "vexora.view_category" in request.user.get_all_permissions %}
+
         <div class="menu-module">
+
           <button
             class="module-btn"
             type="button"
             aria-expanded="false"
+            data-sidebar-title="Ventas"
           >
+
             <span class="module-label">
               <i class="fas fa-cash-register"></i>
               <span>Ventas</span>
             </span>
+
             <i class="fas fa-chevron-down arrow"></i>
+
           </button>
+
           <div class="module-content">
+
             {% if request.user.is_superuser or "vexora.view_sale" in request.user.get_all_permissions %}
-              <a href="{% url 'vexora:sales_main_list' %}" class="menu-item {% if url_name == 'sales_main_list' or url_name == 'sales_main_create' or url_name == 'sales_main_update' %}active{% endif %}">
+              <a
+                href="{% url 'vexora:sales_main_list' %}"
+                class="menu-item {% if url_name == 'sales_main_list' or url_name == 'sales_main_create' or url_name == 'sales_main_update' %}active{% endif %}"
+              >
                 <i class="fas fa-receipt"></i>
                 <span>Ventas</span>
               </a>
             {% endif %}
+
             {% if request.user.is_superuser or "vexora.view_category" in request.user.get_all_permissions %}
-              <a href="{% url 'vexora:list_categories' %}" class="menu-item {% if url_name == 'list_categories' %}active{% endif %}">
+              <a
+                href="{% url 'vexora:list_categories' %}"
+                class="menu-item {% if url_name == 'list_categories' %}active{% endif %}"
+              >
                 <i class="fas fa-tags"></i>
                 <span>Categorías</span>
               </a>
             {% endif %}
+
           </div>
+
         </div>
+
       {% endif %}
 
-       
-      <!-- =====================================
-      REPORTES
-      ====================================== -->
+      <!-- REPORTES -->
       {% if request.user.is_superuser or "vexora.view_sale" in request.user.get_all_permissions or "vexora.view_product" in request.user.get_all_permissions %}
+
         <div class="menu-module">
+
           <button
             class="module-btn"
             type="button"
             aria-expanded="false"
+            data-sidebar-title="Reportes"
           >
+
             <span class="module-label">
               <i class="fas fa-chart-bar"></i>
               <span>Reportes</span>
             </span>
+
             <i class="fas fa-chevron-down arrow"></i>
+
           </button>
+
           <div class="module-content">
-            <a href="{% url 'vexora:reports_dashboard' %}" class="menu-item {% if url_name == 'reports_dashboard' %}active{% endif %}">
-              <i class="fas fa-home"></i>
+
+            <a
+              href="{% url 'vexora:reports_dashboard' %}"
+              class="menu-item {% if url_name == 'reports_dashboard' %}active{% endif %}"
+            >
+              <i class="fas fa-chart-line"></i>
               <span>Dashboard</span>
             </a>
+
             {% if request.user.is_superuser or "vexora.view_product" in request.user.get_all_permissions %}
-              <a href="{% url 'vexora:product_reports' %}" class="menu-item {% if url_name == 'product_reports' %}active{% endif %}">
+              <a
+                href="{% url 'vexora:product_reports' %}"
+                class="menu-item {% if url_name == 'product_reports' %}active{% endif %}"
+              >
                 <i class="fas fa-boxes"></i>
                 <span>Productos</span>
               </a>
             {% endif %}
+
             {% if request.user.is_superuser or "vexora.view_sale" in request.user.get_all_permissions %}
-              <a href="{% url 'vexora:sales_reports' %}" class="menu-item {% if url_name == 'sales_reports' %}active{% endif %}">
+              <a
+                href="{% url 'vexora:sales_reports' %}"
+                class="menu-item {% if url_name == 'sales_reports' %}active{% endif %}"
+              >
                 <i class="fas fa-cash-register"></i>
                 <span>Ventas</span>
               </a>
-              <a href="{% url 'vexora:financial_reports' %}" class="menu-item {% if url_name == 'financial_reports' %}active{% endif %}">
+
+              <a
+                href="{% url 'vexora:financial_reports' %}"
+                class="menu-item {% if url_name == 'financial_reports' %}active{% endif %}"
+              >
                 <i class="fas fa-coins"></i>
                 <span>Financieros</span>
               </a>
             {% endif %}
+
           </div>
+
         </div>
+
       {% endif %}
 
-
-      <!-- =====================================
-      SUSCRIPCIÓN
-      ====================================== -->
+      <!-- SUSCRIPCIÓN -->
       {% if request.user.is_superuser or "vexora.view_subscription" in request.user.get_all_permissions or "vexora.view_plan" in request.user.get_all_permissions %}
+
         <div class="menu-module">
+
           <button
             class="module-btn"
             type="button"
             aria-expanded="false"
+            data-sidebar-title="Suscripción"
           >
+
             <span class="module-label">
               <i class="fas fa-crown"></i>
               <span>Suscripción</span>
             </span>
+
             <i class="fas fa-chevron-down arrow"></i>
+
           </button>
+
           <div class="module-content">
+
             {% if request.user.is_superuser or "vexora.view_subscription" in request.user.get_all_permissions %}
-              {% if not request.user.company.subscription %}
-                <a href="{% url 'vexora:subscription_list' %}" class="menu-item {% if url_name == 'subscription_list' %}active{% endif %}">
-                  <i class="fas fa-credit-card"></i>
-                  <span>Suscripciones</span>
-                </a>
-              {% else %}
-                <a href="{% url 'vexora:subscription_detail' %}" class="menu-item {% if url_name == 'subscription_detail' %}active{% endif %}">
+
+              {% if request.user.company and request.user.company.subscription %}
+
+                <a
+                  href="{% url 'vexora:subscription_detail' %}"
+                  class="menu-item {% if url_name == 'subscription_detail' %}active{% endif %}"
+                >
                   <i class="fas fa-credit-card"></i>
                   <span>Mi suscripción</span>
                 </a>
+
+              {% else %}
+
+                <a
+                  href="{% url 'vexora:subscription_list' %}"
+                  class="menu-item {% if url_name == 'subscription_list' %}active{% endif %}"
+                >
+                  <i class="fas fa-credit-card"></i>
+                  <span>Suscripciones</span>
+                </a>
+
               {% endif %}
+
             {% endif %}
+
             {% if request.user.is_superuser %}
-              <a href="{% url 'vexora:plan_list' %}" class="menu-item {% if url_name == 'plan_list' %}active{% endif %}">
+              <a
+                href="{% url 'vexora:plan_list' %}"
+                class="menu-item {% if url_name == 'plan_list' %}active{% endif %}"
+              >
                 <i class="fas fa-layer-group"></i>
                 <span>Planes</span>
               </a>
             {% endif %}
-          </div>
-        </div>
-      {% endif %}
-<!---====================================
-Tienda
-==========================-->
-        <div class="menu-module">
-          <button
-            class="module-btn"
-            type="button"
-            aria-expanded="false"
-          >
-            <span class="module-label">
-              <i class="fas fa-store"></i>
-              <span>Tienda</span>
-            </span>
-            <i class="fas fa-chevron-down arrow"></i>
-          </button>
-          <!-- Carrito -->
-          <div class="module-content">
-              <a href="{% url 'vexora:store_cart' %}" class="menu-item {% if url_name == 'store_cart' %}active{% endif %}">
-                <i class="fas fa-shopping-cart"></i>
-                <span>Carrito</span>
-              </a>
-              <a href="{% url 'vexora:store_home' %}" class="menu-item {% if url_name == 'store_home' %}active{% endif %}">
-                <i class="fas fa-store"></i>
-                <span>Tienda</span>
-              </a>
 
           </div>
+
         </div>
-      <!-- =====================================
-      CONFIGURACIÓN
-      ====================================== -->
+
+      {% endif %}
+
+      <!-- TIENDA -->
+      <div class="menu-module">
+
+        <button
+          class="module-btn"
+          type="button"
+          aria-expanded="false"
+          data-sidebar-title="Tienda"
+        >
+
+          <span class="module-label">
+            <i class="fas fa-store"></i>
+            <span>Tienda</span>
+          </span>
+
+          <i class="fas fa-chevron-down arrow"></i>
+
+        </button>
+
+        <div class="module-content">
+
+          <a
+            href="{% url 'vexora:store_home' %}"
+            class="menu-item {% if url_name == 'store_home' %}active{% endif %}"
+          >
+            <i class="fas fa-store"></i>
+            <span>Tienda</span>
+          </a>
+
+          <a
+            href="{% url 'vexora:store_cart' %}"
+            class="menu-item {% if url_name == 'store_cart' %}active{% endif %}"
+          >
+            <i class="fas fa-shopping-cart"></i>
+            <span>Carrito</span>
+          </a>
+
+        </div>
+
+      </div>
+
+      <!-- CONFIGURACIÓN -->
       {% if request.user.company %}
+
         <div class="menu-module">
+
           <button
             class="module-btn"
             type="button"
             aria-expanded="false"
+            data-sidebar-title="Configuración"
           >
+
             <span class="module-label">
               <i class="fas fa-gear"></i>
               <span>Configuración</span>
             </span>
+
             <i class="fas fa-chevron-down arrow"></i>
+
           </button>
+
           <div class="module-content">
-            <a href="{% url 'vexora:site_configuration' %}" class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}">
+
+            <a
+              href="{% url 'vexora:site_configuration' %}"
+              class="menu-item {% if url_name == 'site_configuration' %}active{% endif %}"
+            >
               <i class="fas fa-sliders"></i>
               <span>General</span>
             </a>
+
           </div>
+
         </div>
+
       {% endif %}
 
     </nav>
 
-  </aside>
+    <!-- USUARIO -->
+    <div class="sidebar-footer">
 
+      <a
+        href="{% url 'vexora:profil' pk=request.user.id %}"
+        class="sidebar-user"
+        data-sidebar-title="Mi perfil"
+      >
+
+        <div class="sidebar-user-avatar">
+
+          {% if request.user.avatar %}
+            <img
+              src="{{ request.user.avatar.url }}"
+              alt="{{ request.user.username }}"
+            >
+          {% else %}
+            <span>
+              {{ request.user.first_name|default:request.user.username|slice:":1"|upper }}
+            </span>
+          {% endif %}
+
+        </div>
+
+        <div class="sidebar-user-info">
+
+          <strong>
+            {{ request.user.first_name|default:request.user.username }}
+          </strong>
+
+          <small>
+            Ver perfil
+          </small>
+
+        </div>
+
+      </a>
+
+    </div>
+
+  </aside>
 </div>
 
 {% endwith %}
 
-
-<!-- =====================================
-ESTILOS DEL SIDEBAR
-====================================== -->
-
 <style>
+  :root {
+    --navbar-height: 72px;
+    --sidebar-width: 285px;
+    --sidebar-collapsed-width: 86px;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  /* SIDEBAR */
   .sidebar-container {
     position: fixed;
-    inset: 0 auto 0 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
+
     width: var(--sidebar-width);
     height: 100vh;
-    box-sizing: border-box;
+
     background:
       linear-gradient(
         180deg,
         var(--secondary-color),
         var(--background-color)
       );
+
     border-right: 1px solid var(--border-color);
-    z-index: 1055;
+
+    box-shadow:
+      10px 0 35px rgba(0, 0, 0, .22);
+
+    z-index: 1080;
+
     overflow: hidden;
-    transition: transform .3s ease;
+
+    transition:
+      width .3s ease,
+      transform .3s ease,
+      opacity .25s ease;
   }
 
   .sidebar {
     display: flex;
     flex-direction: column;
+
     width: 100%;
     height: 100%;
-    padding: 20px;
+
+    padding: 14px;
+
     box-sizing: border-box;
   }
 
+  /* HEADER */
   .sidebar-header {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     flex: 0 0 auto;
-    padding: 4px 0 24px;
+
+    min-height: 230px;
+    padding: 18px 8px 22px;
+
+    border-bottom:
+      1px solid rgba(255, 255, 255, .08);
+  }
+
+  .sidebar-brand-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    min-width: 0;
+
     text-align: center;
+  }
+
+  /* LOGO GRANDE */
+  .sidebar-logo-wrapper {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    width: 145px;
+    height: 145px;
+
+    padding: 7px;
+    margin-bottom: 16px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255, 255, 255, .18),
+        rgba(255, 255, 255, .04)
+      );
+
+    border:
+      1px solid rgba(255, 255, 255, .16);
+
+    border-radius: 32px;
+
+    box-shadow:
+      0 15px 35px rgba(0, 0, 0, .32),
+      inset 0 1px 0 rgba(255, 255, 255, .14);
+
+    transition:
+      transform .3s ease,
+      box-shadow .3s ease;
+  }
+
+  .sidebar-logo-wrapper:hover {
+    transform:
+      translateY(-3px)
+      scale(1.03);
+
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, .38),
+      0 0 30px rgba(74, 144, 226, .25);
+  }
+
+  .sidebar-logo-glow {
+    position: absolute;
+    inset: -10px;
+
+    background:
+      linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--accent-color)
+      );
+
+    border-radius: 38px;
+
+    opacity: .32;
+    filter: blur(17px);
+
+    z-index: -1;
   }
 
   .sidebar-logo {
     display: block;
-    width: 90px;
-    height: 90px;
-    margin: 0 auto 15px;
-    object-fit: cover;
-    border: 3px solid rgba(255, 255, 255, .08);
-    border-radius: 20px;
+
+    width: 130px;
+    height: 130px;
+
+    object-fit: contain;
+
+    background:
+      rgba(255, 255, 255, .97);
+
+    border:
+      2px solid rgba(255, 255, 255, .38);
+
+    border-radius: 26px;
+
+    box-shadow:
+      0 7px 20px rgba(0, 0, 0, .22);
+  }
+
+  .sidebar-brand-text {
+    width: 100%;
+    min-width: 0;
+
+    text-align: center;
+
+    transition:
+      opacity .2s ease,
+      width .3s ease;
   }
 
   .sidebar-title {
-    margin: 0 0 5px;
+    margin: 0 0 7px;
+
     color: #fff;
-    font-size: 24px;
+
+    font-size: 23px;
     font-weight: 800;
     line-height: 1.2;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .sidebar-subtitle {
     margin: 0;
-    color: rgba(255, 255, 255, .55);
-    font-size: 14px;
+
+    color:
+      rgba(255, 255, 255, .55);
+
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .8px;
+    text-transform: uppercase;
   }
 
+  .sidebar-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 10px;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    width: 40px;
+    height: 40px;
+
+    color: #fff;
+
+    background:
+      rgba(255, 255, 255, .09);
+
+    border:
+      1px solid rgba(255, 255, 255, .10);
+
+    border-radius: 12px;
+
+    z-index: 5;
+  }
+
+  .sidebar-close-btn:hover {
+    background:
+      rgba(255, 255, 255, .16);
+  }
+
+  /* MENÚ */
   .sidebar-menu {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 8px;
+    gap: 7px;
+
     min-height: 0;
-    padding-right: 5px;
+
+    margin-top: 14px;
+    padding: 0 5px 15px 0;
+
     overflow-x: hidden;
     overflow-y: auto;
+
+    overscroll-behavior: contain;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+      rgba(255, 255, 255, .30)
+      transparent;
   }
 
   .sidebar-menu::-webkit-scrollbar {
-    width: 6px;
+    width: 7px;
   }
 
   .sidebar-menu::-webkit-scrollbar-track {
@@ -399,277 +783,1106 @@ ESTILOS DEL SIDEBAR
   }
 
   .sidebar-menu::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, .28);
+    background:
+      rgba(255, 255, 255, .28);
+
+    border:
+      2px solid transparent;
+
     border-radius: 999px;
+
+    background-clip: padding-box;
+  }
+
+  .sidebar-menu::-webkit-scrollbar-thumb:hover {
+    background:
+      rgba(255, 255, 255, .46);
+
+    background-clip: padding-box;
   }
 
   .menu-module {
     flex: 0 0 auto;
   }
 
-  .module-btn {
-    display: flex;
+  .module-btn,
+  .sidebar-menu > .menu-item {
+    display: grid;
+
+    grid-template-columns:
+      24px minmax(0, 1fr) 15px;
+
     align-items: center;
-    justify-content: space-between;
+
+    column-gap: 13px;
+
     width: 100%;
-    padding: 14px 16px;
-    color: #fff;
+    min-height: 50px;
+
+    padding: 12px 14px;
+
+    box-sizing: border-box;
+
+    color:
+      rgba(255, 255, 255, .82);
+
     background: transparent;
+
     border: 0;
-    border-radius: 14px;
+    border-radius: 13px;
+
+    font-size: 14px;
     font-weight: 600;
     text-align: left;
+    text-decoration: none;
+
     cursor: pointer;
+
     transition:
+      color .2s ease,
       background .2s ease,
-      transform .2s ease;
+      transform .2s ease,
+      box-shadow .2s ease;
   }
 
-  .module-btn:hover {
-    background: rgba(255, 255, 255, .07);
+  .module-btn:hover,
+  .sidebar-menu > .menu-item:hover {
+    color: #fff;
+
+    background:
+      rgba(255, 255, 255, .07);
   }
 
-  .module-label {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    min-width: 0;
+  .sidebar-menu > .menu-item:hover {
+    transform: translateX(2px);
   }
 
-  .module-label i {
-    flex: 0 0 22px;
-    width: 22px;
-    font-size: 18px;
+  .sidebar-menu > .menu-item::after {
+    content: "";
+    grid-column: 3;
+  }
+
+  .sidebar-menu > .menu-item > i {
+    grid-column: 1;
+
+    width: 24px;
+
+    color: var(--primary-color);
+
     text-align: center;
   }
 
-  .arrow {
-    flex: 0 0 auto;
-    margin-left: 10px;
-    font-size: 13px;
-    transition: transform .25s ease;
+  .sidebar-menu > .menu-item > span {
+    grid-column: 2;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
+  .module-label {
+    display: contents;
+  }
+
+  .module-label > i {
+    grid-column: 1;
+
+    width: 24px;
+
+    color: var(--primary-color);
+
+    font-size: 17px;
+    text-align: center;
+  }
+
+  .module-label > span {
+    grid-column: 2;
+
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .module-btn > .arrow {
+    grid-column: 3;
+
+    width: 15px;
+    margin: 0;
+
+    color:
+      rgba(255, 255, 255, .55);
+
+    font-size: 12px;
+    text-align: center;
+
+    transition:
+      transform .25s ease;
+  }
+
+  /* SUBMENÚ */
   .module-content {
     display: none;
-    padding: 4px 0 2px 12px;
+
+    padding:
+      5px
+      0
+      3px
+      11px;
   }
 
   .menu-module.active .module-content {
     display: block;
+
+    animation:
+      sidebarModuleOpen .2s ease;
   }
 
   .menu-module.active .arrow {
     transform: rotate(180deg);
   }
 
-  .menu-item {
+  @keyframes sidebarModuleOpen {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .module-content .menu-item {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 13px;
+
     width: 100%;
-    padding: 13px 16px;
+    min-height: 44px;
+
+    padding: 10px 13px;
+
     box-sizing: border-box;
-    color: rgba(255, 255, 255, .82);
-    border-radius: 14px;
+
+    color:
+      rgba(255, 255, 255, .68);
+
+    border-radius: 12px;
+
+    font-size: 13px;
     font-weight: 500;
+
     text-decoration: none;
+
     transition:
       color .2s ease,
       background .2s ease,
       transform .2s ease;
   }
 
-  .menu-item:hover {
+  .module-content .menu-item:hover {
     color: #fff;
-    background: rgba(255, 255, 255, .07);
+
+    background:
+      rgba(255, 255, 255, .07);
+
     transform: translateX(3px);
   }
 
+  .module-content .menu-item i {
+    flex: 0 0 21px;
+
+    width: 21px;
+
+    color:
+      rgba(255, 255, 255, .65);
+
+    text-align: center;
+  }
+
+  /* ELEMENTO ACTIVO */
   .menu-item.active {
+    color: #fff !important;
+
+    background:
+      linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--accent-color)
+      ) !important;
+
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, .23);
+  }
+
+  .menu-item.active i {
+    color: #fff !important;
+  }
+
+  /* USUARIO */
+  .sidebar-footer {
+    flex: 0 0 auto;
+
+    padding-top: 12px;
+
+    border-top:
+      1px solid rgba(255, 255, 255, .07);
+  }
+
+  .sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    width: 100%;
+    padding: 9px;
+
+    box-sizing: border-box;
+
     color: #fff;
+
+    background:
+      rgba(255, 255, 255, .05);
+
+    border-radius: 13px;
+
+    text-decoration: none;
+
+    transition:
+      background .2s ease;
+  }
+
+  .sidebar-user:hover {
+    color: #fff;
+
+    background:
+      rgba(255, 255, 255, .09);
+  }
+
+  .sidebar-user-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    width: 39px;
+    height: 39px;
+
+    color: #fff;
+
     background:
       linear-gradient(
         135deg,
         var(--primary-color),
         var(--accent-color)
       );
-    box-shadow: 0 8px 20px rgba(0, 0, 0, .22);
+
+    border-radius: 50%;
+
+    font-weight: 800;
+
+    overflow: hidden;
   }
 
-  .menu-item i {
-    flex: 0 0 22px;
-    width: 22px;
-    font-size: 17px;
-    text-align: center;
-  }
-
-  @media (max-width: 991px) {
-    .sidebar-container {
-      transform: translateX(-100%);
-    }
-
-    body.sidebar-open .sidebar-container {
-      transform: translateX(0);
-    }
-  }
-
-  /* =====================================
-   ALINEACIÓN UNIFORME DEL MENÚ
-   ===================================== */
-
-  /* Todos los botones principales tendrán la misma altura */
-  .sidebar-menu > .menu-item,
-  .sidebar-menu > .menu-module > .module-btn {
-    min-height: 54px;
-    box-sizing: border-box;
-  }
-
-  /* Dashboard: reserva también el espacio de la flecha */
-  .sidebar-menu > .menu-item {
-    display: grid;
-    grid-template-columns: 22px minmax(0, 1fr) 14px;
-    align-items: center;
-    column-gap: 14px;
+  .sidebar-user-avatar img {
     width: 100%;
-    padding: 14px 16px;
+    height: 100%;
+
+    object-fit: cover;
   }
 
-  /* Espacio invisible donde iría la flecha */
+  .sidebar-user-info {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+  }
+
+  .sidebar-user-info strong {
+    overflow: hidden;
+
+    font-size: 13px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-user-info small {
+    margin-top: 3px;
+
+    color:
+      rgba(255, 255, 255, .50);
+
+    font-size: 11px;
+  }
+
+  /* CONTENIDO PRINCIPAL */
+  .main-content {
+    min-height: 100vh;
+
+    margin-left:
+      var(--sidebar-width);
+
+    padding-top:
+      var(--navbar-height);
+
+    transition:
+      margin-left .3s ease;
+  }
+
+  body.sidebar-collapsed .main-content {
+    margin-left:
+      var(--sidebar-collapsed-width);
+  }
+
+  /* SIDEBAR COLAPSADO */
+  body.sidebar-collapsed .sidebar-container {
+    width:
+      var(--sidebar-collapsed-width);
+  }
+
+  body.sidebar-collapsed .sidebar {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  body.sidebar-collapsed .sidebar-header {
+    min-height: 100px;
+    padding: 14px 4px;
+
+    justify-content: center;
+  }
+
+  body.sidebar-collapsed .sidebar-brand-content {
+    justify-content: center;
+  }
+
+  body.sidebar-collapsed .sidebar-logo-wrapper {
+    width: 60px;
+    height: 60px;
+
+    padding: 4px;
+    margin-bottom: 0;
+
+    border-radius: 18px;
+  }
+
+  body.sidebar-collapsed .sidebar-logo {
+    width: 50px;
+    height: 50px;
+
+    border-radius: 14px;
+  }
+
+  body.sidebar-collapsed .sidebar-brand-text,
+  body.sidebar-collapsed .sidebar-user-info {
+    display: none;
+  }
+
+  body.sidebar-collapsed .module-btn,
+  body.sidebar-collapsed .sidebar-menu > .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  body.sidebar-collapsed .module-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body.sidebar-collapsed .module-label span,
+  body.sidebar-collapsed .sidebar-menu > .menu-item span,
+  body.sidebar-collapsed .module-btn .arrow {
+    display: none;
+  }
+
+  body.sidebar-collapsed .module-content {
+    display: none !important;
+  }
+
+  body.sidebar-collapsed
   .sidebar-menu > .menu-item::after {
-    content: "";
-    display: block;
-    width: 14px;
-    height: 14px;
-    grid-column: 3;
+    display: none;
   }
 
-  /* Icono del Dashboard */
-  .sidebar-menu > .menu-item > i {
-    grid-column: 1;
-    width: 22px;
-    margin: 0;
-    text-align: center;
-    justify-self: center;
+  body.sidebar-collapsed .sidebar-user {
+    justify-content: center;
+    padding: 8px;
   }
 
-  /* Texto del Dashboard */
-  .sidebar-menu > .menu-item > span {
-    grid-column: 2;
-    min-width: 0;
-    text-align: left;
+  body.sidebar-collapsed .module-btn,
+  body.sidebar-collapsed .sidebar-menu > .menu-item,
+  body.sidebar-collapsed .sidebar-user {
+    position: relative;
   }
 
-  /* Botones de los módulos */
-  .module-btn {
-    display: grid;
-    grid-template-columns: 22px minmax(0, 1fr) 14px;
-    align-items: center;
-    column-gap: 14px;
-    width: 100%;
-    min-height: 54px;
-    padding: 14px 16px;
-    justify-content: initial;
+  /* TOOLTIP */
+  body.sidebar-collapsed
+  [data-sidebar-title]:hover::after {
+    content: attr(data-sidebar-title);
+
+    position: fixed;
+
+    left:
+      calc(
+        var(--sidebar-collapsed-width) + 12px
+      );
+
+    padding: 8px 11px;
+
+    color: #fff;
+    background: #151a26;
+
+    border:
+      1px solid rgba(255, 255, 255, .10);
+
+    border-radius: 9px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    box-shadow:
+      0 8px 24px rgba(0, 0, 0, .32);
+
+    z-index: 1200;
   }
 
-  /*
-    Permite que funcionen tanto los módulos nuevos
-    como los parciales antiguos de Inventario y Ventas.
-  */
-  .module-btn > .module-label {
-    display: contents;
+  /* OVERLAY */
+  .sidebar-overlay {
+    display: none;
   }
 
-  /* Iconos con estructura nueva */
-  .module-btn > .module-label > i {
-    grid-column: 1;
-    width: 22px;
-    margin: 0;
-    text-align: center;
-    justify-self: center;
+  /* CELULAR Y TABLET */
+  @media (max-width: 991px) {
+
+    .sidebar-container,
+    body.sidebar-collapsed .sidebar-container {
+      position: fixed;
+
+      top: 0;
+      bottom: 0;
+      left: 0;
+
+      width: min(300px, 88vw);
+      height: 100dvh;
+
+      transform: translateX(-105%);
+
+      visibility: hidden;
+      opacity: 0;
+
+      pointer-events: none;
+
+      z-index: 1100;
+
+      transition:
+        transform .3s ease,
+        opacity .25s ease,
+        visibility .3s ease;
+    }
+
+    body.sidebar-open .sidebar-container,
+    body.sidebar-open.sidebar-collapsed .sidebar-container {
+      transform: translateX(0);
+
+      visibility: visible;
+      opacity: 1;
+
+      pointer-events: auto;
+    }
+
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+
+      display: block;
+
+      background:
+        rgba(4, 8, 16, .68);
+
+      backdrop-filter: blur(3px);
+
+      visibility: hidden;
+      opacity: 0;
+
+      pointer-events: none;
+
+      z-index: 1090;
+
+      transition:
+        opacity .25s ease,
+        visibility .25s ease;
+    }
+
+    body.sidebar-open .sidebar-overlay {
+      visibility: visible;
+      opacity: 1;
+
+      pointer-events: auto;
+    }
+
+    body.sidebar-open {
+      overflow: hidden;
+    }
+
+    .sidebar-close-btn {
+      display: flex;
+    }
+
+    .main-content,
+    body.sidebar-collapsed .main-content {
+      margin-left: 0;
+    }
+
+    body.sidebar-collapsed .sidebar {
+      padding: 14px;
+    }
+
+    body.sidebar-collapsed .sidebar-header {
+      min-height: 230px;
+      padding: 18px 8px 22px;
+
+      justify-content: center;
+    }
+
+    body.sidebar-collapsed .sidebar-brand-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body.sidebar-collapsed .sidebar-logo-wrapper {
+      width: 145px;
+      height: 145px;
+
+      padding: 7px;
+      margin-bottom: 16px;
+
+      border-radius: 32px;
+    }
+
+    body.sidebar-collapsed .sidebar-logo {
+      width: 130px;
+      height: 130px;
+
+      border-radius: 26px;
+    }
+
+    body.sidebar-collapsed .sidebar-brand-text {
+      display: block;
+
+      width: 100%;
+      opacity: 1;
+    }
+
+    body.sidebar-collapsed .sidebar-user-info {
+      display: flex;
+
+      width: auto;
+      opacity: 1;
+    }
+
+    body.sidebar-collapsed .module-btn,
+    body.sidebar-collapsed .sidebar-menu > .menu-item {
+      display: grid;
+
+      grid-template-columns:
+        24px minmax(0, 1fr) 15px;
+
+      justify-content: initial;
+
+      padding: 12px 14px;
+    }
+
+    body.sidebar-collapsed .module-label {
+      display: contents;
+    }
+
+    body.sidebar-collapsed .module-label span,
+    body.sidebar-collapsed .sidebar-menu > .menu-item span,
+    body.sidebar-collapsed .module-btn .arrow {
+      display: initial;
+    }
+
+    body.sidebar-collapsed .module-content {
+      display: none;
+    }
+
+    body.sidebar-collapsed
+    .menu-module.active
+    .module-content {
+      display: block !important;
+    }
+
+    body.sidebar-collapsed
+    .sidebar-menu > .menu-item::after {
+      display: block;
+    }
+
+    body.sidebar-collapsed .sidebar-user {
+      justify-content: flex-start;
+      padding: 9px;
+    }
+
+    body.sidebar-collapsed
+    [data-sidebar-title]:hover::after {
+      display: none;
+    }
   }
 
-  /* Textos con estructura nueva */
-  .module-btn > .module-label > span {
-    grid-column: 2;
-    min-width: 0;
-    text-align: left;
-  }
+  @media (max-width: 575px) {
 
-  /* Iconos con estructura antigua */
-  .module-btn > i:not(.arrow) {
-    grid-column: 1;
-    width: 22px;
-    margin: 0;
-    text-align: center;
-    justify-self: center;
-  }
+    :root {
+      --navbar-height: 66px;
+    }
 
-  /* Textos con estructura antigua */
-  .module-btn > span:not(.module-label) {
-    grid-column: 2;
-    min-width: 0;
-    text-align: left;
-  }
+    .sidebar-container,
+    body.sidebar-collapsed .sidebar-container {
+      width: min(285px, 90vw);
+    }
 
-  /* Todas las flechas en la misma posición */
-  .module-btn > .arrow {
-    grid-column: 3;
-    width: 14px;
-    margin: 0;
-    text-align: center;
-    justify-self: end;
-  }
+    .sidebar-header,
+    body.sidebar-collapsed .sidebar-header {
+      min-height: 210px;
+      padding-top: 20px;
+    }
 
-  /* Evita desplazamientos diferentes al pasar el cursor */
-  .module-btn:hover {
-    transform: none;
+    .sidebar-logo-wrapper,
+    body.sidebar-collapsed .sidebar-logo-wrapper {
+      width: 125px;
+      height: 125px;
+
+      border-radius: 28px;
+    }
+
+    .sidebar-logo,
+    body.sidebar-collapsed .sidebar-logo {
+      width: 110px;
+      height: 110px;
+
+      border-radius: 23px;
+    }
+
+    .sidebar-title {
+      font-size: 21px;
+    }
   }
 </style>
 
-
-<!-- =====================================
-COMPORTAMIENTO DEL MENÚ
-====================================== -->
-
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const moduleButtons = document.querySelectorAll(".module-btn");
+  document.addEventListener("DOMContentLoaded", function () {
 
-  moduleButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      const module = button.closest(".menu-module");
+    const body = document.body;
 
-      if (!module) {
+    const sidebarToggle =
+      document.getElementById("sidebarToggle");
+
+    const sidebarClose =
+      document.getElementById("sidebarClose");
+
+    const sidebarOverlay =
+      document.getElementById("sidebarOverlay");
+
+    const sidebarContainer =
+      document.getElementById("sidebarContainer");
+
+    const sidebarMenu =
+      document.getElementById("sidebarMenu");
+
+    const moduleButtons =
+      document.querySelectorAll(".module-btn");
+
+    const mobileBreakpoint = 991;
+
+    function isMobile() {
+      return window.innerWidth <= mobileBreakpoint;
+    }
+
+    function openMobileSidebar() {
+
+      body.classList.remove(
+        "sidebar-collapsed"
+      );
+
+      body.classList.add(
+        "sidebar-open"
+      );
+
+      if (sidebarToggle) {
+        sidebarToggle.setAttribute(
+          "aria-expanded",
+          "true"
+        );
+      }
+    }
+
+    function closeMobileSidebar() {
+
+      body.classList.remove(
+        "sidebar-open"
+      );
+
+      if (sidebarToggle) {
+        sidebarToggle.setAttribute(
+          "aria-expanded",
+          "false"
+        );
+      }
+    }
+
+    function toggleSidebar() {
+
+      if (isMobile()) {
+
+        if (
+          body.classList.contains(
+            "sidebar-open"
+          )
+        ) {
+          closeMobileSidebar();
+        } else {
+          openMobileSidebar();
+        }
+
         return;
       }
 
-      const isOpen = module.classList.toggle("active");
-
-      button.setAttribute(
-        "aria-expanded",
-        isOpen ? "true" : "false"
+      body.classList.toggle(
+        "sidebar-collapsed"
       );
-    });
+
+      localStorage.setItem(
+        "vexoraSidebarCollapsed",
+        body.classList.contains(
+          "sidebar-collapsed"
+        )
+      );
+    }
+
+    /* ESTADO INICIAL */
+    if (isMobile()) {
+
+      body.classList.remove(
+        "sidebar-collapsed"
+      );
+
+      body.classList.remove(
+        "sidebar-open"
+      );
+
+    } else {
+
+      const savedState =
+        localStorage.getItem(
+          "vexoraSidebarCollapsed"
+        );
+
+      if (savedState === "true") {
+        body.classList.add(
+          "sidebar-collapsed"
+        );
+      }
+
+    }
+
+    /* BOTÓN DEL NAVBAR */
+    if (sidebarToggle) {
+
+      sidebarToggle.addEventListener(
+        "click",
+        function (event) {
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          toggleSidebar();
+
+        }
+      );
+
+    }
+
+    /* BOTÓN CERRAR */
+    if (sidebarClose) {
+
+      sidebarClose.addEventListener(
+        "click",
+        function (event) {
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          closeMobileSidebar();
+
+        }
+      );
+
+    }
+
+    /* OVERLAY */
+    if (sidebarOverlay) {
+
+      sidebarOverlay.addEventListener(
+        "click",
+        function () {
+
+          closeMobileSidebar();
+
+        }
+      );
+
+    }
+
+    /* EVITA QUE SE CIERRE AL TOCAR EL SIDEBAR */
+    if (sidebarContainer) {
+
+      sidebarContainer.addEventListener(
+        "click",
+        function (event) {
+
+          event.stopPropagation();
+
+        }
+      );
+
+    }
+
+    /* MÓDULOS */
+    moduleButtons.forEach(
+      function (button) {
+
+        button.addEventListener(
+          "click",
+          function () {
+
+            const module =
+              button.closest(
+                ".menu-module"
+              );
+
+            if (!module) {
+              return;
+            }
+
+            if (
+              !isMobile() &&
+              body.classList.contains(
+                "sidebar-collapsed"
+              )
+            ) {
+
+              body.classList.remove(
+                "sidebar-collapsed"
+              );
+
+              localStorage.setItem(
+                "vexoraSidebarCollapsed",
+                "false"
+              );
+
+              setTimeout(
+                function () {
+
+                  module.classList.add(
+                    "active"
+                  );
+
+                  button.setAttribute(
+                    "aria-expanded",
+                    "true"
+                  );
+
+                },
+                200
+              );
+
+              return;
+            }
+
+            const isOpen =
+              module.classList.contains(
+                "active"
+              );
+
+            document
+              .querySelectorAll(
+                ".menu-module.active"
+              )
+              .forEach(
+                function (openModule) {
+
+                  if (
+                    openModule !== module
+                  ) {
+
+                    openModule.classList.remove(
+                      "active"
+                    );
+
+                    const openButton =
+                      openModule.querySelector(
+                        ".module-btn"
+                      );
+
+                    if (openButton) {
+
+                      openButton.setAttribute(
+                        "aria-expanded",
+                        "false"
+                      );
+
+                    }
+
+                  }
+
+                }
+              );
+
+            module.classList.toggle(
+              "active",
+              !isOpen
+            );
+
+            button.setAttribute(
+              "aria-expanded",
+              isOpen
+                ? "false"
+                : "true"
+            );
+
+          }
+        );
+
+      }
+    );
+
+    /* ABRIR MÓDULO DE LA PÁGINA ACTUAL */
+    document
+      .querySelectorAll(
+        ".module-content .menu-item.active"
+      )
+      .forEach(
+        function (activeItem) {
+
+          const module =
+            activeItem.closest(
+              ".menu-module"
+            );
+
+          if (!module) {
+            return;
+          }
+
+          module.classList.add(
+            "active"
+          );
+
+          const button =
+            module.querySelector(
+              ".module-btn"
+            );
+
+          if (button) {
+
+            button.setAttribute(
+              "aria-expanded",
+              "true"
+            );
+
+          }
+
+          setTimeout(
+            function () {
+
+              activeItem.scrollIntoView({
+                block: "nearest",
+                behavior: "smooth"
+              });
+
+            },
+            150
+          );
+
+        }
+      );
+
+    /* CERRAR AL ABRIR ENLACE EN CELULAR */
+    if (sidebarMenu) {
+
+      sidebarMenu
+        .querySelectorAll("a")
+        .forEach(
+          function (link) {
+
+            link.addEventListener(
+              "click",
+              function () {
+
+                if (isMobile()) {
+                  closeMobileSidebar();
+                }
+
+              }
+            );
+
+          }
+        );
+
+    }
+
+    /* CERRAR CON ESCAPE */
+    document.addEventListener(
+      "keydown",
+      function (event) {
+
+        if (event.key === "Escape") {
+          closeMobileSidebar();
+        }
+
+      }
+    );
+
+    /* CAMBIO DE TAMAÑO */
+    window.addEventListener(
+      "resize",
+      function () {
+
+        if (isMobile()) {
+
+          body.classList.remove(
+            "sidebar-collapsed"
+          );
+
+        } else {
+
+          closeMobileSidebar();
+
+          const savedState =
+            localStorage.getItem(
+              "vexoraSidebarCollapsed"
+            );
+
+          body.classList.toggle(
+            "sidebar-collapsed",
+            savedState === "true"
+          );
+
+        }
+
+      }
+    );
+
   });
-
-  /*
-   * Si una opción interna está activa, abre automáticamente
-   * su módulo correspondiente.
-   */
-  document
-    .querySelectorAll(".module-content .menu-item.active")
-    .forEach(function (activeItem) {
-      const module = activeItem.closest(".menu-module");
-      const button = module?.querySelector(".module-btn");
-
-      if (module) {
-        module.classList.add("active");
-      }
-
-      if (button) {
-        button.setAttribute("aria-expanded", "true");
-      }
-    });
-});
 </script>

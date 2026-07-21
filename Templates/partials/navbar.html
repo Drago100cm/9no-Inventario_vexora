@@ -4,222 +4,592 @@ NAVBAR.HTML
 
 <nav class="navbar navbar-expand-lg fixed-top" id="mainNavbar">
 
-    <div class="container-fluid">
+  <div class="container-fluid px-3 px-lg-4">
 
-        <!-- Sidebar Toggle -->
+    <!-- BOTÓN SIDEBAR -->
+    <button
+      class="btn navbar-sidebar-btn me-3"
+      id="sidebarToggle"
+      type="button"
+      aria-label="Mostrar u ocultar menú"
+      title="Mostrar u ocultar menú"
+    >
+      <i class="fas fa-bars"></i>
+    </button>
 
-        <button class="btn me-3" id="sidebarToggle">
+    <!-- MARCA -->
+    <a
+      class="navbar-brand"
+      href="{% url 'vexora:home' %}"
+    >
+      {{ site_config.company.name|default:"Vexora" }}
+    </a>
 
-            <i class="fas fa-bars"></i>
+    <!-- BOTÓN MÓVIL -->
+    <button
+      class="navbar-toggler border-0"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarContent"
+      aria-controls="navbarContent"
+      aria-expanded="false"
+      aria-label="Mostrar navegación"
+    >
+      <i class="fas fa-ellipsis-vertical text-white"></i>
+    </button>
 
-        </button>
+    <!-- CONTENIDO -->
+    <div
+      class="collapse navbar-collapse"
+      id="navbarContent"
+    >
 
-        <!-- Brand -->
+      <ul class="navbar-nav ms-auto align-items-lg-center">
 
-        <a class="navbar-brand" href="{% url 'vexora:home' %}">
-            {{ site_config.company.name|default:"Vexora" }}
-        </a>
+        <!-- EMPRESA -->
+        {% if request.user.company %}
+          <li class="nav-item me-lg-3 mt-2 mt-lg-0">
 
-        <!-- Mobile -->
+            <div class="navbar-company">
 
-        <button class="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarContent">
+              <i class="fas fa-building"></i>
 
-            <span class="navbar-toggler-icon"></span>
+              <span>
+                {{ request.user.company.name|default:"Mi empresa" }}
+              </span>
 
-        </button>
+            </div>
 
-        <!-- Content -->
+          </li>
+        {% endif %}
 
-        <div class="collapse navbar-collapse" id="navbarContent">
+        <!-- PERFIL -->
+        <li class="nav-item dropdown mt-2 mt-lg-0">
 
-            <ul class="navbar-nav ms-auto align-items-center">
+          <a
+            class="nav-link dropdown-toggle profile-dropdown-toggle"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
 
-                <!-- Dark Mode -->
+            <!-- AVATAR -->
+            <div class="navbar-avatar">
 
+              {% if request.user.avatar %}
 
+                <img
+                  src="{{ request.user.avatar.url }}"
+                  alt="{{ request.user.username }}"
+                >
 
-                <!-- Profile -->
+              {% else %}
 
-                <li class="nav-item dropdown">
+                <span>
+                  {{ request.user.first_name|default:request.user.username|slice:":1"|upper }}
+                </span>
 
-                    <a class="nav-link dropdown-toggle"
-                       href="#"
-                       role="button"
-                       data-bs-toggle="dropdown">
+              {% endif %}
 
-                        {{ request.user.username }}
+            </div>
 
-                    </a>
+            <!-- INFORMACIÓN -->
+            <div class="navbar-user-info d-none d-sm-flex">
 
-                    <ul class="dropdown-menu dropdown-menu-end">
+              <strong>
+                {{ request.user.get_full_name|default:request.user.username }}
+              </strong>
 
-                        <li>
+              <small>
 
-                            <a class="dropdown-item"
-                               href="{% url 'vexora:profil' pk=request.user.id %}">
+                {% if request.user.is_superuser %}
+                  Superadministrador
+                {% elif request.user.is_client %}
+                  Cliente
+                {% else %}
+                  Usuario
+                {% endif %}
 
-                                <i class="fas fa-user me-2"></i>
-                                Perfil
+              </small>
 
-                            </a>
+            </div>
 
-                        </li>
+          </a>
 
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
+          <!-- MENÚ PERFIL -->
+          <ul class="dropdown-menu dropdown-menu-end navbar-dropdown">
 
-                        <li>
+            <li class="px-3 py-2">
 
-                            <a class="dropdown-item"
-                               href="{% url 'vexora:logout' %}">
+              <div class="dropdown-user-header">
 
-                                <i class="fas fa-sign-out-alt me-2"></i>
-                                Cerrar sesión
+                <strong>
+                  {{ request.user.get_full_name|default:request.user.username }}
+                </strong>
 
-                            </a>
+                <small>
+                  {{ request.user.email|default:"Sin correo registrado" }}
+                </small>
 
-                        </li>
+              </div>
 
-                    </ul>
+            </li>
 
-                </li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
 
-            </ul>
+            <li>
 
-        </div>
+              <a
+                class="dropdown-item"
+                href="{% url 'vexora:profil' pk=request.user.id %}"
+              >
+
+                <i class="fas fa-user me-2"></i>
+                Mi perfil
+
+              </a>
+
+            </li>
+
+            {% if request.user.company %}
+
+              <li>
+
+                <a
+                  class="dropdown-item"
+                  href="{% url 'vexora:site_configuration' %}"
+                >
+
+                  <i class="fas fa-gear me-2"></i>
+                  Configuración
+
+                </a>
+
+              </li>
+
+            {% endif %}
+
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+
+            <li>
+
+              <a
+                class="dropdown-item dropdown-logout"
+                href="{% url 'vexora:logout' %}"
+              >
+
+                <i class="fas fa-sign-out-alt me-2"></i>
+                Cerrar sesión
+
+              </a>
+
+            </li>
+
+          </ul>
+
+        </li>
+
+      </ul>
 
     </div>
+
+  </div>
 
 </nav>
 
 <style>
 
-#mainNavbar{
+  :root {
+    --navbar-height: 72px;
+    --sidebar-width: 285px;
+    --sidebar-collapsed-width: 86px;
+  }
 
-    background:linear-gradient(
+  /* =========================
+  NAVBAR
+  ========================= */
+
+  #mainNavbar {
+    left: var(--sidebar-width);
+
+    width: calc(
+      100% - var(--sidebar-width)
+    );
+
+    min-height: var(--navbar-height);
+    padding: 10px 0;
+
+    background:
+      linear-gradient(
         135deg,
         var(--secondary-color),
         var(--background-color)
+      );
+
+    border-bottom: 1px solid var(--border-color);
+
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, .22);
+
+    backdrop-filter: blur(20px);
+
+    z-index: 1060;
+
+    transition:
+      left .3s ease,
+      width .3s ease;
+  }
+
+  body.sidebar-collapsed #mainNavbar {
+    left: var(--sidebar-collapsed-width);
+
+    width: calc(
+      100% - var(--sidebar-collapsed-width)
     );
+  }
 
-    backdrop-filter:blur(20px);
+  /* =========================
+  BOTÓN SIDEBAR
+  ========================= */
 
-    border-bottom:1px solid var(--border-color);
+  .navbar-sidebar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-    padding:12px 0;
+    width: 44px;
+    height: 44px;
 
-    box-shadow:0 8px 30px rgba(0,0,0,.25);
+    color: #fff;
 
-    z-index:1040;
-}
+    background:
+      rgba(255, 255, 255, .08);
 
-.navbar-brand{
+    border:
+      1px solid rgba(255, 255, 255, .09);
 
-    font-size:1.4rem;
+    border-radius: 13px;
 
-    font-weight:800;
+    transition:
+      background .25s ease,
+      transform .25s ease,
+      box-shadow .25s ease;
+  }
 
-    background:linear-gradient(
+  .navbar-sidebar-btn:hover {
+    color: #fff;
+
+    background:
+      linear-gradient(
         135deg,
         var(--primary-color),
         var(--accent-color)
-    );
+      );
 
-    -webkit-background-clip:text;
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, .25);
 
-    -webkit-text-fill-color:transparent;
+    transform: scale(1.05);
+  }
 
-}
+  .navbar-sidebar-btn:focus {
+    color: #fff;
+    box-shadow: none;
+  }
 
-.navbar-nav .nav-link{
+  /* =========================
+  MARCA
+  ========================= */
 
-    color:white !important;
+  .navbar-brand {
+    max-width: 260px;
 
-    font-weight:600;
+    overflow: hidden;
 
-    transition:.3s ease;
-}
+    font-size: 1.35rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 
-.navbar-nav .nav-link:hover{
-
-    color:var(--primary-color) !important;
-
-}
-
-#sidebarToggle{
-
-    background:rgba(255,255,255,.06);
-
-    color:white;
-
-    border-radius:12px;
-
-    border:none;
-
-    padding:10px 14px;
-
-    transition:.3s ease;
-}
-
-#sidebarToggle:hover{
-
-    background:var(--primary-color);
-
-}
-
-#darkModeToggle{
-
-    border:none;
-
-    background:linear-gradient(
+    background:
+      linear-gradient(
         135deg,
         var(--primary-color),
         var(--accent-color)
-    );
+      );
 
-    color:white;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 
-    border-radius:50px;
+  /* =========================
+  EMPRESA
+  ========================= */
 
-    padding:8px 14px;
+  .navbar-company {
+    display: flex;
+    align-items: center;
+    gap: 9px;
 
-    transition:.3s ease;
-}
+    max-width: 220px;
+    padding: 9px 14px;
 
-#darkModeToggle:hover{
+    color: rgba(255, 255, 255, .86);
 
-    transform:scale(1.08);
+    background:
+      rgba(255, 255, 255, .06);
 
-}
+    border:
+      1px solid rgba(255, 255, 255, .07);
 
-.dropdown-menu{
+    border-radius: 12px;
 
-    background:var(--secondary-color);
+    font-size: 14px;
+    font-weight: 600;
+  }
 
-    border:1px solid var(--border-color);
+  .navbar-company i {
+    color: var(--primary-color);
+  }
 
-    border-radius:16px;
+  .navbar-company span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-    overflow:hidden;
-}
+  /* =========================
+  PERFIL
+  ========================= */
 
-.dropdown-item{
+  .profile-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 11px;
 
-    color:white;
+    padding: 5px 10px !important;
 
-    transition:.3s ease;
-}
+    color: #fff !important;
+    border-radius: 14px;
 
-.dropdown-item:hover{
+    transition: background .25s ease;
+  }
 
-    background:rgba(255,255,255,.06);
+  .profile-dropdown-toggle:hover,
+  .profile-dropdown-toggle:focus {
+    background:
+      rgba(255, 255, 255, .07);
+  }
 
-    color:white;
+  .profile-dropdown-toggle::after {
+    margin-left: 4px;
+  }
 
-}
+  .navbar-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    width: 42px;
+    height: 42px;
+
+    color: #fff;
+
+    background:
+      linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--accent-color)
+      );
+
+    border:
+      2px solid rgba(255, 255, 255, .14);
+
+    border-radius: 50%;
+
+    font-size: 17px;
+    font-weight: 800;
+
+    overflow: hidden;
+  }
+
+  .navbar-avatar img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+  }
+
+  .navbar-user-info {
+    flex-direction: column;
+
+    max-width: 180px;
+
+    line-height: 1.15;
+  }
+
+  .navbar-user-info strong {
+    overflow: hidden;
+
+    color: #fff;
+
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .navbar-user-info small {
+    margin-top: 4px;
+
+    color: rgba(255, 255, 255, .55);
+
+    font-size: 12px;
+  }
+
+  /* =========================
+  DROPDOWN
+  ========================= */
+
+  .navbar-dropdown {
+    min-width: 250px;
+
+    margin-top: 13px !important;
+    padding: 8px;
+
+    background: var(--secondary-color);
+
+    border:
+      1px solid var(--border-color);
+
+    border-radius: 16px;
+
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, .35);
+  }
+
+  .dropdown-user-header {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+  }
+
+  .dropdown-user-header strong {
+    color: #fff;
+    font-size: 14px;
+  }
+
+  .dropdown-user-header small {
+    margin-top: 4px;
+
+    color: rgba(255, 255, 255, .55);
+
+    font-size: 12px;
+
+    overflow-wrap: anywhere;
+  }
+
+  .navbar-dropdown .dropdown-divider {
+    border-color:
+      rgba(255, 255, 255, .08);
+  }
+
+  .navbar-dropdown .dropdown-item {
+    padding: 11px 13px;
+
+    color: rgba(255, 255, 255, .82);
+
+    border-radius: 10px;
+
+    font-size: 14px;
+
+    transition:
+      background .2s ease,
+      color .2s ease;
+  }
+
+  .navbar-dropdown .dropdown-item:hover {
+    color: #fff;
+
+    background:
+      rgba(255, 255, 255, .08);
+  }
+
+  .navbar-dropdown .dropdown-logout {
+    color: #ff8787;
+  }
+
+  .navbar-dropdown .dropdown-logout:hover {
+    color: #fff;
+
+    background:
+      rgba(220, 53, 69, .2);
+  }
+
+  /* =========================
+  RESPONSIVE
+  ========================= */
+
+  @media (max-width: 991px) {
+
+    #mainNavbar,
+    body.sidebar-collapsed #mainNavbar {
+      left: 0;
+      width: 100%;
+    }
+
+    #navbarContent {
+      padding: 10px 0 4px;
+    }
+
+    .navbar-nav {
+      align-items: stretch !important;
+    }
+
+    .navbar-company {
+      max-width: 100%;
+    }
+
+    .profile-dropdown-toggle {
+      justify-content: flex-start;
+    }
+
+    .navbar-dropdown {
+      width: 100%;
+      min-width: 100%;
+    }
+
+  }
+
+  @media (max-width: 575px) {
+
+    :root {
+      --navbar-height: 66px;
+    }
+
+    #mainNavbar {
+      min-height: var(--navbar-height);
+    }
+
+    .navbar-brand {
+      max-width: 145px;
+      font-size: 1.08rem;
+    }
+
+    .navbar-sidebar-btn {
+      width: 40px;
+      height: 40px;
+
+      margin-right: 8px !important;
+    }
+
+  }
 
 </style>

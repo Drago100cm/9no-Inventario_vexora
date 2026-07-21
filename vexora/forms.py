@@ -220,7 +220,7 @@ class CustomerRegisterForm(UserCreationForm):
 class CustomUserRegisterForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
-        company = kwargs.pop("company", None)
+        self.company = kwargs.pop("company", None)
         super().__init__(*args, **kwargs)
 
         self.fields['avatar'].widget.attrs.update({
