@@ -13,15 +13,15 @@
       <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
 
-    <form method="POST" enctype="multipart/form-data" action="{% url 'vexora:create_product' %}">
+    <form method="POST" enctype="multipart/form-data" action="{% url 'vexora:create_product' %}" id="productWizardForm" onsubmit="return validarRequeridos(this)" novalidate>
       {% csrf_token %}
 
       <div class="modal-body">
-        <!-- Mostrar errores del formulario -->
+        <!-- Errores globales -->
         {% if form.errors %}
           <div class="alert alert-danger">
-            <strong>Error:</strong> Por favor corrige los siguientes errores:
-            <ul>
+            <strong><i class="ri-error-warning-line me-1"></i> Error:</strong> Por favor corrige los siguientes errores:
+            <ul class="mb-0">
               {% for field, errors in form.errors.items %}
                 {% for error in errors %}
                   <li><strong>{{ field }}:</strong> {{ error }}</li>
@@ -32,93 +32,118 @@
         {% endif %}
 
         <!-- Información de la compañía -->
-        <div class="alert alert-info mb-3">
-          <i class="ri-building-line me-2"></i>
-          <strong>Compañía:</strong> {{ user.company.name }}
-          <br>
-          <small class="text-muted">El producto será creado para esta compañía</small>
+        <div class="alert alert-info mb-3 d-flex align-items-center">
+          <i class="ri-building-line me-2 fs-5"></i>
+          <div>
+            <strong>{{ user.company.name }}</strong>
+            <br>
+            <small class="text-muted">El producto será creado para esta compañía</small>
+          </div>
         </div>
 
-        <ul class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#general_info" role="tab">
-              <i class="ri-information-line me-1"></i> Información General
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#pricing_stock" role="tab">
-              <i class="ri-price-tag-3-line me-1"></i> Precios y Stock
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#classification" role="tab">
-              <i class="ri-price-tag-line me-1"></i> Clasificación
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#images" role="tab">
-              <i class="ri-image-line me-1"></i> Imagen
-            </a>
-          </li>
-        </ul>
+        <!-- STEPPER / BARRA DE PROGRESO -->
+        <div class="wizard-stepper mb-4">
+          <div class="wizard-progress">
+            <div class="wizard-progress-bar" id="wizardProgressBar"></div>
+          </div>
+          <div class="wizard-steps">
+            <div class="wizard-step active" data-step="1">
+              <div class="wizard-step-circle"><i class="ri-information-line"></i></div>
+              <span class="wizard-step-label">Información</span>
+            </div>
+            <div class="wizard-step" data-step="2">
+              <div class="wizard-step-circle"><i class="ri-shopping-cart-line"></i></div>
+              <span class="wizard-step-label">Compra</span>
+            </div>
+            <div class="wizard-step" data-step="3">
+              <div class="wizard-step-circle"><i class="ri-price-tag-3-line"></i></div>
+              <span class="wizard-step-label">Precios</span>
+            </div>
+            <div class="wizard-step" data-step="4">
+              <div class="wizard-step-circle"><i class="ri-price-tag-line"></i></div>
+              <span class="wizard-step-label">Clasificación</span>
+            </div>
+            <div class="wizard-step" data-step="5">
+              <div class="wizard-step-circle"><i class="ri-image-line"></i></div>
+              <span class="wizard-step-label">Imagen</span>
+            </div>
+            <div class="wizard-step" data-step="6">
+              <div class="wizard-step-circle"><i class="ri-check-double-line"></i></div>
+              <span class="wizard-step-label">Revisar</span>
+            </div>
+          </div>
+        </div>
 
-        <div class="tab-content">
-          <!-- TAB 1: Información General -->
-          <div class="tab-pane active" id="general_info">
+        <!-- CONTENIDO DE LOS PASOS -->
+        <div class="wizard-content">
+
+          <!-- PASO 1: Información General -->
+          <div class="wizard-pane active" data-pane="1">
+            <div class="d-flex align-items-center mb-3">
+              <i class="ri-information-line text-primary fs-4 me-2"></i>
+              <h6 class="mb-0">Información básica del producto</h6>
+            </div>
             <div class="row gy-3">
               <div class="col-md-12">
                 <label class="form-label">Nombre del producto <span class="text-danger">*</span></label>
                 {{ form.name }}
-                {% if form.name.errors %}
-                  <div class="text-danger small mt-1">{{ form.name.errors }}</div>
-                {% endif %}
+                <small class="text-muted">Ej: Camiseta azul talla M</small>
+                {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
               </div>
               <div class="col-md-6">
                 <label class="form-label">SKU (Código único)</label>
                 {{ form.sku }}
                 <small class="text-muted">Déjalo vacío para generar automáticamente</small>
-                {% if form.sku.errors %}
-                  <div class="text-danger small mt-1">{{ form.sku.errors }}</div>
-                {% endif %}
+                {% if form.sku.errors %}<div class="text-danger small mt-1">{{ form.sku.errors }}</div>{% endif %}
               </div>
               <div class="col-md-6">
                 <label class="form-label">Código de barras</label>
                 <div class="input-group">
                   {{ form.barcode }}
-                  <button type="button" class="btn btn-primary" id="scanBarcodeBtn" title="Escanear código de barras con la cámara">
+                  <button type="button" class="btn btn-primary" id="scanBarcodeBtn" title="Escanear con la cámara">
                     <i class="ri-qr-scan-line"></i>
                   </button>
                 </div>
-                {% if form.barcode.errors %}
-                  <div class="text-danger small mt-1">{{ form.barcode.errors }}</div>
-                {% endif %}
+                <small class="text-muted">Opcional - puedes escanearlo con la cámara o el lector USB</small>
+                {% if form.barcode.errors %}<div class="text-danger small mt-1">{{ form.barcode.errors }}</div>{% endif %}
               </div>
               <div class="col-md-12">
                 <label class="form-label">Descripción</label>
                 {{ form.description }}
-                {% if form.description.errors %}
-                  <div class="text-danger small mt-1">{{ form.description.errors }}</div>
-                {% endif %}
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Fecha de compra <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" name="purchase_date" id="id_purchase_date" value="{{ form.purchase_date.value|default_if_none:'' }}">
-                {% if form.purchase_date.errors %}
-                  <div class="text-danger small mt-1">{{ form.purchase_date.errors }}</div>
-                {% endif %}
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Proveedor <span class="text-danger">*</span></label>
-                {{ form.supplier }}
-                {% if form.supplier.errors %}
-                  <div class="text-danger small mt-1">{{ form.supplier.errors }}</div>
-                {% endif %}
+                <small class="text-muted">Detalles del producto, materiales, dimensiones, etc.</small>
+                {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
               </div>
             </div>
           </div>
 
-          <!-- TAB 2: Precios y Stock -->
-          <div class="tab-pane" id="pricing_stock">
+          <!-- PASO 2: Compra y Proveedor -->
+          <div class="wizard-pane" data-pane="2">
+            <div class="d-flex align-items-center mb-3">
+              <i class="ri-shopping-cart-line text-primary fs-4 me-2"></i>
+              <h6 class="mb-0">Datos de compra</h6>
+            </div>
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <label class="form-label">Fecha de compra <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="purchase_date" id="id_purchase_date" value="{{ form.purchase_date.value|default_if_none:'' }}" required>
+                <small class="text-muted">¿Cuándo se adquirió este producto?</small>
+                {% if form.purchase_date.errors %}<div class="text-danger small mt-1">{{ form.purchase_date.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Proveedor <span class="text-danger">*</span></label>
+                {{ form.supplier }}
+                <small class="text-muted">¿De quién lo compraste?</small>
+                {% if form.supplier.errors %}<div class="text-danger small mt-1">{{ form.supplier.errors }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 3: Precios y Stock -->
+          <div class="wizard-pane" data-pane="3">
+            <div class="d-flex align-items-center mb-3">
+              <i class="ri-price-tag-3-line text-primary fs-4 me-2"></i>
+              <h6 class="mb-0">Precios y existencias</h6>
+            </div>
             <div class="row gy-3">
               <div class="col-md-6">
                 <label class="form-label">Precio de compra <span class="text-danger">*</span></label>
@@ -126,36 +151,41 @@
                   <span class="input-group-text">$</span>
                   {{ form.price }}
                 </div>
-                {% if form.price.errors %}
-                  <div class="text-danger small mt-1">{{ form.price.errors }}</div>
-                {% endif %}
+                <small class="text-muted">Precio al que adquiriste el producto</small>
+                {% if form.price.errors %}<div class="text-danger small mt-1">{{ form.price.errors }}</div>{% endif %}
               </div>
+              
+              <!-- CAMPO: Margen de Ganancia -->
+              <div class="col-md-6">
+                <label class="form-label">Margen de ganancia (%)</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="profit_margin" min="0" max="99" step="0.01" placeholder="Ej: 20">
+                  <span class="input-group-text">%</span>
+                </div>
+                <small class="text-muted">Porcentaje real de ganancia sobre el precio final.</small>
+              </div>
+
               <div class="col-md-6">
                 <label class="form-label">Precio de venta</label>
                 <div class="input-group">
                   <span class="input-group-text">$</span>
                   {{ form.sale_price }}
                 </div>
-                <small class="text-muted">Opcional. Déjalo vacío si es igual al precio de compra</small>
-                {% if form.sale_price.errors %}
-                  <div class="text-danger small mt-1">{{ form.sale_price.errors }}</div>
-                {% endif %}
+                <small class="text-muted">Si lo modificas, el margen se recalculará.</small>
+                {% if form.sale_price.errors %}<div class="text-danger small mt-1">{{ form.sale_price.errors }}</div>{% endif %}
               </div>
+
               <div class="col-md-6">
                 <label class="form-label">Stock inicial</label>
                 {{ form.stock }}
-                <small class="text-muted">Cantidad de unidades disponibles al crear el producto</small>
-                {% if form.stock.errors %}
-                  <div class="text-danger small mt-1">{{ form.stock.errors }}</div>
-                {% endif %}
+                <small class="text-muted">Cantidad de unidades disponibles</small>
+                {% if form.stock.errors %}<div class="text-danger small mt-1">{{ form.stock.errors }}</div>{% endif %}
               </div>
               <div class="col-md-6">
                 <label class="form-label">Stock mínimo</label>
                 {{ form.min_stock }}
                 <small class="text-muted">Alerta cuando el stock baje de este número</small>
-                {% if form.min_stock.errors %}
-                  <div class="text-danger small mt-1">{{ form.min_stock.errors }}</div>
-                {% endif %}
+                {% if form.min_stock.errors %}<div class="text-danger small mt-1">{{ form.min_stock.errors }}</div>{% endif %}
               </div>
               <div class="col-md-12">
                 <div class="form-check form-switch">
@@ -166,55 +196,116 @@
             </div>
           </div>
 
-          <!-- TAB 3: Clasificación -->
-          <div class="tab-pane" id="classification">
+          <!-- PASO 4: Clasificación -->
+          <div class="wizard-pane" data-pane="4">
+            <div class="d-flex align-items-center mb-3">
+              <i class="ri-price-tag-line text-primary fs-4 me-2"></i>
+              <h6 class="mb-0">Clasificación del producto</h6>
+            </div>
             <div class="row gy-3">
               <div class="col-md-12">
                 <label class="form-label">Categoría</label>
                 {{ form.category }}
                 <small class="text-muted">Categoría a la que pertenece el producto</small>
-                {% if form.category.errors %}
-                  <div class="text-danger small mt-1">{{ form.category.errors }}</div>
-                {% endif %}
+                {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors }}</div>{% endif %}
               </div>
               <div class="col-md-12">
                 <label class="form-label">Tags / Etiquetas</label>
                 {{ form.tags }}
                 <small class="text-muted">Mantén presionado Ctrl para seleccionar múltiples tags</small>
-                {% if form.tags.errors %}
-                  <div class="text-danger small mt-1">{{ form.tags.errors }}</div>
-                {% endif %}
+                {% if form.tags.errors %}<div class="text-danger small mt-1">{{ form.tags.errors }}</div>{% endif %}
               </div>
             </div>
           </div>
 
-          <!-- TAB 4: Imagen -->
-          <div class="tab-pane" id="images">
+          <!-- PASO 5: Imagen -->
+          <div class="wizard-pane" data-pane="5">
+            <div class="d-flex align-items-center mb-3">
+              <i class="ri-image-line text-primary fs-4 me-2"></i>
+              <h6 class="mb-0">Imagen del producto</h6>
+            </div>
             <div class="row gy-3">
               <div class="col-md-12">
-                <label class="form-label">Imagen del producto</label>
+                <label class="form-label">Imagen</label>
                 {{ form.image }}
-                <small class="text-muted d-block">Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB</small>
-                {% if form.image.errors %}
-                  <div class="text-danger small mt-1">{{ form.image.errors }}</div>
-                {% endif %}
+                <small class="text-muted d-block">Formatos: JPG, PNG, GIF. Tamaño máximo: 5MB</small>
+                {% if form.image.errors %}<div class="text-danger small mt-1">{{ form.image.errors }}</div>{% endif %}
                 <div class="mt-3 text-center" id="imagePreviewContainer" style="display: none;">
-                  <img id="imagePreview" src="#" alt="Vista previa" class="img-thumbnail" style="max-height: 150px;">
+                  <img id="imagePreview" src="#" alt="Vista previa" class="img-thumbnail" style="max-height: 200px;">
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- PASO 6: Revisión final -->
+          <div class="wizard-pane" data-pane="6">
+            <div class="d-flex align-items-center mb-3">
+              <i class="ri-check-double-line text-success fs-4 me-2"></i>
+              <h6 class="mb-0">Revisa los datos antes de guardar</h6>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="review-card">
+                  <div class="review-title"><i class="ri-information-line me-1"></i> Información</div>
+                  <div class="review-item"><strong>Nombre:</strong> <span id="rv-name">—</span></div>
+                  <div class="review-item"><strong>SKU:</strong> <span id="rv-sku">—</span></div>
+                  <div class="review-item"><strong>Código de barras:</strong> <span id="rv-barcode">—</span></div>
+                  <div class="review-item"><strong>Descripción:</strong> <span id="rv-description">—</span></div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="review-card">
+                  <div class="review-title"><i class="ri-shopping-cart-line me-1"></i> Compra</div>
+                  <div class="review-item"><strong>Fecha:</strong> <span id="rv-date">—</span></div>
+                  <div class="review-item"><strong>Proveedor:</strong> <span id="rv-supplier">—</span></div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="review-card">
+                  <div class="review-title"><i class="ri-price-tag-3-line me-1"></i> Precios y Stock</div>
+                  <div class="review-item"><strong>Precio compra:</strong> <span id="rv-price">—</span></div>
+                  <div class="review-item"><strong>Margen real:</strong> <span id="rv-margin">—</span></div>
+                  <div class="review-item"><strong>Precio venta:</strong> <span id="rv-saleprice">—</span></div>
+                  <div class="review-item"><strong>Stock:</strong> <span id="rv-stock">—</span></div>
+                  <div class="review-item"><strong>Stock mínimo:</strong> <span id="rv-minstock">—</span></div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="review-card">
+                  <div class="review-title"><i class="ri-price-tag-line me-1"></i> Clasificación</div>
+                  <div class="review-item"><strong>Categoría:</strong> <span id="rv-category">—</span></div>
+                  <div class="review-item"><strong>Tags:</strong> <span id="rv-tags">—</span></div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="review-card text-center">
+                  <div class="review-title"><i class="ri-image-line me-1"></i> Imagen</div>
+                  <div id="rv-imagePreview" class="mt-2">
+                    <span class="text-muted">Sin imagen seleccionada</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Campo oculto para company -->
+        <!-- Campo oculto -->
         {{ form.company.as_hidden }}
       </div>
 
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">
-          <i class="ri-close-line me-1"></i> Cancelar
+      <!-- FOOTER CON BOTONES DE NAVEGACIÓN -->
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-sm btn-light" id="btnPrev" disabled>
+          <i class="ri-arrow-left-line me-1"></i> Anterior
         </button>
-        <button type="submit" class="btn btn-sm btn-success">
+        <div class="text-muted small">
+          Paso <span id="currentStep">1</span> de <span>6</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" id="btnNext">
+          Siguiente <i class="ri-arrow-right-line ms-1"></i>
+        </button>
+        <button type="submit" class="btn btn-sm btn-success" id="btnSubmit" style="display: none;">
           <i class="ri-save-line me-1"></i> Guardar Producto
         </button>
       </div>
@@ -224,321 +315,440 @@
 
 <!-- Modal para escáner de código de barras -->
 <div class="modal fade" id="barcodeScannerModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="ri-qr-scan-line me-2"></i>
-                    Escanear Código de Barras
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Selector de cámara -->
-                <div class="mb-3">
-                    <label for="cameraSelect" class="form-label">Selecciona la cámara a utilizar:</label>
-                    <select id="cameraSelect" class="form-select"></select>
-                </div>
-
-                <div id="deviceStatus" class="alert alert-info">
-                    <i class="ri-information-line me-2"></i>
-                    <span id="statusText">Preparando cámara...</span>
-                </div>
-                <div id="barcodeReader" style="width: 100%;"></div>
-                <div id="barcodeResult" class="mt-3 alert alert-success" style="display: none;">
-                    <strong>Código detectado:</strong> <span id="scannedBarcode"></span>
-                </div>
-                <div class="mt-2 text-center">
-                    <small class="text-muted" id="cameraHint">Si usas USB, selecciona la cámara de tu app (ej. Iriun, DroidCam)</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="ri-close-line me-1"></i> Cerrar
-                </button>
-                <button type="button" class="btn btn-primary" id="useScannedBarcode" disabled>
-                    <i class="ri-check-line me-1"></i> Usar código
-                </button>
-            </div>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="ri-qr-scan-line me-2"></i> Escanear Código de Barras</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="cameraSelect" class="form-label">Selecciona la cámara a utilizar:</label>
+          <select id="cameraSelect" class="form-select"></select>
         </div>
+        <div id="deviceStatus" class="alert alert-info">
+          <i class="ri-information-line me-2"></i>
+          <span id="statusText">Preparando cámara...</span>
+        </div>
+        <div id="barcodeReader" style="width: 100%;"></div>
+        <div id="barcodeResult" class="mt-3 alert alert-success" style="display: none;">
+          <strong>Código detectado:</strong> <span id="scannedBarcode"></span>
+        </div>
+        <div class="mt-2 text-center">
+          <small class="text-muted" id="cameraHint">Si usas USB, selecciona la cámara de tu app (ej. Iriun, DroidCam)</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="ri-close-line me-1"></i> Cerrar
+        </button>
+        <button type="button" class="btn btn-primary" id="useScannedBarcode" disabled>
+          <i class="ri-check-line me-1"></i> Usar código
+        </button>
+      </div>
     </div>
+  </div>
 </div>
 
 <style>
-    #barcodeReader {
-        width: 100%;
-        background: #000;
-        border-radius: 8px;
-        overflow: hidden;
-        min-height: 300px;
-    }
-    
-    #barcodeReader video {
-        width: 100% !important;
-        height: auto !important;
-    }
-    
-    @keyframes scanLine {
-        0% { top: 20%; }
-        100% { top: 80%; }
-    }
-    
-    .scanner-frame {
-        position: relative;
-    }
-    
-    .scanner-frame::before {
-        content: '';
-        position: absolute;
-        top: 20%;
-        left: 10%;
-        right: 10%;
-        height: 2px;
-        background: rgba(0, 255, 0, 0.8);
-        box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-        animation: scanLine 2s infinite linear;
-        z-index: 10;
-        pointer-events: none;
-    }
-    
-    #scanBarcodeBtn {
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-        transition: all 0.3s ease;
-    }
-    
-    #scanBarcodeBtn:hover {
-        transform: scale(1.05);
-    }
-    
-    #scanBarcodeBtn:active {
-        transform: scale(0.95);
-    }
-    
-    #id_barcode:focus {
-        border-color: #4CAF50;
-        box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
-    }
+  /* ===== WIZARD STEPPER ===== */
+  .wizard-stepper { position: relative; padding: 0 10px; }
+  .wizard-progress { position: absolute; top: 18px; left: 50px; right: 50px; height: 4px; background: #e9ecef; border-radius: 4px; z-index: 0; }
+  .wizard-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #4CAF50, #2196F3); border-radius: 4px; transition: width 0.4s ease; }
+  .wizard-steps { display: flex; justify-content: space-between; position: relative; z-index: 1; }
+  .wizard-step { display: flex; flex-direction: column; align-items: center; flex: 1; cursor: pointer; transition: all 0.3s ease; }
+  .wizard-step-circle { width: 38px; height: 38px; border-radius: 50%; background: #fff; border: 2px solid #dee2e6; display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 18px; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  .wizard-step.active .wizard-step-circle { background: #4361ee; border-color: #4361ee; color: #fff; transform: scale(1.1); box-shadow: 0 4px 12px rgba(67, 97, 238, 0.4); }
+  .wizard-step.completed .wizard-step-circle { background: #4CAF50; border-color: #4CAF50; color: #fff; }
+  .wizard-step.completed .wizard-step-circle::before { content: "✓"; font-family: inherit; }
+  .wizard-step.completed .wizard-step-circle i { display: none; }
+  .wizard-step-label { margin-top: 6px; font-size: 12px; color: #6c757d; font-weight: 500; transition: color 0.3s ease; }
+  .wizard-step.active .wizard-step-label, .wizard-step.completed .wizard-step-label { color: #212529; font-weight: 600; }
+
+  /* ===== PANES ===== */
+  .wizard-content { min-height: 320px; }
+  .wizard-pane { display: none; animation: fadeInRight 0.4s ease; }
+  .wizard-pane.active { display: block; }
+  @keyframes fadeInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* ===== REVIEW CARDS ===== */
+  .review-card { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 14px 16px; height: 100%; transition: all 0.3s ease; }
+  .review-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .review-title { font-weight: 600; margin-bottom: 8px; color: #4361ee; font-size: 14px; padding-bottom: 6px; border-bottom: 1px dashed #dee2e6; }
+  .review-item { font-size: 13px; color: #495057; margin-bottom: 4px; word-break: break-word; }
+  .review-item strong { color: #212529; }
+
+  /* ===== EFECTO INPUT ESCÁNER ===== */
+  #id_barcode:focus { border-color: #4CAF50; box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25); }
+  
+  /* Animación de error */
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+  .shake-error { animation: shake 0.4s ease; }
+  .wizard-pane .is-invalid, .wizard-pane input.is-invalid, .wizard-pane select.is-invalid, .wizard-pane textarea.is-invalid { border-color: #dc3545 !important; box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15); }
 </style>
 
 <script>
-  $(document).ready(function() {
-    // Inicializar Select2
-    if (typeof $.fn.select2 !== 'undefined') {
-      $('#id_supplier, #id_category, #id_tags').select2({
-        theme: 'bootstrap-5',
-        dropdownParent: $('#ModalOptions'),
-        width: '100%',
-        placeholder: 'Seleccione una opción'
-      });
-    }
-
-    // Vista previa de imagen
-    $('#id_image').on('change', function() {
-      const file = this.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          $('#imagePreview').attr('src', e.target.result);
-          $('#imagePreviewContainer').show();
-        }
-        reader.readAsDataURL(file);
-      } else {
-        $('#imagePreviewContainer').hide();
-      }
-    });
-
-    // --- FUNCIONALIDAD DE ESCÁNER DE CÓDIGO DE BARRAS ---
-    let html5QrCode = null;
-    let lastScannedCode = '';
-    let isScanning = false;
-
-    // Abrir modal
-    $('#scanBarcodeBtn').on('click', function() {
-        if (!isScanning) {
-            $('#barcodeScannerModal').modal('show');
-            setTimeout(function() {
-                loadCameras();
-            }, 500);
-        }
-    });
-
-    // Cerrar modal y limpiar todo
-    $('#barcodeScannerModal').on('hidden.bs.modal', function() {
-        stopScanner().then(() => {
-            // Solo limpiamos el resultado cuando se CIERRA el modal
-            $('#barcodeResult').hide();
-            $('#useScannedBarcode').prop('disabled', true);
-            lastScannedCode = '';
-        });
-    });
-
-    // Función para listar las cámaras
-    function loadCameras() {
-        $('#statusText').text('Buscando cámaras disponibles...');
+ // ===== FUNCIÓN VALIDACIÓN REQUERIDOS =====
+ function validarRequeridos(form) {
+    const requeridos = form.querySelectorAll('[required]');
+    let errores = [];
+    
+    requeridos.forEach(campo => {
+        const label = campo.closest('.col-md-4, .col-md-12, .col-md-6')?.querySelector('label');
+        const nombre = label ? label.textContent.trim().replace('*', '').trim() : campo.name;
         
-        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-            Swal.fire('Error', 'Tu navegador no soporta la enumeración de dispositivos.', 'error');
-            return;
-        }
-
-        Html5Qrcode.getCameras().then(devices => {
-            if (devices && devices.length > 0) {
-                $('#cameraSelect').empty();
-                devices.forEach(device => {
-                    $('#cameraSelect').append(`<option value="${device.id}">${device.label || 'Cámara ' + device.id}</option>`);
-                });
-                startScanner(devices[0].id);
-            } else {
-                Swal.fire('Error', 'No se encontraron cámaras conectadas.', 'error');
-            }
-        }).catch(err => {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Permiso de cámara',
-                text: 'No se pudo acceder a las cámaras. Asegúrate de dar permiso en el navegador.',
-            });
-        });
-    }
-
-    // Cambiar de cámara
-    $('#cameraSelect').on('change', function() {
-        if (isScanning) {
-            stopScanner().then(() => {
-                startScanner($(this).val());
-            });
+        if (!campo.value || campo.value.trim() === '') {
+            errores.push(nombre);
+            campo.classList.add('is-invalid');
         } else {
-            startScanner($(this).val());
+            campo.classList.remove('is-invalid');
         }
     });
-
-    // Iniciar escáner
-    function startScanner(cameraId) {
-        const readerElement = document.getElementById('barcodeReader');
-        if (!readerElement) return;
-        readerElement.innerHTML = '';
-
-        try {
-            html5QrCode = new Html5Qrcode("barcodeReader");
-            const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-
-            html5QrCode.start(cameraId, config, onScanSuccess, onScanError).then(() => {
-                isScanning = true;
-                $('#barcodeReader').addClass('scanner-frame');
-                $('#statusText').text('Cámara activa - Escaneando...');
-                $('#deviceStatus').removeClass('alert-info alert-danger').addClass('alert-success');
-            }).catch(function(err) {
-                showCameraError(err);
-            });
-        } catch (error) {
-            showCameraError(error);
-        }
-    }
-
-    function showCameraError(error) {
-        let errorMessage = 'No se pudo iniciar la cámara seleccionada. ';
-        errorMessage += 'Asegúrate de que no esté siendo usada por otra aplicación.';
-        Swal.fire({ icon: 'warning', title: 'Error de cámara', text: errorMessage });
-        $('#statusText').text('Error: ' + (error.message || 'No se pudo acceder'));
-        $('#deviceStatus').removeClass('alert-info alert-success').addClass('alert-danger');
-    }
-
-    // Detener cámara SIN borrar el resultado
-    function stopScanner() {
-        return new Promise((resolve) => {
-            if (html5QrCode) {
-                try {
-                    html5QrCode.stop().then(() => {
-                        html5QrCode.clear();
-                        html5QrCode = null;
-                        isScanning = false;
-                        $('#barcodeReader').removeClass('scanner-frame');
-                        $('#statusText').text('Cámara detenida');
-                        $('#deviceStatus').removeClass('alert-success alert-danger').addClass('alert-info');
-                        resolve();
-                    }).catch(err => {
-                        html5QrCode = null;
-                        isScanning = false;
-                        resolve();
-                    });
-                } catch (error) {
-                    html5QrCode = null;
-                    isScanning = false;
-                    resolve();
-                }
-            } else {
-                resolve();
-            }
+    
+    if (errores.length > 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Los campos marcados con * son obligatorios',
+            text: errores.join(', '),
+            confirmButtonText: 'OK'
         });
+        return false;
+    }
+    return true;
+ }
+
+ $(document).ready(function() {
+  // ===== Select2 =====
+  if (typeof $.fn.select2 !== 'undefined') {
+    $('#id_supplier, #id_category, #id_tags').select2({
+      theme: 'bootstrap-5',
+      dropdownParent: $('#ModalOptions'),
+      width: '100%',
+      placeholder: 'Seleccione una opción'
+    });
+  }
+
+  // Poner el foco automáticamente en el código de barras al abrir
+  $('#ModalOptions').on('shown.bs.modal', function() {
+    setTimeout(() => { $('#id_barcode').focus(); }, 300);
+  });
+
+  // ===== Vista previa de imagen =====
+  let imageBase64 = '';
+  $('#id_image').on('change', function() {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        $('#imagePreview').attr('src', e.target.result);
+        $('#imagePreviewContainer').show();
+        imageBase64 = e.target.result;
+      }
+      reader.readAsDataURL(file);
+    } else {
+      $('#imagePreviewContainer').hide();
+      imageBase64 = '';
+    }
+  });
+
+  // ===== CÁLCULO AUTOMÁTICO DE PRECIO Y MARGEN REAL =====
+  // 1. Calcular Precio de Venta basado en el Margen (%) deseado
+  function calcularPrecioVenta() {
+    const precioCompra = parseFloat($('#id_price').val()) || 0;
+    const margen = parseFloat($('#profit_margin').val()) || 0;
+    
+    if (precioCompra > 0 && margen > 0 && margen < 100) {
+      // Fórmula margen sobre venta final: PV = PC / (1 - (margen/100))
+      const precioVenta = precioCompra / (1 - (margen / 100));
+      $('#id_sale_price').val(precioVenta.toFixed(2));
+    }
+  }
+
+  // 2. Calcular Margen Real (%) si el usuario modifica el Precio de Venta manualmente
+  function calcularMargenReal() {
+    const precioCompra = parseFloat($('#id_price').val()) || 0;
+    const precioVenta = parseFloat($('#id_sale_price').val()) || 0;
+    
+    if (precioCompra > 0 && precioVenta > 0) {
+      // Fórmula margen real: ((PV - PC) / PV) * 100
+      const margenReal = ((precioVenta - precioCompra) / precioVenta) * 100;
+      $('#profit_margin').val(margenReal.toFixed(2));
+    }
+  }
+
+  // Listeners para recalcular automáticamente
+  $('#id_price, #profit_margin').on('input change', function() {
+    calcularPrecioVenta();
+  });
+
+  $('#id_sale_price').on('input change', function() {
+    calcularMargenReal();
+  });
+
+  // ===== WIZARD =====
+  let currentStep = 1;
+  const totalSteps = 6;
+
+  function goToStep(step) {
+    if (step < 1 || step > totalSteps) return;
+
+    $('.wizard-pane').removeClass('active');
+    $(`.wizard-pane[data-pane="${step}"]`).addClass('active');
+
+    $('.wizard-step').removeClass('active completed');
+    for (let i = 1; i <= totalSteps; i++) {
+      if (i < step) $('.wizard-step[data-step="' + i + '"]').addClass('completed');
+      else if (i === step) $('.wizard-step[data-step="' + i + '"]').addClass('active');
     }
 
-    function onScanSuccess(decodedText, decodedResult) {
-        if (decodedText && decodedText.length > 0) {
-            playBeep();
-            if (navigator.vibrate) navigator.vibrate(200);
-            
-            // Mostrar resultado
-            $('#scannedBarcode').text(decodedText);
-            $('#barcodeResult').show();
-            $('#useScannedBarcode').prop('disabled', false);
-            lastScannedCode = decodedText;
+    const progress = ((step - 1) / (totalSteps - 1)) * 100;
+    $('#wizardProgressBar').css('width', progress + '%');
+    $('#currentStep').text(step);
 
-            // Detener cámara pero mantener el resultado en pantalla
-            setTimeout(() => {
-                stopScanner();
-            }, 1000);
+    $('#btnPrev').prop('disabled', step === 1);
+    if (step === totalSteps) {
+      $('#btnNext').hide();
+      $('#btnSubmit').show();
+      updateReview();
+    } else {
+      $('#btnNext').show();
+      $('#btnSubmit').hide();
+    }
+
+    currentStep = step;
+    $('.modal-body').animate({ scrollTop: 0 }, 200);
+  }
+
+  function validateStep(step) {
+    let requiredFields = [];
+    if (step === 1) requiredFields = ['name'];
+    else if (step === 2) requiredFields = ['purchase_date', 'supplier'];
+    else if (step === 3) requiredFields = ['price'];
+
+    let valid = true;
+    let firstError = null;
+    requiredFields.forEach(function(field) {
+      const $el = $('#id_' + field);
+      const val = $el.val();
+      if (!val || (Array.isArray(val) ? val.length === 0 : $.trim(val) === '')) {
+        $el.addClass('is-invalid');
+        if (!firstError) firstError = $el;
+        valid = false;
+      } else {
+        $el.removeClass('is-invalid');
+      }
+    });
+
+    if (!valid && firstError) {
+      const pane = $(`.wizard-pane[data-pane="${step}"]`);
+      pane.addClass('shake-error');
+      setTimeout(() => pane.removeClass('shake-error'), 400);
+      firstError.focus();
+      Swal.fire({ icon: 'warning', title: 'Campos requeridos', text: 'Por favor completa los campos obligatorios.', timer: 2000, showConfirmButton: false });
+    }
+    return valid;
+  }
+
+  $('#btnNext').on('click', function() {
+    if (validateStep(currentStep)) goToStep(currentStep + 1);
+  });
+  
+  $('#btnPrev').on('click', function() {
+    goToStep(currentStep - 1);
+  });
+
+  $('.wizard-step').on('click', function() {
+    const target = parseInt($(this).data('step'));
+    if (target < currentStep) goToStep(target);
+  });
+
+  $(document).on('input change', '.is-invalid', function() {
+    $(this).removeClass('is-invalid');
+  });
+
+  function updateReview() {
+    $('#rv-name').text($('#id_name').val() || '—');
+    $('#rv-sku').text($('#id_sku').val() || '—');
+    $('#rv-barcode').text($('#id_barcode').val() || '—');
+    $('#rv-description').text($('#id_description').val() || '—');
+    $('#rv-date').text($('#id_purchase_date').val() || '—');
+    $('#rv-supplier').text($('#id_supplier option:selected').text() || '—');
+    $('#rv-price').text($('#id_price').val() ? '$' + $('#id_price').val() : '—');
+    
+    const margen = $('#profit_margin').val();
+    $('#rv-margin').text(margen ? margen + '%' : '—');
+    $('#rv-saleprice').text($('#id_sale_price').val() ? '$' + $('#id_sale_price').val() : '—');
+    
+    $('#rv-stock').text($('#id_stock').val() || '0');
+    $('#rv-minstock').text($('#id_min_stock').val() || '—');
+    $('#rv-category').text($('#id_category option:selected').text() || '—');
+
+    const tags = [];
+    $('#id_tags option:selected').each(function() { tags.push($(this).text()); });
+    $('#rv-tags').text(tags.length ? tags.join(', ') : '—');
+
+    if (imageBase64) {
+      $('#rv-imagePreview').html('<img src="' + imageBase64 + '" class="img-thumbnail" style="max-height:120px;">');
+    } else {
+      $('#rv-imagePreview').html('<span class="text-muted">Sin imagen</span>');
+    }
+  }
+
+  // ===== LÓGICA PARA ESCÁNER USB Y TECLADO =====
+  $('#productWizardForm').on('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+      if (currentStep < totalSteps) {
+        e.preventDefault(); 
+        if (validateStep(currentStep)) {
+          goToStep(currentStep + 1); 
         }
+      }
     }
+  });
 
-    function onScanError(errorMessage) { }
+  // ===== ESCÁNER DE CÓDIGO DE BARRAS (CÁMARA) =====
+  let html5QrCode = null;
+  let lastScannedCode = '';
+  let isScanning = false;
 
-    function playBeep() {
+  $('#scanBarcodeBtn').on('click', function() {
+    if (!isScanning) {
+      $('#barcodeScannerModal').modal('show');
+      setTimeout(loadCameras, 500);
+    }
+  });
+
+  $('#barcodeScannerModal').on('hidden.bs.modal', function() {
+    stopScanner().then(() => {
+      $('#barcodeResult').hide();
+      $('#useScannedBarcode').prop('disabled', true);
+      lastScannedCode = '';
+    });
+  });
+
+  function loadCameras() {
+    $('#statusText').text('Buscando cámaras disponibles...');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+      Swal.fire('Error', 'Tu navegador no soporta la enumeración de dispositivos.', 'error');
+      return;
+    }
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length > 0) {
+        $('#cameraSelect').empty();
+        devices.forEach(device => {
+          $('#cameraSelect').append(`<option value="${device.id}">${device.label || 'Cámara ' + device.id}</option>`);
+        });
+        startScanner(devices[0].id);
+      } else {
+        Swal.fire('Error', 'No se encontraron cámaras conectadas.', 'error');
+      }
+    }).catch(() => {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Permiso de cámara',
+        text: 'No se pudo acceder a las cámaras. Asegúrate de dar permiso en el navegador.',
+      });
+    });
+  }
+
+  $('#cameraSelect').on('change', function() {
+    if (isScanning) stopScanner().then(() => startScanner($(this).val()));
+    else startScanner($(this).val());
+  });
+
+  function startScanner(cameraId) {
+    const readerElement = document.getElementById('barcodeReader');
+    if (!readerElement) return;
+    readerElement.innerHTML = '';
+    try {
+      html5QrCode = new Html5Qrcode("barcodeReader");
+      const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+      html5QrCode.start(cameraId, config, onScanSuccess, onScanError).then(() => {
+        isScanning = true;
+        $('#barcodeReader').addClass('scanner-frame');
+        $('#statusText').text('Cámara activa - Escaneando...');
+        $('#deviceStatus').removeClass('alert-info alert-danger').addClass('alert-success');
+      }).catch(err => showCameraError(err));
+    } catch (error) { showCameraError(error); }
+  }
+
+  function showCameraError(error) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Error de cámara',
+      text: 'No se pudo iniciar la cámara. Asegúrate de que no esté siendo usada por otra aplicación.'
+    });
+    $('#statusText').text('Error: ' + (error.message || 'No se pudo acceder'));
+    $('#deviceStatus').removeClass('alert-info alert-success').addClass('alert-danger');
+  }
+
+  function stopScanner() {
+    return new Promise((resolve) => {
+      if (html5QrCode) {
         try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.2);
-        } catch (error) { }
+          html5QrCode.stop().then(() => {
+            html5QrCode.clear();
+            html5QrCode = null;
+            isScanning = false;
+            $('#barcodeReader').removeClass('scanner-frame');
+            $('#statusText').text('Cámara detenida');
+            $('#deviceStatus').removeClass('alert-success alert-danger').addClass('alert-info');
+            resolve();
+          }).catch(() => { html5QrCode = null; isScanning = false; resolve(); });
+        } catch { html5QrCode = null; isScanning = false; resolve(); }
+      } else resolve();
+    });
+  }
+
+  function onScanSuccess(decodedText) {
+    if (decodedText && decodedText.length > 0) {
+      playBeep();
+      if (navigator.vibrate) navigator.vibrate(200);
+      $('#scannedBarcode').text(decodedText);
+      $('#barcodeResult').show();
+      $('#useScannedBarcode').prop('disabled', false);
+      lastScannedCode = decodedText;
+      setTimeout(stopScanner, 1000);
     }
+  }
+  function onScanError() {}
 
-    // Usar el código en el formulario
-    $('#useScannedBarcode').on('click', function() {
-        if (lastScannedCode) {
-            $('#id_barcode').val(lastScannedCode);
-            $('#id_barcode').trigger('change');
-            $('#barcodeScannerModal').modal('hide');
-            Swal.fire({ icon: 'success', title: 'Código agregado', timer: 1500, showConfirmButton: false });
-        }
-    });
+  function playBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 800; osc.type = 'sine';
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      osc.start(); osc.stop(ctx.currentTime + 0.2);
+    } catch {}
+  }
 
-    // Limpiar al abrir el modal
-    $('#barcodeScannerModal').on('shown.bs.modal', function() {
-        $('#barcodeResult').hide();
-        $('#useScannedBarcode').prop('disabled', true);
-        lastScannedCode = '';
-    });
+  $('#useScannedBarcode').on('click', function() {
+    if (lastScannedCode) {
+      $('#id_barcode').val(lastScannedCode).trigger('change');
+      $('#barcodeScannerModal').modal('hide');
+      Swal.fire({ icon: 'success', title: 'Código agregado', timer: 1500, showConfirmButton: false });
+    }
   });
 
-  // Cerrar modales con ESC
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      const modal = document.getElementById('ModalOptions');
-      if (modal && modal.classList.contains('show')) {
-        const closeBtn = modal.querySelector('[data-bs-dismiss="modal"]');
-        if (closeBtn) closeBtn.click();
-      }
-      const scannerModal = document.getElementById('barcodeScannerModal');
-      if (scannerModal && scannerModal.classList.contains('show')) {
-        const closeBtn = scannerModal.querySelector('[data-bs-dismiss="modal"]');
-        if (closeBtn) closeBtn.click();
-      }
-    }
+  $('#barcodeScannerModal').on('shown.bs.modal', function() {
+    $('#barcodeResult').hide();
+    $('#useScannedBarcode').prop('disabled', true);
+    lastScannedCode = '';
   });
+});
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const m = document.getElementById('ModalOptions');
+    if (m && m.classList.contains('show')) {
+      const btn = m.querySelector('[data-bs-dismiss="modal"]');
+      if (btn) btn.click();
+    }
+  }
+});
 </script>

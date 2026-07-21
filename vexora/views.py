@@ -1369,13 +1369,12 @@ def view_product(request, pk):
     
     return render(request, 'vexora/products/view.html', context)
 
-def delete_product(request, pk):
+def delete_product(request, id):
     company = request.user.company
-    product = get_object_or_404(Product, id=pk, company=company)
+    product = get_object_or_404(Product, id=id, company=company)
     product.delete()
     messages.success(request, "✅ Producto eliminado correctamente!")
     return redirect('vexora:list_products')
-
 
 
 # =====================================
