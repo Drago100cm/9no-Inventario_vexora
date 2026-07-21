@@ -1396,7 +1396,6 @@ def delete_product(request, id):
     return redirect('vexora:list_products')
 
 
-
 # =====================================
 # SALES VIEWS (Ventas)
 # =====================================
