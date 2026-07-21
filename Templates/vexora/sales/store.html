@@ -42,37 +42,6 @@
   </div>
   {% endif %}
 
-  <div class="section-label">Categorías</div>
-  <div class="cats-row">
-    <a href="{% url 'vexora:store_home' %}" class="cat-chip {% if not categoria_activa %}active{% endif %}"><i class="fas fa-th-large"></i> Todos</a>
-    {% for cat in categorias %}
-      <a href="?categoria={{ cat.id }}{% if talla_activa %}&talla={{ talla_activa }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" class="cat-chip {% if categoria_activa == cat.id|stringformat:'s' %}active{% endif %}">
-        <i class="fas fa-tag"></i> {{ cat.name }}
-      </a>
-    {% endfor %}
-  </div>
-
-  
-    {% for t in tallas %}
-      
-    {% empty %}
-      
-    {% endfor %}
-
-    <form method="GET" class="store-order-form">
-      {% if categoria_activa %}<input type="hidden" name="categoria" value="{{ categoria_activa }}">{% endif %}
-      {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
-      {% if talla_activa %}<input type="hidden" name="talla" value="{{ talla_activa }}">{% endif %}
-      {% if seccion %}<input type="hidden" name="seccion" value="{{ seccion }}">{% endif %}
-      <select name="orden" class="orden-select" onchange="this.form.submit()" aria-label="Ordenar productos">
-        <option value="nuevo" {% if orden == 'nuevo' %}selected{% endif %}>Más nuevos</option>
-        <option value="precio_asc" {% if orden == 'precio_asc' %}selected{% endif %}>Menor precio</option>
-        <option value="precio_desc" {% if orden == 'precio_desc' %}selected{% endif %}>Mayor precio</option>
-      </select>
-      <span class="results-count" id="results-count">{{ productos|length }} resultado{{ productos|length|pluralize }}</span>
-    </form>
-  </div>
-
   <div class="prod-grid" id="product-grid">
     {% if productos %}
       {% for p in productos %}

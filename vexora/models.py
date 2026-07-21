@@ -431,7 +431,6 @@ class Supplier(models.Model):
         ordering = ['name']
 
 # ========== PRODUCT MODEL ==========
-# ========== PRODUCT MODEL ==========
 
 class Product(models.Model):
     item_number = models.PositiveIntegerField(default=0,verbose_name="Número de producto",help_text="Número secuencial del producto para esta compañía",

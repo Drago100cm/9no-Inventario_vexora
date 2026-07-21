@@ -1,0 +1,669 @@
+/* =========================================================
+   PALETA DINÁMICA PARA PERFIL Y TIENDA
+
+   Este archivo SOLO modifica colores.
+   No modifica:
+   - display
+   - grid
+   - flex
+   - tamaños
+   - posiciones
+   - padding
+   - margin
+   - border-radius
+   ========================================================= */
+
+
+/* =========================================================
+   PERFIL
+   ========================================================= */
+
+.profile-wrap {
+    color: var(--text-color);
+}
+
+/* Fondos de tarjetas */
+
+.profile-wrap .stat-card,
+.profile-wrap .profile-card {
+    background-color: var(--card-bg);
+    border-color: var(--palette-border);
+}
+
+/* Portada y avatar */
+
+.profile-wrap .cover-placeholder {
+    background:
+        linear-gradient(
+            135deg,
+            var(--palette-primary-soft),
+            var(--palette-accent-soft)
+        );
+
+    border-color: var(--palette-border);
+    color: var(--text-muted);
+}
+
+.profile-wrap .avatar-img {
+    border-color: var(--card-bg);
+}
+
+.profile-wrap .avatar-placeholder {
+    background-color: var(--palette-surface);
+    border-color: var(--card-bg);
+    color: var(--text-muted);
+}
+
+/* Texto principal */
+
+.profile-wrap .profile-name,
+.profile-wrap .stat-val,
+.profile-wrap .card-hdr,
+.profile-wrap .info-val,
+.profile-wrap .company-name,
+.profile-wrap .pedido-num,
+.profile-wrap .pedido-total,
+.profile-wrap .fav-name {
+    color: var(--text-color);
+}
+
+/* Texto secundario */
+
+.profile-wrap .profile-email,
+.profile-wrap .profile-username,
+.profile-wrap .stat-label,
+.profile-wrap .info-label,
+.profile-wrap .company-email,
+.profile-wrap .pedido-fecha,
+.profile-wrap .fav-price,
+.profile-wrap .empty-state,
+.profile-wrap .accion-btn span {
+    color: var(--text-muted);
+}
+
+/* Líneas divisorias */
+
+.profile-wrap .card-hdr,
+.profile-wrap .info-row,
+.profile-wrap .company-row,
+.profile-wrap .pedido-row,
+.profile-wrap .fav-row {
+    border-color: var(--palette-border);
+}
+
+/* Botón de editar */
+
+.profile-wrap .btn-edit {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-muted);
+}
+
+.profile-wrap .btn-edit:hover {
+    background-color: var(--palette-hover);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+/* Encabezados y enlaces */
+
+.profile-wrap .card-hdr i,
+.profile-wrap .card-hdr-link {
+    color: var(--accent-color);
+}
+
+.profile-wrap .card-hdr-link:hover {
+    color: var(--primary-color);
+}
+
+/* Empresas, favoritos y acciones */
+
+.profile-wrap .company-ico,
+.profile-wrap .fav-ico,
+.profile-wrap .accion-btn {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-muted);
+}
+
+.profile-wrap .company-link,
+.profile-wrap .fav-remove {
+    background-color: transparent;
+    border-color: var(--palette-border);
+    color: var(--text-muted);
+}
+
+.profile-wrap .company-link:hover,
+.profile-wrap .accion-btn:hover {
+    background-color: var(--palette-hover);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+/* Iconos basados en la paleta */
+
+.profile-wrap .ic-blue,
+.profile-wrap .ic-purple {
+    background-color: var(--palette-primary-soft);
+    color: var(--primary-color);
+}
+
+.profile-wrap .ic-green,
+.profile-wrap .ic-teal {
+    background-color: var(--palette-accent-soft);
+    color: var(--accent-color);
+}
+
+.profile-wrap .ic-amber {
+    background-color: var(--palette-secondary-soft);
+    color: var(--secondary-color);
+}
+
+/* Badges */
+
+.profile-wrap .badge-superadmin {
+    background-color: var(--palette-accent-soft);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.profile-wrap .badge-group {
+    background-color: var(--palette-primary-soft);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.profile-wrap .badge-active {
+    background-color: var(--palette-accent-soft);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+/* Botón para ir a tienda */
+
+.profile-wrap .btn-ir-tienda {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.profile-wrap .btn-ir-tienda:hover {
+    background-color: var(--secondary-color);
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   TIENDA: CATÁLOGO
+   ========================================================= */
+
+.store-wrap {
+    color: var(--text-color);
+}
+
+/* Tarjetas principales */
+
+.store-wrap .store-topbar,
+.store-wrap .prod-card,
+.store-wrap .store-empty,
+.store-wrap .store-toast {
+    background-color: var(--card-bg);
+    border-color: var(--palette-border);
+}
+
+/* Hero */
+
+.store-wrap .store-hero {
+    background:
+        linear-gradient(
+            135deg,
+            var(--palette-primary-soft),
+            var(--palette-secondary-soft)
+        );
+
+    border-color: var(--palette-border);
+}
+
+/* Texto principal */
+
+.store-wrap .hero-title,
+.store-wrap .prod-name,
+.store-wrap .prod-price,
+.store-wrap .store-empty h3 {
+    color: var(--text-color);
+}
+
+.store-wrap .hero-title span {
+    color: var(--primary-color);
+}
+
+/* Texto secundario */
+
+.store-wrap .store-nav-link,
+.store-wrap .hero-sub,
+.store-wrap .section-label,
+.store-wrap .filtros-label,
+.store-wrap .results-count,
+.store-wrap .prod-cat,
+.store-wrap .prod-desc,
+.store-wrap .prod-price-old,
+.store-wrap .store-empty p {
+    color: var(--text-muted);
+}
+
+/* Buscador y select */
+
+.store-wrap .store-search,
+.store-wrap .orden-select {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-color);
+}
+
+.store-wrap .store-search input {
+    color: var(--text-color);
+}
+
+.store-wrap .store-search input::placeholder {
+    color: var(--text-muted);
+}
+
+.store-wrap .store-search:focus-within,
+.store-wrap .orden-select:focus {
+    border-color: var(--primary-color);
+}
+
+/* Navegación, categorías y tallas */
+
+.store-wrap .store-nav-link,
+.store-wrap .cat-chip,
+.store-wrap .talla-btn,
+.store-wrap .size-pill {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-muted);
+}
+
+.store-wrap .store-nav-link:hover,
+.store-wrap .cat-chip:hover,
+.store-wrap .talla-btn:hover {
+    background-color: var(--palette-hover);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.store-wrap .store-nav-link.active,
+.store-wrap .cat-chip.active,
+.store-wrap .talla-btn.active {
+    background-color: var(--palette-primary-soft);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Tarjeta al pasar el mouse */
+
+.store-wrap .prod-card:hover {
+    border-color: var(--primary-color);
+}
+
+/* Pie de producto */
+
+.store-wrap .prod-foot {
+    border-color: var(--palette-border);
+}
+
+/* Botones */
+
+.store-wrap .btn-add,
+.store-wrap .btn-hero-p {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.store-wrap .btn-add:hover,
+.store-wrap .btn-hero-p:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: #ffffff;
+}
+
+.store-wrap .btn-ver,
+.store-wrap .btn-hero-s {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-color);
+}
+
+.store-wrap .btn-ver:hover,
+.store-wrap .btn-hero-s:hover {
+    background-color: var(--palette-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Favoritos */
+
+.store-wrap .store-favorite-btn {
+    background-color: var(--card-bg);
+    border-color: var(--palette-border);
+    color: var(--text-muted);
+}
+
+.store-wrap .store-favorite-btn:hover {
+    background-color: var(--palette-accent-soft);
+    color: var(--accent-color);
+}
+
+.store-wrap .store-favorite-btn.active {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #ffffff;
+}
+
+/* Etiquetas */
+
+.store-wrap .hero-badge,
+.store-wrap .badge-oferta {
+    background-color: var(--palette-accent-soft);
+    color: var(--accent-color);
+}
+
+.store-wrap .badge-new,
+.store-wrap .store-count-badge {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+/* Imagen vacía */
+
+.store-wrap .no-img {
+    background-color: var(--palette-surface);
+    color: var(--text-muted);
+}
+
+/* Toast */
+
+.store-wrap .store-toast {
+    color: var(--text-color);
+}
+
+.store-wrap .store-toast i {
+    color: var(--accent-color);
+}
+
+
+/* =========================================================
+   CARRITO
+   ========================================================= */
+
+.carrito-layout {
+    color: var(--text-color);
+}
+
+.carrito-layout .cart-item,
+.carrito-layout .resumen-card,
+.carrito-layout .carrito-vacio {
+    background-color: var(--card-bg);
+    border-color: var(--palette-border);
+}
+
+.carrito-layout .carrito-title,
+.carrito-layout .ci-name,
+.carrito-layout .ci-price,
+.carrito-layout .res-titulo,
+.carrito-layout .res-total,
+.carrito-layout .carrito-vacio h3 {
+    color: var(--text-color);
+}
+
+.carrito-layout .ci-var,
+.carrito-layout .ci-stock,
+.carrito-layout .res-fila,
+.carrito-layout .res-nota,
+.carrito-layout .carrito-vacio p {
+    color: var(--text-muted);
+}
+
+.carrito-layout .ci-img,
+.carrito-layout .cq-btn,
+.carrito-layout .ci-del {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-muted);
+}
+
+.carrito-layout .cq-btn:hover {
+    background-color: var(--palette-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.carrito-layout .btn-checkout {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.carrito-layout .btn-checkout:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: #ffffff;
+}
+
+.carrito-layout .btn-seguir-comp {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-color);
+}
+
+.carrito-layout .btn-seguir-comp:hover {
+    background-color: var(--palette-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+
+/* =========================================================
+   DETALLE DEL PRODUCTO
+   ========================================================= */
+
+.detalle-wrap {
+    color: var(--text-color);
+}
+
+.detalle-wrap .img-principal,
+.detalle-wrap .rel-card {
+    background-color: var(--card-bg);
+    border-color: var(--palette-border);
+}
+
+.detalle-wrap .prod-titulo,
+.detalle-wrap .precio-grande,
+.detalle-wrap .selector-titulo span,
+.detalle-wrap .qty-num,
+.detalle-wrap .section-title-lg,
+.detalle-wrap .rel-name,
+.detalle-wrap .rel-price {
+    color: var(--text-color);
+}
+
+.detalle-wrap .breadcrumb-store,
+.detalle-wrap .breadcrumb-store a,
+.detalle-wrap .prod-sku-txt,
+.detalle-wrap .precio-tachado,
+.detalle-wrap .selector-titulo,
+.detalle-wrap .color-lbl,
+.detalle-wrap .stock-txt,
+.detalle-wrap .garantia-item,
+.detalle-wrap .desc-txt {
+    color: var(--text-muted);
+}
+
+.detalle-wrap .breadcrumb-store > span {
+    color: var(--text-color) !important;
+}
+
+.detalle-wrap .cat-badge,
+.detalle-wrap .badge-oferta {
+    background-color: var(--palette-accent-soft);
+    color: var(--accent-color);
+}
+
+.detalle-wrap .talla-btn,
+.detalle-wrap .qty-btn {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-muted);
+}
+
+.detalle-wrap .talla-btn:hover,
+.detalle-wrap .qty-btn:hover {
+    background-color: var(--palette-hover);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.detalle-wrap .talla-btn.selected {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.detalle-wrap .btn-agregar-grande {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.detalle-wrap .btn-agregar-grande:hover {
+    background-color: var(--secondary-color);
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   CHECKOUT
+   ========================================================= */
+
+.checkout-layout {
+    color: var(--text-color);
+}
+
+.checkout-layout .form-card,
+.checkout-layout .res-card {
+    background-color: var(--card-bg);
+    border-color: var(--palette-border);
+}
+
+.checkout-layout .checkout-title,
+.checkout-layout .form-sec-title,
+.checkout-layout .res-titulo,
+.checkout-layout .ri-nom,
+.checkout-layout .ri-precio,
+.checkout-layout .res-total {
+    color: var(--text-color);
+}
+
+.checkout-layout .field label,
+.checkout-layout .ri-det,
+.checkout-layout .res-fila,
+.checkout-layout .res-nota {
+    color: var(--text-muted);
+}
+
+.checkout-layout .field input,
+.checkout-layout .field textarea {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-color);
+}
+
+.checkout-layout .field input::placeholder,
+.checkout-layout .field textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.checkout-layout .field input:focus,
+.checkout-layout .field textarea:focus {
+    border-color: var(--primary-color);
+}
+
+.checkout-layout .btn-confirmar {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.checkout-layout .btn-confirmar:hover {
+    background-color: var(--secondary-color);
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   CONFIRMACIÓN
+   ========================================================= */
+
+.confirm-wrap {
+    color: var(--text-color);
+}
+
+.confirm-wrap .confirm-card {
+    background-color: var(--card-bg);
+    border-color: var(--palette-border);
+}
+
+.confirm-wrap .confirm-titulo,
+.confirm-wrap .num-pedido,
+.confirm-wrap .icr-nom,
+.confirm-wrap .icr-price,
+.confirm-wrap .total-conf {
+    color: var(--text-color);
+}
+
+.confirm-wrap .confirm-sub,
+.confirm-wrap .icr-det,
+.confirm-wrap .confirm-card > p {
+    color: var(--text-muted) !important;
+}
+
+.confirm-wrap strong {
+    color: var(--text-color) !important;
+}
+
+.confirm-wrap .check-ico {
+    background-color: var(--palette-accent-soft);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.confirm-wrap .num-pedido {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+}
+
+.confirm-wrap .item-conf-row,
+.confirm-wrap .sep {
+    border-color: var(--palette-border);
+    background-color: var(--palette-border);
+}
+
+.confirm-wrap .btn-cp {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.confirm-wrap .btn-cp:hover {
+    background-color: var(--secondary-color);
+    color: #ffffff;
+}
+
+.confirm-wrap .btn-cs {
+    background-color: var(--palette-surface);
+    border-color: var(--palette-border);
+    color: var(--text-muted);
+}
+
+.confirm-wrap .btn-cs:hover {
+    background-color: var(--palette-hover);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
