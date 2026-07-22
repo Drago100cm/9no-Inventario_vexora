@@ -146,41 +146,77 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
         return None
     objects = CustomUserManager()
-
     def get_role_permissions(self):
         company = self.company
+
         if not company:
             return set()
 
         try:
-            membership = self.memberships.select_related("role").get(company=company)
+            membership = (
+                self.memberships
+                .select_related("role")
+                .get(company=company)
+            )
         except CompanyMember.DoesNotExist:
             return set()
 
+        if not membership.role:
+            return set()
+
+        role_permissions = (
+            membership.role.permissions
+            .select_related("content_type")
+            .all()
+        )
+
         return {
-            f"{p.content_type.app_label}.{p.codename}"
-            for p in membership.role.permissions.all()
+            f"{permission.content_type.app_label}.{permission.codename}"
+            for permission in role_permissions
         }
+
+
     def get_all_permissions(self, obj=None):
+        if not self.is_active:
+            return set()
 
         if self.is_superuser:
+            permissions = Permission.objects.select_related("content_type").all()
+
             return {
-                f"{p.content_type.app_label}.{p.codename}"
-                for p in Permission.objects.all()
+                f"{permission.content_type.app_label}.{permission.codename}"
+                for permission in permissions
             }
 
-        permissions = set()
-
-        permissions.update(super().get_all_permissions(obj))
+        permissions = set(super().get_all_permissions(obj))
         permissions.update(self.get_role_permissions())
 
         return permissions
+
+
     def has_perm(self, perm, obj=None):
+        if not self.is_active:
+            return False
 
         if self.is_superuser:
             return True
 
-        return perm in self.get_all_permissions()
+        return perm in self.get_all_permissions(obj)
+
+
+    def has_module_perms(self, app_label):
+        if not self.is_active:
+            return False
+
+        if self.is_superuser:
+            return True
+
+        prefix = f"{app_label}."
+
+        return any(
+            permission.startswith(prefix)
+            for permission in self.get_all_permissions()
+        )
     USERNAME_FIELD = "email"  # login con email
     REQUIRED_FIELDS = ["username","first_name", "last_name"]
 
