@@ -9,15 +9,15 @@ from xml.sax.saxutils import escape
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView,RedirectView, DetailView, TemplateView
 from vexora.models import *
 from django.contrib import messages
-from django.utils import timezone
 from django.http import JsonResponse
 from django.core.mail import send_mail
 import logging
+from django.utils import timezone
+from datetime import date
 from django.db import transaction, models
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission
-from django.utils import timezone
 from datetime import timedelta
 from django.views import View
 from django.core.mail import EmailMessage
@@ -824,26 +824,33 @@ class SubscriptionDetailView(LoginRequiredMixin, TemplateView):
         company = getattr(user, 'company', None)
 
         context['company'] = company
-
-        # Si no hay empresa, no hay suscripción
+        context['subscription'] = None
+        context['payments'] = payment.objects.none()
+        context['total_paid'] = 0
+        context['today'] = date.today()
+        # Sin empresa no puede existir una suscripción
         if not company:
-            context['subscription'] = None
-            context['payments'] = None
             return context
 
         try:
-            # AHORA es por company, no por user
             subscription = Subscription.objects.get(company=company)
 
-            context['subscription'] = subscription
-
-            context['payments'] = payment.objects.filter(
+            payments = payment.objects.filter(
                 subscription=subscription
             ).order_by('-paid_at')
 
+            total_paid = payments.filter(
+                status='completed'
+            ).aggregate(
+                total=Sum('amount')
+            )['total'] or 0
+
+            context['subscription'] = subscription
+            context['payments'] = payments
+            context['total_paid'] = total_paid
+
         except Subscription.DoesNotExist:
-            context['subscription'] = None
-            context['payments'] = None
+            pass
 
         return context
 #---------------------User List----------------------
