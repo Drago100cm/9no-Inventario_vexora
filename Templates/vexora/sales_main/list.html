@@ -124,7 +124,7 @@
                                                 </button>
                                                 <button type="button"
                                                         class="btn btn-sm btn-outline-danger"
-                                                        onclick="deleteSale('{{ sale.id }}')"
+                                                        onclick="deleteSale('{{ sale.id }}', '{{ sale.invoice_number|default:'Sin factura' }}')"
                                                         title="Eliminar">
                                                     <i class="ri-delete-bin-6-line"></i>Eliminar
                                                 </button>
