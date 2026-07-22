@@ -32,8 +32,11 @@ SECRET_KEY = 'django-insecure-cd(or%ouqonoh+4-4eu3hty1fli=a9r3$*#dr+ofe#fvv)8iu0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = [
+    "nineno-inventario-vexora.onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
 
 # Application definition
 
