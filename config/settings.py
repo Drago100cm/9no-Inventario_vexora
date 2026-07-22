@@ -152,7 +152,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 LOGIN_URL = 'vexora:login'  # a dónde ir si no está logueado
-LOGIN_REDIRECT_URL = '/users/'
+#luego de iniciar sesión, redirigir a la página principal dashboard
+LOGIN_REDIRECT_URL = '/Dashboard/'
 LOGOUT_REDIRECT_URL = reverse_lazy('vexora:login')  # a dónde ir después de cerrar sesión
 LANGUAGE_CODE = "es"
 TIME_ZONE = "America/Mexico_City"

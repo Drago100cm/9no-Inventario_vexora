@@ -269,11 +269,13 @@ class Plan(models.Model):
     max_providers = models.PositiveIntegerField(default=10)
     max_collaborators = models.PositiveIntegerField(default=1)
 
-    # Funcionalidades
-    sales_module = models.BooleanField(default=True)
-    users_module = models.BooleanField(default=False)
-    groups_module = models.BooleanField(default=False)
-    providers_module = models.BooleanField(default=True)
+    # Funcionalidades para ver que modulos tienene acceso segun su plan
+    sales_module = models.BooleanField(default=True)#para ver si puede subir cosas 
+    users_module = models.BooleanField(default=False)#para ver si puede administrar usuarios
+    groups_module = models.BooleanField(default=False)#por si puede agregar roles
+    providers_module = models.BooleanField(default=True)#para ver si tiene acceso a preveedores
+    
+    
     custom_domain = models.BooleanField(default=False)
     priority_support = models.BooleanField(default=False)
 
