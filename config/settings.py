@@ -85,21 +85,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+load_dotenv()
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'pruebas',       # Nombre de tu base de datos
-        'USER': 'root',               # Usuario de MySQL
-        'PASSWORD': 'anselmo05',       # Contraseña de MySQL
-        'HOST': 'localhost',               # o la IP del servidor MySQL
-        'PORT': '3306',                    # Puerto por defecto de MySQL
-        
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES',  time_zone = '-06:00'"
-        }
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME", "postgres"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+        "OPTIONS": {
+            "sslmode": "require",
+            "connect_timeout": 30,
+        },
+        "CONN_MAX_AGE": 60,
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
