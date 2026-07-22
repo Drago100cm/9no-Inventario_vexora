@@ -9,7 +9,7 @@ from xml.sax.saxutils import escape
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView,RedirectView, DetailView, TemplateView
 from vexora.models import *
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from django.core.mail import send_mail
 import logging
 from django.utils import timezone
@@ -513,7 +513,6 @@ class CustomLoginView(FormView):
         return context
     
 # --------------------- Registro ----------------------
-
 class CustomerRegisterView(CreateView):
     model = CustomUser
     form_class = CustomerRegisterForm
@@ -526,18 +525,43 @@ class CustomerRegisterView(CreateView):
             slug=self.kwargs["slug"]
         )
 
-        return super().dispatch(request, *args, **kwargs)
+        try:
+            subscription = self.company.subscription
+        except Subscription.DoesNotExist:
+            messages.error(
+                request,
+                "No se puede realizar el registro porque esta empresa "
+                "no tiene una suscripción."
+            )
+            return redirect("vexora:login")
 
+        today = timezone.localdate()
+
+        if (
+            not subscription.active
+            or subscription.status != "active"
+            or subscription.end_date < today
+            or not subscription.plan.active
+            or not subscription.plan.sales_module
+        ):
+            messages.error(
+                request,
+                "No se puede realizar el registro porque la empresa "
+                "no tiene habilitado el módulo de ventas."
+            )
+            return redirect("vexora:login")
+
+        self.subscription = subscription
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["company"] = self.company
         return context
 
-
     def form_valid(self, form):
         user = form.save(commit=False)
-
         user.user_type = "customer"
         user.is_client = True
         user.save()
@@ -552,7 +576,14 @@ class CustomerRegisterView(CreateView):
             role=customer_role
         )
 
-        return super().form_valid(form)
+        self.object = user
+
+        messages.success(
+            self.request,
+            "Tu cuenta se registró correctamente."
+        )
+
+        return HttpResponseRedirect(self.get_success_url())
 
 class ClientsListView(LoginRequiredMixin, ListView):
     template_name = "vexora/users/client_list.html"

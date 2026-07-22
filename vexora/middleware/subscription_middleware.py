@@ -1,24 +1,31 @@
-from django.http import JsonResponse
 from django.shortcuts import redirect
 
-from vexora.subscriptions.services import (
-    subscription_is_active
-)
+from vexora.subscriptions.services import subscription_is_active
 
 
-EXCLUDED_PATHS = [
-    '/login/',
-    '//',
-    '/Registro/',
-    '/register/',
-    '/logout/',
-    '/subscription_list/',
-    '/subscriptions/choose/',
-    '/subscriptions/detail/',
-    '/company_create/',
-    #-----------------------Vista de compañía-----------------------
-    '/companies/',
-    '/Dashboard/',
+# Rutas que cualquier usuario puede abrir
+PUBLIC_PATHS = [
+    "/",
+    "/login/",
+    "/Registro/",
+    "/register/",
+    "/logout/",
+]
+
+# Rutas que puede abrir un usuario autenticado que todavía no tiene empresa
+NO_COMPANY_PATHS = [
+    "/Dashboard/",
+    "/company_create/",
+    "/companies/",
+    "/logout/",
+]
+
+# Rutas relacionadas con la contratación de una suscripción
+SUBSCRIPTION_PATHS = [
+    "/subscription_list/",
+    "/subscriptions/choose/",
+    "/subscriptions/detail/",
+    "/logout/",
 ]
 
 
@@ -31,29 +38,36 @@ class SubscriptionMiddleware:
 
         path = request.path
 
-        if path.startswith(tuple(EXCLUDED_PATHS)):
+        # Dejar pasar archivos estáticos y archivos multimedia
+        if path.startswith(("/static/", "/media/")):
             return self.get_response(request)
 
+        # Rutas públicas
+        if path in PUBLIC_PATHS:
+            return self.get_response(request)
+
+        # Si no inició sesión, dejamos que Django maneje la protección
         if not request.user.is_authenticated:
             return self.get_response(request)
 
         company = request.user.company
 
-        #if company is None:
-        #    return JsonResponse(
-        #       {"error": "No perteneces a ninguna empresa."},
-        #        status=403
-        #    )
-
+        # Usuario recién registrado sin empresa
         if company is None:
-            return redirect("vexora:dashboard")
 
-        #if not subscription_is_active(company):
-         #   return JsonResponse(
-          #      {
-           #         "error": "La suscripción de tu empresa expiró o no está activa."
-            #    },
-             #   status=403
-            #)
+            # Puede entrar al dashboard y a la creación de empresas
+            if path in NO_COMPANY_PATHS:
+                return self.get_response(request)
+
+            # Para cualquier otra ruta, mandarlo a crear una empresa
+            return redirect("vexora:company_create")
+
+        # Si ya tiene empresa, permitirle ver las opciones de suscripción
+        if path in SUBSCRIPTION_PATHS:
+            return self.get_response(request)
+
+        # Si la empresa no tiene una suscripción activa
+        if not subscription_is_active(company):
+            return redirect("vexora:subscription_list")
 
         return self.get_response(request)
