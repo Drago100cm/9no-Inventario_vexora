@@ -1,5 +1,14 @@
 /* ── WRAP ── */
 
+.profile-wrap {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+
 main .container-fluid{
     max-width:1100px;
     margin:0 auto;
@@ -1074,4 +1083,35 @@ main .container-fluid{
     white-space: normal;
     overflow-wrap: anywhere;
   }
+  .acciones-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+/* =========================================================
+   FORZAR ANCHO COMPLETO SOLO EN LA PÁGINA DE PERFIL
+   ========================================================= */
+
+@media (min-width: 992px) {
+    .main-content > .container-fluid {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .main-content .profile-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    .main-content .profile-wrap .stats-grid,
+    .main-content .profile-wrap .profile-grid,
+    .main-content .profile-wrap .cover-wrap,
+    .main-content .profile-wrap .edit-btn-wrap,
+    .main-content .profile-wrap .profile-info {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
 }

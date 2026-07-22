@@ -66,6 +66,8 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from django.db import transaction
+
 
 from .models import Sale, SaleItem
 # Create your views here.
@@ -1266,6 +1268,9 @@ class ProductListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(is_active=True, stock__gt=0)
         elif disponibilidad == 'no_disponibles':
             queryset = queryset.filter(Q(is_active=False) | Q(stock=0))
+        elif disponibilidad == 'bajo_stock':
+            # Productos con stock menor o igual al mínimo, pero mayor a 0
+            queryset = queryset.filter(stock__lte=F('min_stock'), stock__gt=0)
 
         # Filtro por rango de fechas
         fecha_inicio = self.request.GET.get('fecha_inicio')
@@ -1868,10 +1873,24 @@ class SalesMainUpdateView(LoginRequiredMixin, View):
             
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
 def delete_sale(request, pk):
     company = request.user.company
     sale = get_object_or_404(Sale, id=pk, company=company)
-    sale.delete()
+
+    # Usamos transaction.atomic para asegurarnos de que si algo falla, 
+    # no se borre la venta a medias ni se modifique el stock a medias.
+    with transaction.atomic():
+        # 1. Recorrer todos los artículos de esa venta
+        for item in sale.items.all():
+            product = item.product
+            # 2. Sumar la cantidad comprada de vuelta al stock
+            product.stock += item.quantity
+            product.save()
+        
+        # 3. Eliminar la venta
+        sale.delete()
+        
     messages.success(request, "✅ Venta eliminada correctamente!")
     return redirect('vexora:sales_main_list')
 # ============================================
