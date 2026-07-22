@@ -106,7 +106,7 @@
 
           <div class="module-content">
 
-            {% if request.user.is_superuser or perms.vexora.view_customuser %}
+            {% if request.user.is_superuser %}
               <a
                 href="{% url 'vexora:user_list' %}"
                 class="menu-item {% if url_name == 'user_list' %}active{% endif %}"
@@ -116,7 +116,7 @@
               </a>
             {% endif %}
 
-            {% if request.user.is_superuser or perms.vexora.view_company %}
+            {% if request.user.is_superuser %}
               <a
                 href="{% url 'vexora:company_list' %}"
                 class="menu-item {% if url_name == 'company_list' %}active{% endif %}"
