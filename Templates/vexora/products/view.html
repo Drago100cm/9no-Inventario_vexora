@@ -18,7 +18,8 @@
         <div class="row g-2">
             <div class="col-6">
                 <small class="text-muted">N° de producto</small>
-                <p class="fw-bold">{{ product.item_number }}</p>
+                <!-- AQUÍ ESTÁ EL CAMBIO PARA QUE TOME EL NÚMERO DE LA TABLA -->
+                <p class="fw-bold">{{ request.GET.item_num|default:product.item_number }}</p>
             </div>
             <div class="col-6">
                 <small class="text-muted">Estado</small>

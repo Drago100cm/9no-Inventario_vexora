@@ -107,6 +107,11 @@
                                    class="btn btn-outline-success {% if request.GET.disponibilidad == 'disponibles' %}active{% endif %}">
                                     <i class="ri-checkbox-circle-line me-1"></i> Disponibles ({{ stats.disponibles }})
                                 </a>
+                                <!-- NUEVO BOTÓN: STOCK BAJO -->
+                                <a href="?disponibilidad=bajo_stock{% for key, value in request.GET.items %}{% if key != 'disponibilidad' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                   class="btn btn-outline-warning {% if request.GET.disponibilidad == 'bajo_stock' %}active{% endif %}">
+                                    <i class="ri-error-warning-line me-1"></i> Stock Bajo
+                                </a>
                                 <a href="?disponibilidad=no_disponibles{% for key, value in request.GET.items %}{% if key != 'disponibilidad' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
                                    class="btn btn-outline-danger {% if request.GET.disponibilidad == 'no_disponibles' %}active{% endif %}">
                                     <i class="ri-close-circle-line me-1"></i> Sin Stock ({{ stats.no_disponibles }})
@@ -215,7 +220,6 @@
                             {% for product in products %}
                                 <tr class="{% if product.stock <= product.min_stock and product.stock > 0 %}table-warning{% endif %}">
                                     <td>
-                                        <!-- Se reemplaza product.item_number por forloop.counter -->
                                         <span class="badge bg-primary">{{ forloop.counter }}</span>
                                     </td>
                                     <td>
@@ -261,14 +265,22 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="11" class="text-center py-5">
-                                        <i class="ri-inbox-line" style="font-size: 3rem; color: #ccc;"></i>
-                                        <p class="text-muted mt-2">No hay productos registrados en esta compañía</p>
-                                        {% if perms.vexora.add_product %}
-                                            <button type="button" class="btn btn-primary btn-sm mt-2"
-                                                    onclick="editModal('{% url 'vexora:create_product' %}')">
-                                                <i class="ri-add-line me-1"></i> Crear el primer producto
-                                            </button>
+                                    <td colspan="9" class="text-center py-5">
+                                        {% if request.GET.disponibilidad == 'no_disponibles' %}
+                                            <i class="ri-emotion-happy-line" style="font-size: 3rem; color: #198754;"></i>
+                                            <p class="text-success mt-2 fw-bold fs-5">¡Todos los productos tienen stock!</p>
+                                        {% elif request.GET.disponibilidad == 'bajo_stock' %}
+                                            <i class="ri-checkbox-circle-line" style="font-size: 3rem; color: #198754;"></i>
+                                            <p class="text-success mt-2 fw-bold fs-5">¡No hay productos con stock bajo, todo en orden!</p>
+                                        {% else %}
+                                            <i class="ri-inbox-line" style="font-size: 3rem; color: #ccc;"></i>
+                                            <p class="text-muted mt-2">No hay productos registrados en esta compañía</p>
+                                            {% if perms.vexora.add_product and not request.GET.disponibilidad %}
+                                                <button type="button" class="btn btn-primary btn-sm mt-2"
+                                                        onclick="editModal('{% url 'vexora:create_product' %}')">
+                                                    <i class="ri-add-line me-1"></i> Crear el primer producto
+                                                </button>
+                                            {% endif %}
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -292,7 +304,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="viewProductContent">
-                <!-- El contenido se cargará vía AJAX -->
                 <div class="text-center py-4">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
@@ -322,13 +333,12 @@
         });
     }
 
-    function viewProduct(productId) {
-        // Mostrar el modal
+    function viewProduct(productId, itemNum) {
         $('#viewProductModal').modal('show');
+        const url = '/products/view/' + productId + '/?item_num=' + encodeURIComponent(itemNum);
         
-        // Cargar los datos del producto vía AJAX
         $.ajax({
-            url: '/products/view/' + productId + '/',
+            url: url,
             method: 'GET',
             success: function(data) {
                 $('#viewProductContent').html(data);
@@ -376,7 +386,6 @@
         }
     }
 
-    // Función para establecer la fecha máxima en los inputs de fecha
     function setMaxDate() {
         const today = new Date();
         const year = today.getFullYear();
@@ -390,7 +399,6 @@
         });
     }
 
-    // Validar que fecha_inicio no sea mayor que fecha_fin
     function validateDates() {
         const fechaInicio = document.getElementById('fecha_inicio');
         const fechaFin = document.getElementById('fecha_fin');
@@ -424,12 +432,8 @@
         }
     }
 
-    // Búsqueda en tabla (fallback si no funciona el filtro del servidor)
     document.addEventListener('DOMContentLoaded', function () {
-        // Establecer fecha máxima
         setMaxDate();
-        
-        // Validar fechas
         validateDates();
         
         const searchInput = document.getElementById('globalSearch');
@@ -447,7 +451,6 @@
         }
     });
 
-    // Ordenamiento de tabla
     document.addEventListener('DOMContentLoaded', function () {
         const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
         const comparer = (idx, asc) => (a, b) => ((v1, v2) => (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)))(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
