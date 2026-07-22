@@ -48,12 +48,12 @@ class SubscriptionMiddleware:
         if company is None:
             return redirect("vexora:dashboard")
 
-        if not subscription_is_active(company):
-            return JsonResponse(
-                {
-                    "error": "La suscripción de tu empresa expiró o no está activa."
-                },
-                status=403
-            )
+        #if not subscription_is_active(company):
+         #   return JsonResponse(
+          #      {
+           #         "error": "La suscripción de tu empresa expiró o no está activa."
+            #    },
+             #   status=403
+            #)
 
         return self.get_response(request)
