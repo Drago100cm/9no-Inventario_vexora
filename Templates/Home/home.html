@@ -3,197 +3,519 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockFlow - Sistema de vexora SaaS</title>
-    <!-- Bootstrap 5 CSS -->
+    <title>Vexora — Control de inventario</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        /* Personalización de colores */
+        /* ============================================================
+           TOKENS — light, professional base. The violet→cyan→magenta
+           system now lives in accents (icons, buttons, gradient text)
+           and two dark "bookend" sections (nav-adjacent hero panel,
+           stats, CTA, footer), not the whole canvas.
+        ============================================================ */
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #e67e22;
-            --accent-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #2c3e50;
+            --ink: #14121F;
+            --ink-2: #1E1B2E;
+            --navy: #0B0820;
+            --navy-2: #120E2A;
+
+            --paper: #FFFFFF;
+            --paper-dim: #F7F7FB;
+            --paper-line: #EDEDF3;
+
+            --surface: rgba(20,18,31,0.03);
+            --surface-strong: rgba(20,18,31,0.05);
+            --border: rgba(20,18,31,0.09);
+            --border-bright: rgba(124,58,237,0.28);
+            --border-on-dark: rgba(255,255,255,0.12);
+            --border-on-dark-bright: rgba(167,139,250,0.35);
+
+            --violet: #7C3AED;
+            --violet-bright: #9061F9;
+            --cyan: #0EA5B7;
+            --pink: #DB2777;
+            --amber: #D97706;
+            --green: #059669;
+            --red: #DC2626;
+
+            --text: var(--ink);
+            --text-dim: rgba(20,18,31,0.62);
+            --text-faint: rgba(20,18,31,0.42);
+            --text-on-dark: #F6F4FF;
+            --text-on-dark-dim: rgba(246,244,255,0.66);
+            --text-on-dark-faint: rgba(246,244,255,0.42);
+
+            --grad-primary: linear-gradient(120deg, var(--violet) 0%, #A855F7 45%, var(--cyan) 100%);
+            --grad-warm: linear-gradient(120deg, var(--pink) 0%, var(--amber) 100%);
+
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            --radius: 16px;
+            --radius-sm: 12px;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
         }
-        
-        .bg-primary-custom {
-            background-color: var(--primary-color) !important;
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            color: var(--text);
+            background: var(--paper);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
-        
-        .text-primary-custom {
-            color: var(--primary-color) !important;
+
+        h1, h2, h3, h4, h5, .display-heading {
+            font-family: var(--font-display);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            color: var(--text);
         }
-        
-        .btn-primary-custom {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
+
+        .mono { font-family: var(--font-mono); }
+        a { color: inherit; text-decoration: none; }
+        ::selection { background: var(--violet); color: white; }
+
+        a:focus-visible, button:focus-visible, .accordion-button:focus-visible {
+            outline: 2px solid var(--violet);
+            outline-offset: 3px;
         }
-        
-        .btn-primary-custom:hover {
-            background-color: #34495e;
-            border-color: #34495e;
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+                scroll-behavior: auto !important;
+            }
         }
-        
-        .btn-secondary-custom {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-            color: white;
+
+        .container { max-width: 1200px; }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(110px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.16;
         }
-        
-        .btn-secondary-custom:hover {
-            background-color: #d35400;
-            border-color: #d35400;
-            color: white;
+        @keyframes drift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(22px,-16px) scale(1.04); } }
+        @keyframes drift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-18px,14px) scale(1.03); } }
+
+        .gradient-text {
+            background: var(--grad-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+
+        .eyebrow {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--violet);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.4rem 0.9rem;
+            border: 1px solid var(--border-bright);
+            border-radius: 100px;
+            background: rgba(124,58,237,0.05);
         }
-        
-        /* Efectos hover para tarjetas */
+        .eyebrow i { color: var(--pink); }
+        .eyebrow.on-dark {
+            color: var(--violet-bright);
+            border-color: var(--border-on-dark-bright);
+            background: rgba(144,97,249,0.1);
+        }
+
+        .section-label { font-size: clamp(1.9rem, 3.2vw, 2.5rem); margin: 1rem 0 0.6rem; }
+        .section-intro { max-width: 620px; }
+
+        /* ============================================================
+           BUTTONS
+        ============================================================ */
+        .btn {
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.94rem;
+            padding: 0.75rem 1.6rem;
+            border: 1px solid transparent;
+            transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), background 0.3s var(--ease), border-color 0.3s var(--ease), color 0.3s var(--ease);
+        }
+        .btn i { margin-right: 0.45rem; }
+
+        .btn-glow {
+            background: var(--grad-primary);
+            color: #FFFFFF;
+            font-weight: 700;
+            box-shadow: 0 6px 18px -6px rgba(124,58,237,0.4);
+        }
+        .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 10px 26px -8px rgba(124,58,237,0.5); color: #FFFFFF; }
+
+        .btn-ghost-dark {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--border-on-dark);
+            color: var(--text-on-dark);
+        }
+        .btn-ghost-dark:hover { border-color: var(--border-on-dark-bright); background: rgba(255,255,255,0.09); transform: translateY(-2px); color: var(--text-on-dark); }
+
+        .btn-outline-ink {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--ink);
+        }
+        .btn-outline-ink:hover { border-color: var(--violet); background: rgba(124,58,237,0.05); transform: translateY(-2px); color: var(--violet); }
+
+        /* ============================================================
+           NAVBAR
+        ============================================================ */
+        .sf-navbar {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--paper-line);
+        }
+        .sf-navbar .navbar-brand {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--ink) !important;
+            display: flex; align-items: center; gap: 0.6rem;
+        }
+        .sf-mark {
+            width: 34px; height: 34px; border-radius: 10px;
+            background: var(--grad-primary);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-mono); font-weight: 700; font-size: 0.75rem;
+            color: #fff;
+        }
+        .sf-navbar .nav-link {
+            color: var(--text-dim) !important;
+            font-size: 0.93rem; font-weight: 500;
+            padding: 0.5rem 1.05rem !important;
+            transition: color 0.2s var(--ease);
+        }
+        .sf-navbar .nav-link:hover, .sf-navbar .nav-link.active { color: var(--ink) !important; }
+        .sf-navbar .navbar-toggler { border-color: var(--border); }
+
+        /* ============================================================
+           HERO — light canvas, soft color washes, dark manifest panel
+           as the "screenshot" contrast element
+        ============================================================ */
+        .hero {
+            position: relative;
+            padding: 7rem 0 5.5rem;
+            overflow: hidden;
+            background: var(--paper);
+        }
+        .hero .blob-1 { width: 560px; height: 560px; top: -220px; right: -160px; background: var(--violet); animation: drift1 16s ease-in-out infinite; }
+        .hero .blob-2 { width: 460px; height: 460px; bottom: -200px; left: -160px; background: var(--cyan); opacity: 0.12; animation: drift2 18s ease-in-out infinite; }
+        .hero .blob-3 { width: 320px; height: 320px; top: 40%; left: 42%; background: var(--pink); opacity: 0.1; animation: drift1 22s ease-in-out infinite reverse; }
+
+        .hero-content { position: relative; z-index: 2; }
+
+        .hero h1 { font-size: clamp(2.5rem, 4.4vw, 3.4rem); line-height: 1.1; margin: 1.2rem 0 1.3rem; color: var(--ink); }
+        .hero p.lead { color: var(--text-dim); font-size: 1.1rem; line-height: 1.65; max-width: 480px; }
+        .hero-trust { font-family: var(--font-mono); font-size: 0.79rem; color: var(--text-faint); margin-top: 1.6rem; }
+        .hero-trust i { color: var(--green); margin-right: 0.35rem; }
+        .hero-trust span + span { margin-left: 1.2rem; }
+
+        .reveal-load { opacity: 0; transform: translateY(18px); animation: revealUp 0.8s var(--ease) forwards; }
+        .reveal-load.d1 { animation-delay: 0.05s; }
+        .reveal-load.d2 { animation-delay: 0.18s; }
+        .reveal-load.d3 { animation-delay: 0.3s; }
+        .reveal-load.d4 { animation-delay: 0.42s; }
+        @keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Signature: Live Manifest, dark "product" panel on the light hero --- */
+        .manifest {
+            background: linear-gradient(180deg, var(--navy-2), var(--navy));
+            border: 1px solid var(--border-on-dark);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 30px 70px -24px rgba(20,18,31,0.35);
+            position: relative;
+        }
+        .manifest-head { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.3rem; border-bottom: 1px solid var(--border-on-dark); }
+        .manifest-head .title { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-on-dark-faint); }
+        .manifest-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 7px; box-shadow: 0 0 8px var(--green); }
+
+        .manifest-scan {
+            position: absolute; left: 0; right: 0; top: 54px; height: 50px;
+            background: linear-gradient(180deg, rgba(144,97,249,0) 0%, rgba(144,97,249,0.14) 50%, rgba(144,97,249,0) 100%);
+            animation: scanSweep 4.2s var(--ease) infinite;
+            pointer-events: none;
+        }
+        @keyframes scanSweep {
+            0% { transform: translateY(0); opacity: 0; }
+            8% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(320px); opacity: 0; }
+        }
+
+        .manifest-row {
+            display: grid; grid-template-columns: 82px 1fr 74px 92px; gap: 0.8rem; align-items: center;
+            padding: 0.9rem 1.3rem; border-bottom: 1px solid var(--border-on-dark);
+            opacity: 0; transform: translateX(-8px); animation: rowIn 0.5s var(--ease) forwards;
+        }
+        .manifest-row:last-child { border-bottom: none; }
+        .manifest-row .sku { font-family: var(--font-mono); font-size: 0.76rem; color: var(--violet-bright); }
+        .manifest-row .name { font-size: 0.87rem; color: var(--text-on-dark); }
+        .manifest-row .qty { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-on-dark-faint); text-align: right; }
+        .manifest-bar { height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .manifest-bar span { display: block; height: 100%; border-radius: 3px; animation: fillBar 1.1s var(--ease) forwards; transform-origin: left; }
+        @keyframes fillBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @keyframes rowIn { to { opacity: 1; transform: translateX(0); } }
+
+        .manifest-foot { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.3rem; background: rgba(255,255,255,0.02); font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-on-dark-faint); }
+        .manifest-foot .ok { color: var(--green); }
+
+        /* ============================================================
+           STATS — dark accent band for rhythm
+        ============================================================ */
+        .stats-strip { background: var(--navy); padding: 3.5rem 0; }
+        .stat-block { text-align: center; }
+        .stat-num { font-family: var(--font-mono); font-weight: 700; font-size: 2.4rem; line-height: 1; }
+        .stat-num.c-violet { color: var(--violet-bright); }
+        .stat-num.c-cyan { color: #22D3EE; }
+        .stat-num.c-pink { color: #F472B6; }
+        .stat-num.c-amber { color: #FBBF24; }
+        .stat-label { color: var(--text-on-dark-faint); font-size: 0.85rem; margin-top: 0.55rem; }
+
+        /* ============================================================
+           SCROLL REVEAL
+        ============================================================ */
+        .fade-in-up { opacity: 0; transform: translateY(22px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+        .fade-in-up.in-view { opacity: 1; transform: translateY(0); }
+        .stagger.in-view .fu-item:nth-child(1) { transition-delay: 0.02s; }
+        .stagger.in-view .fu-item:nth-child(2) { transition-delay: 0.10s; }
+        .stagger.in-view .fu-item:nth-child(3) { transition-delay: 0.18s; }
+        .stagger.in-view .fu-item:nth-child(4) { transition-delay: 0.26s; }
+        .stagger.in-view .fu-item:nth-child(5) { transition-delay: 0.34s; }
+        .stagger.in-view .fu-item:nth-child(6) { transition-delay: 0.42s; }
+        .fu-item { opacity: 0; transform: translateY(18px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
+        .stagger.in-view .fu-item { opacity: 1; transform: translateY(0); }
+
+        /* ============================================================
+           FEATURES — clean white cards, colorful icon badges
+        ============================================================ */
+        .features { padding: 6.5rem 0; background: var(--paper); }
+
         .feature-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: var(--paper);
+            border: 1px solid var(--paper-line);
+            border-radius: var(--radius);
+            padding: 2rem 1.8rem;
+            height: 100%;
+            transition: transform 0.35s var(--ease), border-color 0.35s var(--ease), box-shadow 0.35s var(--ease);
         }
-        
         .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+            border-color: var(--border-bright);
+            box-shadow: 0 20px 40px -24px rgba(20,18,31,0.25);
         }
-        
-        /* Hero section */
-        .hero-section {
-            padding: 150px 0 100px;
-            background: linear-gradient(rgba(44, 62, 80, 0.95), rgba(44, 62, 80, 0.95)), 
-                        url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80');
-            background-size: cover;
-            background-position: center;
-            color: white;
+        .feature-icon {
+            width: 50px; height: 50px; border-radius: 13px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 1.2rem; font-size: 1.25rem; color: #fff;
         }
-        
-        /* Animación sutil para elementos */
-        .fade-in {
-            animation: fadeIn 1s ease-in;
+        .feature-icon.grad-1 { background: linear-gradient(135deg, var(--violet), var(--cyan)); }
+        .feature-icon.grad-2 { background: linear-gradient(135deg, var(--pink), var(--amber)); }
+        .feature-icon.grad-3 { background: linear-gradient(135deg, var(--cyan), var(--green)); }
+        .feature-icon.grad-4 { background: linear-gradient(135deg, var(--amber), var(--pink)); }
+        .feature-icon.grad-5 { background: linear-gradient(135deg, var(--violet), var(--pink)); }
+        .feature-icon.grad-6 { background: linear-gradient(135deg, var(--green), var(--cyan)); }
+
+        .feature-card h4 { font-size: 1.13rem; margin-bottom: 0.6rem; }
+        .feature-card p { color: var(--text-dim); font-size: 0.92rem; line-height: 1.62; margin: 0; }
+        .feature-tag-code { font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-faint); letter-spacing: 0.08em; display: block; margin-top: 1.1rem; }
+
+        /* ============================================================
+           PRICING
+        ============================================================ */
+        .pricing { padding: 6.5rem 0; background: var(--paper-dim); }
+        .price-card {
+            background: var(--paper);
+            border: 1px solid var(--paper-line);
+            border-radius: var(--radius);
+            padding: 2.2rem;
+            height: 100%;
+            display: flex; flex-direction: column;
+            transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease);
+            position: relative;
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .price-card:hover { transform: translateY(-4px); border-color: var(--border-bright); }
+
+        .price-card.featured {
+            background: linear-gradient(180deg, #FBF9FF 0%, var(--paper) 60%);
+            border: 1px solid var(--border-bright);
+            box-shadow: 0 24px 50px -26px rgba(124,58,237,0.3);
         }
-        
-        /* Estilo para testimonios */
-        .testimonial-card {
-            border-left: 4px solid var(--secondary-color);
+        .price-card.featured::before {
+            content: "";
+            position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: var(--grad-primary);
+            border-radius: var(--radius) var(--radius) 0 0;
         }
-        
-        /* Tarjeta de precios */
-        .pricing-card {
-            transition: transform 0.3s ease;
-            border-radius: 15px;
+
+        .ribbon {
+            position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+            background: var(--grad-primary); color: #fff;
+            font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em;
+            padding: 0.4rem 1rem; border-radius: 100px;
+            box-shadow: 0 6px 16px -4px rgba(124,58,237,0.45);
+        }
+
+        .plan-name { font-size: 1.22rem; margin-bottom: 0.3rem; }
+        .plan-price { font-family: var(--font-mono); font-size: 2.4rem; font-weight: 700; margin: 0.65rem 0 0.15rem; color: var(--ink); }
+        .plan-price sub { font-family: var(--font-body); font-size: 0.94rem; font-weight: 500; color: var(--text-faint); }
+        .plan-desc { color: var(--text-dim); font-size: 0.87rem; margin-bottom: 1.3rem; }
+        .plan-list { list-style: none; padding: 0; margin: 0 0 1.7rem; flex-grow: 1; }
+        .plan-item { display: flex; gap: 0.58rem; align-items: flex-start; font-size: 0.9rem; padding: 0.4rem 0; color: var(--text-dim); }
+        .plan-item i { color: var(--green); margin-top: 0.15rem; }
+        .plan-item.off { color: var(--text-faint); text-decoration: line-through; }
+        .plan-item.off i { color: rgba(20,18,31,0.2); }
+
+        /* ============================================================
+           TESTIMONIALS
+        ============================================================ */
+        .testimonials { padding: 6.5rem 0; background: var(--paper); }
+        .t-card {
+            background: var(--paper-dim);
+            border: 1px solid var(--paper-line);
+            border-radius: var(--radius);
+            padding: 2rem;
+            height: 100%;
+            transition: transform 0.3s var(--ease), border-color 0.3s var(--ease);
+        }
+        .t-card:hover { transform: translateY(-4px); border-color: var(--border-bright); }
+        .t-quote-mark {
+            font-family: var(--font-display); font-size: 2.7rem; line-height: 1; margin-bottom: 0.4rem; display: block;
+            background: var(--grad-warm); -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .t-card p.quote { font-size: 0.95rem; line-height: 1.68; color: var(--ink-2); margin-bottom: 1.4rem; }
+        .t-person { display: flex; align-items: center; gap: 0.85rem; }
+        .t-person img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        .t-person h6 { margin: 0; font-family: var(--font-body); font-weight: 600; font-size: 0.92rem; }
+        .t-person small { color: var(--text-faint); font-size: 0.78rem; }
+
+        /* ============================================================
+           INTEGRATIONS
+        ============================================================ */
+        .integrations { padding: 5.5rem 0; background: var(--paper-dim); }
+        .integration-item {
+            padding: 1.7rem 1rem;
+            border: 1px solid var(--paper-line);
+            border-radius: var(--radius-sm);
+            background: var(--paper);
+            transition: border-color 0.3s var(--ease), transform 0.3s var(--ease);
+        }
+        .integration-item:hover { border-color: var(--border-bright); transform: translateY(-3px); }
+        .integration-item i { font-size: 1.6rem; background: var(--grad-primary); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .integration-item p { margin: 0.55rem 0 0; font-weight: 600; font-size: 0.85rem; color: var(--text-dim); }
+
+        /* ============================================================
+           CTA BAND — dark, sits between light sections
+        ============================================================ */
+        .cta-band { padding: 5rem 0; background: var(--paper); }
+        .cta-inner {
+            position: relative;
+            border-radius: 24px;
+            padding: 3.4rem 3rem;
+            background: linear-gradient(135deg, var(--navy-2), var(--navy));
             overflow: hidden;
         }
-        
-        .pricing-card:hover {
-            transform: scale(1.03);
+        .cta-inner .blob-6 { width: 280px; height: 280px; top: -100px; right: -60px; background: var(--pink); opacity: 0.22; animation: drift1 14s ease-in-out infinite; }
+        .cta-band h2 { font-size: clamp(1.7rem, 3vw, 2.2rem); color: var(--text-on-dark); }
+        .cta-band p { color: var(--text-on-dark-dim); }
+
+        /* ============================================================
+           FAQ
+        ============================================================ */
+        .faq { padding: 6.5rem 0; background: var(--paper); }
+        .accordion-item {
+            background: var(--paper-dim);
+            border: 1px solid var(--paper-line);
+            border-radius: var(--radius-sm) !important;
+            margin-bottom: 0.85rem;
+            overflow: hidden;
         }
-        
-        .pricing-card .card-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 20px;
+        .accordion-button {
+            background: transparent;
+            font-family: var(--font-display); font-weight: 600; font-size: 1.02rem;
+            color: var(--ink); padding: 1.25rem 1.4rem; box-shadow: none !important;
         }
-        
-        .price {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--primary-color);
+        .accordion-button:not(.collapsed) { color: var(--violet); background: rgba(124,58,237,0.05); }
+        .accordion-body { padding: 0 1.4rem 1.4rem; color: var(--text-dim); font-size: 0.93rem; line-height: 1.68; }
+
+        /* ============================================================
+           FOOTER — dark, grounds the page
+        ============================================================ */
+        footer.sf-footer { background: var(--navy); padding: 4.2rem 0 2rem; }
+        .sf-footer h4 { display: flex; align-items: center; gap: 0.55rem; color: var(--text-on-dark); }
+        .sf-footer h5 { font-size: 0.84rem; letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--font-mono); font-weight: 500; color: var(--text-on-dark); }
+        .sf-footer p { font-size: 0.9rem; line-height: 1.62; color: var(--text-on-dark-dim); }
+        .sf-footer ul li { margin-bottom: 0.58rem; font-size: 0.9rem; color: var(--text-on-dark-dim); }
+        .sf-footer a.flink { color: var(--text-on-dark-dim); transition: color 0.2s var(--ease); }
+        .sf-footer a.flink:hover { color: var(--violet-bright); }
+        .sf-footer .social a {
+            width: 35px; height: 35px; border: 1px solid var(--border-on-dark); border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: var(--text-on-dark-dim);
+            transition: border-color 0.25s var(--ease), color 0.25s var(--ease);
         }
-        
-        .price small {
-            font-size: 0.9rem;
-            color: #7f8c8d;
-        }
-        
-        /* Footer */
-        footer a {
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        
-        footer a:hover {
-            color: var(--secondary-color) !important;
-        }
-        
-        /* Badges de stock */
-        .stock-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        
-        .stock-low {
-            background-color: var(--warning-color);
-            color: #fff;
-        }
-        
-        .stock-out {
-            background-color: var(--danger-color);
-            color: #fff;
-        }
-        
-        .stock-good {
-            background-color: var(--success-color);
-            color: #fff;
-        }
+        .sf-footer .social a:hover { border-color: var(--border-on-dark-bright); color: var(--violet-bright); }
+        .sf-footer hr { border-color: var(--border-on-dark); }
+        .sf-footer .fine-print a { color: var(--text-on-dark-faint); font-size: 0.82rem; }
+        .sf-footer .fine-print a:hover { color: var(--violet-bright); }
     </style>
 </head>
 <body>
+
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary-custom shadow-sm sticky-top">
+    <nav class="navbar navbar-expand-lg sf-navbar sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">
-                <i class="bi bi-box-seam me-2"></i>StockFlow
+            <a class="navbar-brand" href="#">
+                <span class="sf-mark">Vx</span>Vexora
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#">Inicio</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#features">Características</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#testimonials">Testimonios</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#pricing">Planes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#faq">FAQ</a>
-                    </li>
+                <ul class="navbar-nav me-auto ms-lg-4">
+                    <li class="nav-item"><a class="nav-link active" href="#">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#features">Características</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#pricing">Planes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
                 </ul>
                 <div class="d-flex">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'vexora:home' %}" class="btn btn-outline-light me-2">
-                            <i class="bi bi-speedometer2"></i> home
+                        <a href="{% url 'vexora:home' %}" class="btn btn-outline-ink me-2">
+                            <i class="bi bi-speedometer2"></i>home
                         </a>
-                        <a href="{% url 'vexora:logout' %}" class="btn btn-secondary-custom">
-                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        <a href="{% url 'vexora:logout' %}" class="btn btn-glow">
+                            <i class="bi bi-box-arrow-right"></i>Cerrar sesión
                         </a>
                     {% else %}
-                        <a href="{% url 'vexora:login' %}" class="btn btn-outline-light me-2">
-                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                        <a href="{% url 'vexora:login' %}" class="btn btn-outline-ink me-2">
+                            <i class="bi bi-box-arrow-in-right"></i>Iniciar sesión
                         </a>
-                        <a href="{% url 'vexora:registro' %}" class="btn btn-secondary-custom">
-                            <i class="bi bi-person-plus"></i> Registrarse
+                        <a href="{% url 'vexora:registro' %}" class="btn btn-glow">
+                            <i class="bi bi-arrow-right"></i>Registrarse
                         </a>
                     {% endif %}
                 </div>
@@ -201,34 +523,68 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6 fade-in">
-                    <h1 class="display-4 fw-bold mb-4">Gestiona tu vexora de forma inteligente</h1>
-                    <p class="lead mb-4">StockFlow te ayuda a controlar tus productos, optimizar el stock y aumentar la rentabilidad de tu negocio con herramientas avanzadas y reportes en tiempo real.</p>
-                    <div class="d-flex flex-wrap gap-3">
-                        <a href="{% url 'vexora:registro' %}" class="btn btn-secondary-custom btn-lg">
-                            <i class="bi bi-gem"></i> Comenzar Prueba Gratis
+    <!-- Hero -->
+    <section class="hero">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="container hero-content">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6">
+                    <div class="eyebrow reveal-load d1"><i class="bi bi-stars"></i>Control de inventario</div>
+                    <h1 class="reveal-load d2">Cada producto,<br>contado con <span class="gradient-text">precisión.</span></h1>
+                    <p class="lead reveal-load d3">VEXORA ordena tu inventario en un panel claro: entradas, salidas y niveles óptimos, siempre visibles, siempre exactos.</p>
+                    <div class="d-flex flex-wrap gap-3 reveal-load d4">
+                        <a href="{% url 'vexora:registro' %}" class="btn btn-glow btn-lg">
+                            <i class="bi bi-arrow-right"></i>Comenzar prueba gratis
                         </a>
-                        <a href="#features" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-play-circle"></i> Ver Demo
+                        <a href="#features" class="btn btn-outline-ink btn-lg">
+                            <i class="bi bi-play-circle"></i>Ver demo
                         </a>
                     </div>
-                    <p class="mt-3 small">✓ Sin tarjeta de crédito ✓ 14 días gratis ✓ Cancelación en cualquier momento</p>
+                    <div class="hero-trust reveal-load d4">
+                        <span><i class="bi bi-check-circle"></i>Sin tarjeta de crédito</span>
+                        <span><i class="bi bi-check-circle"></i>14 días gratis</span>
+                        <span><i class="bi bi-check-circle"></i>Cancela cuando quieras</span>
+                    </div>
                 </div>
-                <div class="col-lg-6 mt-5 mt-lg-0 fade-in">
-                    <div class="card shadow-lg border-0 rounded-4">
-                        <div class="card-body p-0">
-                            <img src="https://images.unsplash.com/photo-1556742393-d75f468bfcb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
-                                 alt="home de StockFlow" class="img-fluid rounded-4">
-                            <div class="p-3 bg-light rounded-bottom">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span><i class="bi bi-database"></i> 1,234 productos</span>
-                                    <span class="stock-badge stock-good"><i class="bi bi-check-circle"></i> Stock óptimo</span>
-                                </div>
-                            </div>
+
+                <div class="col-lg-6">
+                    <div class="manifest reveal-load d3">
+                        <div class="manifest-scan"></div>
+                        <div class="manifest-head">
+                            <span class="title"><span class="manifest-dot"></span>Manifiesto en vivo</span>
+                            <span class="title">Bodega — 01</span>
+                        </div>
+
+                        <div class="manifest-row" style="animation-delay:0.15s">
+                            <span class="sku">SKU-2291</span>
+                            <span class="name">Camisa oxford azul</span>
+                            <span class="manifest-bar"><span style="width:82%;background:var(--green);animation-delay:0.3s"></span></span>
+                            <span class="qty">312 uds</span>
+                        </div>
+                        <div class="manifest-row" style="animation-delay:0.28s">
+                            <span class="sku">SKU-1187</span>
+                            <span class="name">Taladro inalámbrico 18V</span>
+                            <span class="manifest-bar"><span style="width:38%;background:#FBBF24;animation-delay:0.43s"></span></span>
+                            <span class="qty">46 uds</span>
+                        </div>
+                        <div class="manifest-row" style="animation-delay:0.41s">
+                            <span class="sku">SKU-0564</span>
+                            <span class="name">Casco de seguridad</span>
+                            <span class="manifest-bar"><span style="width:12%;background:#FB7185;animation-delay:0.56s"></span></span>
+                            <span class="qty">9 uds</span>
+                        </div>
+                        <div class="manifest-row" style="animation-delay:0.54s">
+                            <span class="sku">SKU-3340</span>
+                            <span class="name">Tornillo hexagonal M8</span>
+                            <span class="manifest-bar"><span style="width:94%;background:#22D3EE;animation-delay:0.69s"></span></span>
+                            <span class="qty">4,820 uds</span>
+                        </div>
+
+                        <div class="manifest-foot">
+                            <span>1,234 productos activos</span>
+                            <span class="ok"><i class="bi bi-check-circle-fill"></i> vexora sincronizada</span>
                         </div>
                     </div>
                 </div>
@@ -236,362 +592,290 @@
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section id="features" class="py-5 bg-light">
+    <!-- Stats -->
+    <section class="stats-strip">
         <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Características Principales</h2>
-                <p class="lead">Descubre cómo StockFlow puede transformar la gestión de tu vexora</p>
-            </div>
-            
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-4">
-                    <div class="card feature-card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-upc-scan text-white fs-3"></i>
-                            </div>
-                            <h4 class="card-title">Escaneo de Códigos de Barras</h4>
-                            <p class="card-text">Registra productos rápidamente con nuestro sistema de escaneo integrado. Compatible con códigos de barras y QR.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-lg-4">
-                    <div class="card feature-card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-graph-up text-white fs-3"></i>
-                            </div>
-                            <h4 class="card-title">Alertas de Stock Bajo</h4>
-                            <p class="card-text">Configura umbrales mínimos y recibe notificaciones automáticas cuando los productos necesitan reabastecimiento.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-lg-4">
-                    <div class="card feature-card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-file-spreadsheet text-white fs-3"></i>
-                            </div>
-                            <h4 class="card-title">Importación/Exportación</h4>
-                            <p class="card-text">Importa tus productos desde Excel/CSV y exporta reportes en múltiples formatos para análisis externo.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-lg-4">
-                    <div class="card feature-card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-arrow-left-right text-white fs-3"></i>
-                            </div>
-                            <h4 class="card-title">Movimientos de Stock</h4>
-                            <p class="card-text">Registra entradas, salidas, transferencias y ajustes con trazabilidad completa y auditoría detallada.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-lg-4">
-                    <div class="card feature-card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-building text-white fs-3"></i>
-                            </div>
-                            <h4 class="card-title">Múltiples Sucursales</h4>
-                            <p class="card-text">Gestiona vexoras de diferentes ubicaciones desde un solo panel de control centralizado.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-lg-4">
-                    <div class="card feature-card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="bg-primary-custom rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-shield-lock text-white fs-3"></i>
-                            </div>
-                            <h4 class="card-title">Seguridad y Respaldo</h4>
-                            <p class="card-text">Datos encriptados, backups automáticos diarios y accesos por roles de usuario.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Stats Section -->
-    <section class="py-5 gradient-bg text-white">
-        <div class="container">
-            <div class="row text-center">
-                <div class="col-md-3 col-6 mb-4 mb-md-0">
-                    <h3 class="display-4 fw-bold">10K+</h3>
-                    <p class="lead">Empresas Activas</p>
-                </div>
-                <div class="col-md-3 col-6 mb-4 mb-md-0">
-                    <h3 class="display-4 fw-bold">2M+</h3>
-                    <p class="lead">Productos Gestionados</p>
-                </div>
-                <div class="col-md-3 col-6">
-                    <h3 class="display-4 fw-bold">500+</h3>
-                    <p class="lead">Integraciones</p>
-                </div>
-                <div class="col-md-3 col-6">
-                    <h3 class="display-4 fw-bold">98%</h3>
-                    <p class="lead">Precisión en vexora</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section id="pricing" class="py-5">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Planes Flexibles</h2>
-                <p class="lead">Elige el plan que mejor se adapte a tu negocio</p>
-            </div>
-            
-            <div class="row g-4">
-                <div class="col-lg-4">
-                    <div class="card pricing-card h-100 shadow">
-                        <div class="card-header text-center">
-                            <h3 class="mb-0">Básico</h3>
-                        </div>
-                        <div class="card-body text-center p-4">
-                            <div class="price">$29 <small>/mes</small></div>
-                            <p class="text-muted">Ideal para pequeños negocios</p>
-                            <hr>
-                            <ul class="list-unstyled text-start">
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Hasta 500 productos</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> 1 usuario</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Reportes básicos</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Exportación a Excel</li>
-                                <li class="mb-2 text-muted"><i class="bi bi-x-circle-fill text-danger me-2"></i> <del>Múltiples sucursales</del></li>
-                                <li class="mb-2 text-muted"><i class="bi bi-x-circle-fill text-danger me-2"></i> <del>API integración</del></li>
-                            </ul>
-                            <a href="{% url 'vexora:registro' %}" class="btn btn-outline-primary-custom w-100">Comenzar</a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4">
-                    <div class="card pricing-card h-100 shadow-lg border-0">
-                        <div class="card-header text-center position-relative">
-                            <span class="position-absolute top-0 start-50 translate-middle badge bg-secondary-custom">MÁS POPULAR</span>
-                            <h3 class="mb-0">Profesional</h3>
-                        </div>
-                        <div class="card-body text-center p-4">
-                            <div class="price">$79 <small>/mes</small></div>
-                            <p class="text-muted">Perfecto para negocios en crecimiento</p>
-                            <hr>
-                            <ul class="list-unstyled text-start">
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Hasta 5,000 productos</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> 5 usuarios</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Reportes avanzados</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Alertas de stock bajo</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> 2 sucursales</li>
-                                <li class="mb-2"><i class="bi bi-x-circle-fill text-danger me-2"></i> <del>API integración</del></li>
-                            </ul>
-                            <a href="{% url 'vexora:registro' %}" class="btn btn-secondary-custom w-100">Comenzar</a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4">
-                    <div class="card pricing-card h-100 shadow">
-                        <div class="card-header text-center">
-                            <h3 class="mb-0">Empresarial</h3>
-                        </div>
-                        <div class="card-body text-center p-4">
-                            <div class="price">$199 <small>/mes</small></div>
-                            <p class="text-muted">Para empresas grandes y cadenas</p>
-                            <hr>
-                            <ul class="list-unstyled text-start">
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Productos ilimitados</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Usuarios ilimitados</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Reportes personalizados</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Sucursales ilimitadas</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> API completa</li>
-                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Soporte prioritario 24/7</li>
-                            </ul>
-                            <a href="#" class="btn btn-outline-primary-custom w-100">Contactar Ventas</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Testimonials Section -->
-    <section id="testimonials" class="py-5 bg-light">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Lo que Dicen Nuestros Clientes</h2>
-                <p class="lead">Descubre cómo StockFlow ha transformado negocios de todo tipo</p>
-            </div>
-            
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card testimonial-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <img src="https://randomuser.me/api/portraits/women/32.jpg" class="rounded-circle me-3" width="60" height="60" alt="Cliente">
-                                <div>
-                                    <h5 class="mb-0">Ana Rodríguez</h5>
-                                    <small class="text-muted">Dueña de Tienda de Ropa</small>
-                                </div>
-                            </div>
-                            <p class="card-text">"StockFlow nos ayudó a reducir el sobrestock en un 40% y evitar faltantes en temporada alta. El sistema de alertas es increíblemente útil."</p>
-                            <div class="text-warning">
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="card testimonial-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <img src="https://randomuser.me/api/portraits/men/45.jpg" class="rounded-circle me-3" width="60" height="60" alt="Cliente">
-                                <div>
-                                    <h5 class="mb-0">Carlos Méndez</h5>
-                                    <small class="text-muted">Gerente de Logística</small>
-                                </div>
-                            </div>
-                            <p class="card-text">"Pasamos de 3 horas diarias en control de vexora a solo 20 minutos. La importación masiva y los reportes automáticos nos salvaron."</p>
-                            <div class="text-warning">
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-half"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="card testimonial-card h-100 border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <img src="https://randomuser.me/api/portraits/women/67.jpg" class="rounded-circle me-3" width="60" height="60" alt="Cliente">
-                                <div>
-                                    <h5 class="mb-0">Laura Fernández</h5>
-                                    <small class="text-muted">CEO de Ferretería Express</small>
-                                </div>
-                            </div>
-                            <p class="card-text">"Con 3 sucursales, necesitábamos una solución unificada. StockFlow nos permite ver el vexora completo en tiempo real desde cualquier lugar."</p>
-                            <div class="text-warning">
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Integrations Section -->
-    <section class="py-5">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Integraciones con tus Herramientas Favoritas</h2>
-                <p class="lead">Conecta StockFlow con tu ecosistema tecnológico</p>
-            </div>
-            
             <div class="row text-center g-4">
-                <div class="col-md-2 col-6">
-                    <i class="bi bi-shop fs-1 text-primary-custom"></i>
-                    <p class="mt-2 fw-bold">Shopify</p>
+                <div class="col-md-3 col-6 stat-block fade-in-up">
+                    <div class="stat-num c-violet" data-count="10000" data-suffix="+">0</div>
+                    <div class="stat-label">Empresas activas</div>
                 </div>
-                <div class="col-md-2 col-6">
-                    <i class="bi bi-wordpress fs-1 text-primary-custom"></i>
-                    <p class="mt-2 fw-bold">WooCommerce</p>
+                <div class="col-md-3 col-6 stat-block fade-in-up">
+                    <div class="stat-num c-cyan" data-count="2" data-suffix="M+">0</div>
+                    <div class="stat-label">Productos gestionados</div>
                 </div>
-                <div class="col-md-2 col-6">
-                    <i class="bi bi-file-text fs-1 text-primary-custom"></i>
-                    <p class="mt-2 fw-bold">Excel</p>
+                <div class="col-md-3 col-6 stat-block fade-in-up">
+                    <div class="stat-num c-pink" data-count="500" data-suffix="+">0</div>
+                    <div class="stat-label">Integraciones</div>
                 </div>
-                <div class="col-md-2 col-6">
-                    <i class="bi bi-calculator fs-1 text-primary-custom"></i>
-                    <p class="mt-2 fw-bold">QuickBooks</p>
-                </div>
-                <div class="col-md-2 col-6">
-                    <i class="bi bi-code-square fs-1 text-primary-custom"></i>
-                    <p class="mt-2 fw-bold">API REST</p>
-                </div>
-                <div class="col-md-2 col-6">
-                    <i class="bi bi-qr-code-scan fs-1 text-primary-custom"></i>
-                    <p class="mt-2 fw-bold">Lectores QR</p>
+                <div class="col-md-3 col-6 stat-block fade-in-up">
+                    <div class="stat-num c-amber" data-count="98" data-suffix="%">0</div>
+                    <div class="stat-label">Precisión de VEXORA</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="py-5 bg-primary-custom text-white">
+    <!-- Features -->
+    <section id="features" class="features">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <h2 class="display-6 fw-bold mb-3">¿Listo para optimizar tu vexora?</h2>
-                    <p class="lead mb-0">Únete a miles de negocios que ya confían en StockFlow para gestionar su vexora.</p>
+            <div class="eyebrow fade-in-up"><i class="bi bi-grid"></i>Características</div>
+            <h2 class="section-label fade-in-up">Todo el control, en un solo panel</h2>
+            <p class="section-intro lead fade-in-up mb-5" style="font-size:1.02rem; color:var(--text-dim);">
+                Herramientas pensadas para que la gestión de inventario deje de ser un problema y se convierta en una ventaja competitiva.
+            </p>
+
+            <div class="row g-4 stagger fade-in-up">
+                <div class="col-md-6 col-lg-4 fu-item">
+                    <div class="feature-card">
+                        <div class="feature-icon grad-1"><i class="bi bi-upc-scan"></i></div>
+                        <h4>Escaneo de códigos de barras</h4>
+                        <p>Registra productos en segundos con nuestro lector integrado, compatible con códigos de barras y QR.</p>
+                        <span class="feature-tag-code">// SCN.MODULE</span>
+                    </div>
                 </div>
-                <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
-                    <a href="{% url 'vexora:registro' %}" class="btn btn-secondary-custom btn-lg">
-                        <i class="bi bi-gem"></i> Probar 14 días gratis
-                    </a>
+                <div class="col-md-6 col-lg-4 fu-item">
+                    <div class="feature-card">
+                        <div class="feature-icon grad-2"><i class="bi bi-bell"></i></div>
+                        <h4>Alertas de stock bajo</h4>
+                        <p>Define umbrales mínimos y recibe notificaciones automáticas antes de quedarte sin producto.</p>
+                        <span class="feature-tag-code">// ALR.MODULE</span>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4 fu-item">
+                    <div class="feature-card">
+                        <div class="feature-icon grad-3"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+                        <h4>Importación y exportación</h4>
+                        <p>Sube tu catálogo desde CSV y exporta reportes en múltiples formatos para análisis externo.</p>
+                        <span class="feature-tag-code">// IMP.MODULE</span>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4 fu-item">
+                    <div class="feature-card">
+                        <div class="feature-icon grad-4"><i class="bi bi-arrow-left-right"></i></div>
+                        <h4>Movimientos de stock</h4>
+                        <p>Entradas, salidas, transferencias y ajustes, con trazabilidad completa y auditoría detallada.</p>
+                        <span class="feature-tag-code">// MOV.MODULE</span>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4 fu-item">
+                    <div class="feature-card">
+                        <div class="feature-icon grad-5"><i class="bi bi-building"></i></div>
+                        <h4>Múltiples sucursales</h4>
+                        <p>Administra vexoras de distintas ubicaciones desde un solo panel de control centralizado.</p>
+                        <span class="feature-tag-code">// SUC.MODULE</span>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4 fu-item">
+                    <div class="feature-card">
+                        <div class="feature-icon grad-6"><i class="bi bi-shield-lock"></i></div>
+                        <h4>Seguridad y respaldo</h4>
+                        <p>Datos cifrados, copias de seguridad automáticas y accesos configurables por rol de usuario.</p>
+                        <span class="feature-tag-code">// SEG.MODULE</span>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- FAQ Section -->
-    <section id="faq" class="py-5 bg-light">
+    <!-- Pricing -->
+    <section id="pricing" class="pricing">
         <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Preguntas Frecuentes</h2>
-                <p class="lead">Resolvemos tus dudas sobre StockFlow</p>
+            <div class="eyebrow fade-in-up"><i class="bi bi-gem"></i>Planes</div>
+            <h2 class="section-label fade-in-up">Un plan para cada etapa</h2>
+            <p class="section-intro lead fade-in-up mb-5" style="font-size:1.02rem; color:var(--text-dim);">
+                Empieza pequeño y crece sin fricciones. Cambia de plan cuando lo necesites.
+            </p>
+
+            <div class="row g-4 stagger fade-in-up align-items-stretch">
+                <div class="col-lg-4 fu-item">
+                    <div class="price-card">
+                        <div class="plan-name">Básico</div>
+                        <div class="plan-price">$29 <sub>/mes</sub></div>
+                        <div class="plan-desc">Ideal para pequeños negocios</div>
+                        <hr style="border-color:var(--paper-line)">
+                        <ul class="plan-list">
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Hasta 500 productos</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>1 usuario</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Reportes básicos</li>
+                            <li class="plan-item off"><i class="bi bi-dash-circle"></i>Múltiples sucursales</li>
+                            <li class="plan-item off"><i class="bi bi-dash-circle"></i>Integración API</li>
+                        </ul>
+                        <a href="{% url 'vexora:registro' %}" class="btn btn-outline-ink w-100">Comenzar</a>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 fu-item">
+                    <div class="price-card featured">
+                        <span class="ribbon">Más popular</span>
+                        <div class="plan-name mt-2">Profesional</div>
+                        <div class="plan-price">$79 <sub>/mes</sub></div>
+                        <div class="plan-desc">Para negocios en crecimiento</div>
+                        <hr style="border-color:var(--paper-line)">
+                        <ul class="plan-list">
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Hasta 5,000 productos</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>5 usuarios</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Reportes avanzados</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Alertas de stock bajo</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>2 sucursales</li>
+                            <li class="plan-item off"><i class="bi bi-dash-circle"></i>Integración API</li>
+                        </ul>
+                        <a href="{% url 'vexora:registro' %}" class="btn btn-glow w-100">Comenzar</a>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 fu-item">
+                    <div class="price-card">
+                        <div class="plan-name">Empresarial</div>
+                        <div class="plan-price">$199 <sub>/mes</sub></div>
+                        <div class="plan-desc">Para empresas grandes y cadenas</div>
+                        <hr style="border-color:var(--paper-line)">
+                        <ul class="plan-list">
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Productos ilimitados</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Usuarios ilimitados</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Reportes personalizados</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Sucursales ilimitadas</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>API completa</li>
+                            <li class="plan-item"><i class="bi bi-check-circle-fill"></i>Soporte prioritario 24/7</li>
+                        </ul>
+                        <a href="#" class="btn btn-outline-ink w-100">Contactar ventas</a>
+                    </div>
+                </div>
             </div>
-            
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="testimonials" class="testimonials">
+        <div class="container">
+            <div class="eyebrow fade-in-up"><i class="bi bi-chat-quote"></i>Testimonios</div>
+            <h2 class="section-label fade-in-up mb-5">Lo que dicen nuestros clientes</h2>
+
+            <div class="row g-4 stagger fade-in-up">
+                <div class="col-md-4 fu-item">
+                    <div class="t-card">
+                        <span class="t-quote-mark">&rdquo;</span>
+                        <p class="quote">Vexora nos ayudó a reducir el sobrestock en un 40% y evitar faltantes en temporada alta. El sistema de alertas es increíblemente útil.</p>
+                        <div class="t-person">
+                            <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Ana Rodríguez">
+                            <div>
+                                <h6>Ana Rodríguez</h6>
+                                <small>Dueña de tienda de ropa</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 fu-item">
+                    <div class="t-card">
+                        <span class="t-quote-mark">&rdquo;</span>
+                        <p class="quote">Pasamos de tres horas diarias en control de vexora a solo veinte minutos. La importación masiva y los reportes automáticos nos salvaron.</p>
+                        <div class="t-person">
+                            <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Carlos Méndez">
+                            <div>
+                                <h6>Carlos Méndez</h6>
+                                <small>Gerente de logística</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 fu-item">
+                    <div class="t-card">
+                        <span class="t-quote-mark">&rdquo;</span>
+                        <p class="quote">Con tres sucursales necesitábamos una solución unificada. Vexora nos permite ver la vexora completa en tiempo real desde cualquier lugar.</p>
+                        <div class="t-person">
+                            <img src="https://randomuser.me/api/portraits/women/67.jpg" alt="Laura Fernández">
+                            <div>
+                                <h6>Laura Fernández</h6>
+                                <small>CEO de ferretería Express</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integrations -->
+    <section class="integrations">
+        <div class="container">
+            <div class="eyebrow fade-in-up"><i class="bi bi-plug"></i>Integraciones</div>
+            <h2 class="section-label fade-in-up mb-5">Conecta tu ecosistema</h2>
+
+            <div class="row text-center g-3 stagger fade-in-up">
+                <div class="col-md-2 col-4 fu-item">
+                    <div class="integration-item"><i class="bi bi-shop"></i><p>Shopify</p></div>
+                </div>
+                <div class="col-md-2 col-4 fu-item">
+                    <div class="integration-item"><i class="bi bi-wordpress"></i><p>WooCommerce</p></div>
+                </div>
+                <div class="col-md-2 col-4 fu-item">
+                    <div class="integration-item"><i class="bi bi-calculator"></i><p>QuickBooks</p></div>
+                </div>
+                <div class="col-md-2 col-4 fu-item">
+                    <div class="integration-item"><i class="bi bi-code-square"></i><p>API REST</p></div>
+                </div>
+                <div class="col-md-2 col-4 fu-item">
+                    <div class="integration-item"><i class="bi bi-qr-code-scan"></i><p>Lectores QR</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-band">
+        <div class="container">
+            <div class="cta-inner fade-in-up">
+                <div class="blob blob-6"></div>
+                <div class="row align-items-center g-4" style="position:relative; z-index:1;">
+                    <div class="col-lg-8">
+                        <h2 class="fw-bold mb-2">¿Listo para optimizar tu <span class="gradient-text">vexora?</span></h2>
+                        <p class="mb-0">Únete a miles de negocios que ya confían en Vexora para gestionar su vexora.</p>
+                    </div>
+                    <div class="col-lg-4 text-lg-end">
+                        <a href="{% url 'vexora:registro' %}" class="btn btn-glow btn-lg">
+                            <i class="bi bi-arrow-right"></i>Probar 14 días gratis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="faq">
+        <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-8">
-                    <div class="accordion" id="faqAccordion">
+                    <div class="eyebrow fade-in-up"><i class="bi bi-question-circle"></i>Preguntas frecuentes</div>
+                    <h2 class="section-label fade-in-up mb-5">Resolvemos tus dudas</h2>
+
+                    <div class="accordion fade-in-up" id="faqAccordion">
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-                                    ¿Puedo probar StockFlow antes de comprar?
+                                    ¿Puedo probar Vexora antes de comprar?
                                 </button>
                             </h2>
                             <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body">
-                                    ¡Sí! Ofrecemos 14 días de prueba gratuita sin necesidad de tarjeta de crédito. Durante la prueba tendrás acceso a todas las funciones del plan Profesional.
+                                    Sí. Ofrecemos 14 días de prueba gratuita sin necesidad de tarjeta de crédito, con acceso completo a todas las funciones del plan Profesional.
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-                                    ¿Puedo importar mi vexora actual?
+                                    ¿Puedo importar mi inventario actual?
                                 </button>
                             </h2>
                             <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body">
-                                    Absolutamente. StockFlow permite importar productos desde archivos Excel o CSV. También ofrecemos asistencia personalizada para migraciones complejas.
+                                    Sí. Vexora permite importar productos desde archivos SVG y ofrecemos asistencia personalizada para migraciones complejas.
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
@@ -600,24 +884,24 @@
                             </h2>
                             <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body">
-                                    Todos los planes incluyen soporte por email. Los planes Profesional y Empresarial incluyen soporte prioritario y chat en vivo. El plan Empresarial incluye soporte telefónico 24/7.
+                                    Todos los planes incluyen soporte por correo. Profesional y Empresarial suman soporte prioritario y chat en vivo; Empresarial incluye línea telefónica 24/7.
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-                                    ¿StockFlow funciona en dispositivos móviles?
+                                    ¿Vexora funciona en dispositivos móviles?
                                 </button>
                             </h2>
                             <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body">
-                                    Sí, nuestra plataforma es completamente responsive. También tenemos aplicaciones nativas para iOS y Android disponibles en las tiendas oficiales.
+                                    Sí, la plataforma es completamente responsive, y contamos con aplicaciones nativas para iOS y Android en las tiendas oficiales.
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
@@ -626,7 +910,7 @@
                             </h2>
                             <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body">
-                                    Por supuesto. Puedes cancelar tu suscripción en cualquier momento desde la configuración de tu cuenta. No hay permanencias ni costos ocultos.
+                                    Por supuesto. Puedes cancelar desde la configuración de tu cuenta cuando quieras; no hay permanencias ni costos ocultos.
                                 </div>
                             </div>
                         </div>
@@ -637,72 +921,99 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white py-5">
+    <footer class="sf-footer">
         <div class="container">
-            <div class="row">
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <h4 class="fw-bold mb-3">
-                        <i class="bi bi-box-seam me-2"></i>StockFlow
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <h4 class="mb-3" style="font-family: var(--font-display);">
+                        <span class="sf-mark">SF</span>Vexora
                     </h4>
-                    <p>La plataforma de gestión de vexora más completa y fácil de usar del mercado. Diseñada para negocios que buscan optimizar su cadena de suministro.</p>
-                    <div class="d-flex gap-3">
-                        <a href="#" class="text-white"><i class="bi bi-facebook fs-5"></i></a>
-                        <a href="#" class="text-white"><i class="bi bi-twitter fs-5"></i></a>
-                        <a href="#" class="text-white"><i class="bi bi-linkedin fs-5"></i></a>
-                        <a href="#" class="text-white"><i class="bi bi-instagram fs-5"></i></a>
+                    <p>La plataforma de gestión de vexora más completa y fácil de usar del mercado, diseñada para negocios que buscan optimizar su cadena de suministro.</p>
+                    <div class="d-flex gap-2 social">
+                        <a href="#"><i class="bi bi-facebook"></i></a>
+                        <a href="#"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#"><i class="bi bi-linkedin"></i></a>
+                        <a href="#"><i class="bi bi-instagram"></i></a>
                     </div>
                 </div>
-                <div class="col-lg-2 col-md-4 mb-4 mb-lg-0">
-                    <h5 class="fw-bold mb-3">Producto</h5>
+                <div class="col-lg-2 col-md-4">
+                    <h5 class="mb-3">Producto</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#" class="text-white-50">Características</a></li>
-                        <li class="mb-2"><a href="#pricing" class="text-white-50">Precios</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50">Demo</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50">Integraciones</a></li>
+                        <li><a href="#features" class="flink">Características</a></li>
+                        <li><a href="#pricing" class="flink">Precios</a></li>
+                        <li><a href="#" class="flink">Demo</a></li>
+                        <li><a href="#" class="flink">Integraciones</a></li>
                     </ul>
                 </div>
-                <div class="col-lg-2 col-md-4 mb-4 mb-lg-0">
-                    <h5 class="fw-bold mb-3">Recursos</h5>
+                <div class="col-lg-2 col-md-4">
+                    <h5 class="mb-3">Recursos</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#" class="text-white-50">Blog</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50">Centro de Ayuda</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50">Tutoriales</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50">Documentación API</a></li>
+                        <li><a href="#" class="flink">Blog</a></li>
+                        <li><a href="#" class="flink">Centro de ayuda</a></li>
+                        <li><a href="#" class="flink">Tutoriales</a></li>
+                        <li><a href="#" class="flink">Documentación API</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-4 col-md-4">
-                    <h5 class="fw-bold mb-3">Contacto</h5>
+                    <h5 class="mb-3">Contacto</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <i class="bi bi-geo-alt me-2"></i>Av. Tecnológico 456, Ciudad
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-telephone me-2"></i>+1 234 567 8900
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-envelope me-2"></i>ventas@stockflow.com
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-headset me-2"></i>Soporte 24/7
-                        </li>
+                        <li><i class="bi bi-geo-alt me-2"></i>Av. Tecnológico 456, Ciudad</li>
+                        <li><i class="bi bi-telephone me-2"></i>+1 234 567 8900</li>
+                        <li><i class="bi bi-envelope me-2"></i>ventas@vexora.com</li>
+                        <li><i class="bi bi-headset me-2"></i>Soporte 24/7</li>
                     </ul>
                 </div>
             </div>
             <hr class="my-4">
-            <div class="row align-items-center">
+            <div class="row align-items-center fine-print">
                 <div class="col-md-6">
-                    <p class="mb-0">&copy; 2024 StockFlow. Todos los derechos reservados.</p>
+                    <p class="mb-0">&copy; 2024 Vexora. Todos los derechos reservados.</p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <a href="#" class="text-white-50 me-3">Política de Privacidad</a>
-                    <a href="#" class="text-white-50 me-3">Términos de Servicio</a>
-                    <a href="#" class="text-white-50">GDPR</a>
+                    <a href="#" class="me-3">Política de privacidad</a>
+                    <a href="#" class="me-3">Términos de servicio</a>
+                    <a href="#">GDPR</a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const revealEls = document.querySelectorAll('.fade-in-up');
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                    io.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+        revealEls.forEach(el => io.observe(el));
+
+        const counters = document.querySelectorAll('.stat-num');
+        const countIo = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    const target = parseFloat(el.dataset.count);
+                    const suffix = el.dataset.suffix || '';
+                    const duration = 1400;
+                    const start = performance.now();
+                    function tick(now) {
+                        const progress = Math.min((now - start) / duration, 1);
+                        const eased = 1 - Math.pow(1 - progress, 3);
+                        const value = target < 100 ? (target * eased).toFixed(target % 1 !== 0 ? 1 : 0) : Math.floor(target * eased);
+                        el.textContent = value + suffix;
+                        if (progress < 1) requestAnimationFrame(tick);
+                    }
+                    requestAnimationFrame(tick);
+                    countIo.unobserve(el);
+                }
+            });
+        }, { threshold: 0.4 });
+        counters.forEach(el => countIo.observe(el));
+    </script>
 </body>
 </html>
