@@ -60,7 +60,7 @@ class SubscriptionMiddleware:
                 return self.get_response(request)
 
             # Para cualquier otra ruta, mandarlo a crear una empresa
-            return redirect("vexora:company_create")
+            return redirect("vexora:dashboard")
 
         # Si ya tiene empresa, permitirle ver las opciones de suscripción
         if path in SUBSCRIPTION_PATHS:
