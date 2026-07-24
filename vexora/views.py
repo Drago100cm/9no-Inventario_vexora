@@ -535,12 +535,10 @@ class CustomerRegisterView(CreateView):
             )
             return redirect("vexora:login")
 
-        today = timezone.localdate()
 
         if (
             not subscription.active
             or subscription.status != "active"
-            or subscription.end_date < today
             or not subscription.plan.active
             or not subscription.plan.sales_module
         ):
@@ -567,6 +565,7 @@ class CustomerRegisterView(CreateView):
         user.save()
 
         customer_role, _ = Role.objects.get_or_create(
+            company=self.company,
             name="Cliente"
         )
 
@@ -584,7 +583,6 @@ class CustomerRegisterView(CreateView):
         )
 
         return HttpResponseRedirect(self.get_success_url())
-
 class ClientsListView(LoginRequiredMixin, ListView):
     template_name = "vexora/users/client_list.html"
 
