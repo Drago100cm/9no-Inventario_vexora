@@ -430,35 +430,81 @@ class CustomUserUpdateForm(forms.ModelForm):
         return user  
 #--------------------Formulario de empresas-------------------
 # -------------------- Formulario de empresas --------------------
+from django import forms
+from django.utils.text import slugify
 
 class CompanyForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        self.fields['name'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Nombre de la empresa'
+
+        self.fields["name"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Nombre de la empresa",
         })
-        self.fields['address'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Dirección de la empresa'
+
+        self.fields["slug"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "mi-empresa",
+            "pattern": "^[a-z0-9-]+$",
+            "title": "Solo letras minúsculas, números y guiones. No se permiten espacios.",
+            "autocomplete": "off",
+            "oninput": "this.value=this.value.toLowerCase().replace(/\\s+/g,'-').replace(/[^a-z0-9-]/g,'')",
         })
-        self.fields['phone'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Teléfono de la empresa'
+
+        self.fields["email"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "empresa@correo.com",
+            "required": "required",
         })
-        self.fields['email'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Correo electrónico de la empresa'
+
+        self.fields["phone"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "7711234567",
+            "required": "required",
+            
         })
-        self.fields['slug'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Slug de la empresa'
+
+        self.fields["address"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Dirección de la empresa",
+            "required": "required",
         })
+
+        self.fields["rfc"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "XAXX010101000",
+            "style": "text-transform:uppercase;",
+        })
+
+        self.fields["tax_name"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Razón social",
+        })
+
+        self.fields["logo"].widget.attrs.update({
+            "class": "form-control",
+            "accept": "image/*",
+        })
+
+        self.fields["is_active"].widget.attrs.update({
+            "class": "form-check-input",
+        })
+
+    def clean_slug(self):
+        slug = self.cleaned_data["slug"]
+
+        if " " in slug:
+            raise forms.ValidationError(
+                "El slug no puede contener espacios."
+            )
+
+        return slugify(slug)
+
     class Meta:
         model = Company
-        fields = ["name", "address", "phone", "email", "slug"]
+        fields = ["name","slug","email","phone","address","rfc","tax_name","logo","is_active",]
 
 
 #==============================================
@@ -502,36 +548,103 @@ class CategoryForm(forms.ModelForm):
 # SUPPLIER FORM 
 #==============================================
 class SupplierForm(forms.ModelForm):
+
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
+        self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
-        self.fields['name'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Nombre del proveedor',
-            'autofocus': 'autofocus'
+        self.fields["name"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Nombre del proveedor",
+            "autofocus": "autofocus",
+            "required": "required",
         })
 
-        self.fields['address'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Dirección del proveedor',
-            'rows': 3
+        self.fields["address"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Dirección del proveedor",
+            "rows": 3,
         })
 
         # Asignar company automáticamente
-        if self.user and hasattr(self.user, 'company') and self.user.company:
-            self.fields['company'].widget = forms.HiddenInput()
-            self.fields['company'].initial = self.user.company
+        if (
+            self.user
+            and hasattr(self.user, "company")
+            and self.user.company
+        ):
+            self.fields["company"].widget = forms.HiddenInput()
+            self.fields["company"].initial = self.user.company
         else:
-            self.fields['company'].widget.attrs.update({
-                'class': 'form-control'
+            self.fields["company"].widget.attrs.update({
+                "class": "form-control"
             })
-            self.fields['company'].queryset = Company.objects.all()
+            self.fields["company"].queryset = Company.objects.all()
+
+    def clean_name(self):
+            name = self.cleaned_data.get("name", "").strip()
+
+            if not name:
+                raise forms.ValidationError(
+                    "El nombre del proveedor es obligatorio."
+                )
+
+            company = None
+
+            if (
+                self.user
+                and hasattr(self.user, "company")
+                and self.user.company
+            ):
+                company = self.user.company
+            else:
+                company = self.cleaned_data.get("company")
+
+            if not company:
+                raise forms.ValidationError(
+                    "No se pudo determinar la empresa."
+                )
+
+            suppliers = Supplier.objects.filter(
+                company=company,
+                name__iexact=name
+            )
+
+            # Evita que al editar el proveedor se detecte a sí mismo
+            if self.instance and self.instance.pk:
+                suppliers = suppliers.exclude(pk=self.instance.pk)
+
+            if suppliers.exists():
+                raise forms.ValidationError(
+                    "Ya existe un proveedor con este nombre en la empresa."
+                )
+
+            return name
+
+    def clean_company(self):
+        company = self.cleaned_data.get("company")
+
+        # Evita que manipulen el campo oculto desde el navegador
+        if (
+            self.user
+            and hasattr(self.user, "company")
+            and self.user.company
+        ):
+            return self.user.company
+
+        if not company:
+            raise forms.ValidationError(
+                "Debes seleccionar una empresa."
+            )
+
+        return company
 
     class Meta:
         model = Supplier
-        fields = ["name", "address", "company"]
-
+        fields = [
+            "name",
+            "address",
+            "company",
+        ]
 #==============================================
 # PRODUCT FORM
 #==============================================
@@ -722,33 +835,51 @@ class PlanesForm(forms.ModelForm):
             'class': 'form-control',
             'required': 'required   '
         })
-        self.fields['price'].widget.attrs.update({
-            'class': 'form-control',
-        })
         self.fields['description'].widget.attrs.update({
             'class': 'form-control',
+            'required': 'requiered'
         })
+        self.fields['price'].widget.attrs.update({
+            'class': 'form-control',
+            'required': True,
+            'min': '0',
+            'step': '0.01',
+            'placeholder': '0.00'
+        })
+
 
         self.fields['max_users'].widget.attrs.update({
             'class': 'form-control',
-            'required': 'required'
-        })
-        self.fields['max_collaborators'].widget.attrs.update({
-            'class': 'form-control',
-            'required': 'required'
         })
         self.fields['max_products'].widget.attrs.update({
             'class': 'form-control',
-            'required': 'required'
         })
         self.fields['max_groups'].widget.attrs.update({
             'class': 'form-control',
-            'required': 'required'
         })
         self.fields['max_providers'].widget.attrs.update({
             'class': 'form-control',
-            'required': 'required'
         })
+        self.fields['max_collaborators'].widget.attrs.update({
+            'class': 'form-control',
+        })
+        self.fields['max_repost'].widget.attrs.update({
+            'class': 'form-control',
+        })
+        
+        self.fields['sales_module'].widget.attrs.update({
+            'class': 'form-control-input',
+        })
+        self.fields['groups_module'].widget.attrs.update({
+            'class': 'form-control-input',
+        })
+        self.fields['providers_module'].widget.attrs.update({
+            'class': 'form-control-input',
+        })
+        self.fields['report_module'].widget.attrs.update({
+            'class': 'form-control-input',
+        })
+        
         self.fields['custom_domain'].widget.attrs.update({
             'class': 'form-control-input',
         })
@@ -758,12 +889,13 @@ class PlanesForm(forms.ModelForm):
         self.fields['priority_support'].widget.attrs.update({
             'class': 'form-control-input',
         })
+  
 
 
     
     class Meta:
         model = Plan
-        fields = ["name", "price", "max_users","description", "max_products", "max_groups", "max_providers", "custom_domain", "priority_support", "active","max_collaborators"]
+        fields = ["name", "description", "price", "max_users","max_products", "max_groups", "max_providers", "max_collaborators", "max_repost", "sales_module", "groups_module",  "providers_module", "report_module", "custom_domain", "active", "priority_support"]
 
 # ============================================
 # MEMBERS FORMS
