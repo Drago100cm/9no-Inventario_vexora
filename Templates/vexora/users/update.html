@@ -36,13 +36,15 @@
                   </div>
                 {% endif %}
 
-                <!-- Botón para cambiar cover -->
-                <label for="{{ form.cover.auto_id }}"
-                       class="btn btn-sm btn-light border position-absolute m-2"
-                       style="right: 0; top: 0; backdrop-filter: blur(4px);">
-                  <i class="ri-camera-line me-1"></i> Cambiar portada
-                </label>
-              </div>
+                  <!-- Botón para cambiar cover -->
+<label
+  class="btn btn-sm btn-light border position-absolute m-2"
+  style="right: 0; top: 0; backdrop-filter: blur(4px); cursor:pointer;"
+  onclick="document.querySelector('input[name=&quot;{{ form.cover.html_name }}&quot;]').click()"
+>
+  <i class="ri-camera-line me-1"></i> Cambiar portada
+</label>
+
 
               <!-- Avatar circular sobre el cover -->
               <div class="position-absolute start-50 translate-middle" style="bottom: -40px;">
@@ -201,5 +203,16 @@
 
   bindPreview(coverInput, coverPreview, coverPlaceholder);
   bindPreview(avatarInput, avatarPreview, avatarPlaceholder);
+
+  // Disparamos el input de cover manualmente en vez de usar for/id,
+  // porque puede haber otro elemento en la página con el mismo id
+  // y el label terminaría apuntando al input equivocado.
+  const coverTrigger = document.getElementById('cover-trigger-btn');
+  if (coverTrigger && coverInput) {
+    coverTrigger.addEventListener('click', function (e) {
+      e.preventDefault();
+      coverInput.click();
+    });
+  }
 })();
 </script>

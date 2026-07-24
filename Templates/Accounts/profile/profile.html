@@ -180,7 +180,6 @@
     <div class="profile-card">
       <div class="card-hdr">
         <i class="ri-shopping-bag-line"></i> Últimos pedidos
-        <a href="{% url 'vexora:list_sales' %}" class="card-hdr-link">Ver todos</a>
       </div>
       <div class="card-body-inner">
         {% if ultimos_pedidos %}
@@ -272,11 +271,11 @@
               <span>Productos</span>
             </a>
             <a href="{% url 'vexora:sales_main_list' %}" class="accion-btn">
-              <div class="accion-ico ic-purple"><i class="ri-receipt-line"></i></div>
+              <div class="accion-ico ic-purple"><i class="ri-bill-line"></i></div>
               <span>Ventas</span>
             </a>
             <a href="{% url 'vexora:user_list' %}" class="accion-btn">
-              <div class="accion-ico ic-teal"><i class="ri-users-line"></i></div>
+              <div class="accion-ico ic-teal"><i class="ri-group-line"></i></div>
               <span>Usuarios</span>
             </a>
             <a href="{% url 'vexora:company_list' %}" class="accion-btn">
@@ -318,6 +317,18 @@ function editModal(url) {
     .then(html => {
       const m = document.getElementById('ModalOptions');
       m.innerHTML = html;
+      // Los <script> insertados vía innerHTML no se ejecutan solos;
+      // hay que recrearlos manualmente para que sí corran.
+      m.querySelectorAll('script').forEach(oldScript => {
+        const newScript = document.createElement('script');
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+        oldScript.replaceWith(newScript);
+      });
+
       new bootstrap.Modal(m).show();
     })
     .catch(e => console.error('Error modal:', e));

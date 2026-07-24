@@ -286,6 +286,7 @@ class CustomUserCreationForm(UserCreationForm):
         campos_form_control = [
             "avatar",
             "email",
+            "cover",
             "username",
             "first_name",
             "last_name",
@@ -304,6 +305,7 @@ class CustomUserCreationForm(UserCreationForm):
         model = CustomUser
         fields = [
             "avatar",
+            "cover",
             "email",
             "username",
             "first_name",
@@ -361,6 +363,7 @@ class CustomUserUpdateForm(forms.ModelForm):
         campos_form_control = [
             "avatar",
             "email",
+            "cover",
             "username",
             "first_name",
             "last_name",
@@ -393,6 +396,7 @@ class CustomUserUpdateForm(forms.ModelForm):
         fields = [
             "avatar",
             "email",
+            "cover",
             "username",
             "first_name",
             "last_name",
@@ -428,7 +432,6 @@ class CustomUserUpdateForm(forms.ModelForm):
         role = self.cleaned_data.get("role")
 
         return user  
-#--------------------Formulario de empresas-------------------
 # -------------------- Formulario de empresas --------------------
 
 class CompanyForm(forms.ModelForm):
