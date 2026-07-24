@@ -9,12 +9,74 @@
 
 {% block content %}
 
+<!--
+  Estilos de los mensajes/estados de error de validación.
+  Van inline aquí para no depender de que store.checkout.css cargue.
+-->
+<style>
+  .campo-error {
+    display: none;
+    color: #f87171;
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  .campo-error.show { display: block; }
+
+  .field input.input-invalid,
+  .field textarea.input-invalid {
+    border-color: #ef4444 !important;
+  }
+
+  .field input.input-valido,
+  .field textarea.input-valido {
+    border-color: #22c55e !important;
+  }
+
+  .campo-contador {
+    display: block;
+    text-align: right;
+    font-size: 10px;
+    color: rgba(255,255,255,.45);
+    margin-top: 2px;
+  }
+
+  /* Oculta visualmente el campo trampa anti-bots sin usar
+     display:none (para que siga siendo "detectable" por bots
+     simples que no evalúan CSS), pero invisible e inalcanzable
+     por teclado para usuarios reales. */
+  .campo-oculto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>
+
 <form
   method="POST"
   action="{% url 'vexora:store_checkout' %}"
   id="checkout-form"
+  novalidate
 >
   {% csrf_token %}
+
+  <!-- Trampa anti-bots: campo que un humano nunca debería llenar.
+       Si el backend no lo espera, simplemente se ignora (no rompe nada). -->
+  <div class="campo-oculto" aria-hidden="true">
+    <input
+      type="text"
+      name="sitioweb"
+      id="input-sitioweb"
+      tabindex="-1"
+      autocomplete="off"
+      aria-hidden="true"
+    >
+  </div>
 
   <div class="checkout-layout">
 
@@ -43,9 +105,15 @@
 
               <input
                 name="nombre"
-                placeholder="Tu nombre"
+                id="input-nombre"
+                placeholder="Tu nombre y apellido"
+                maxlength="60"
+                autocomplete="name"
+                aria-describedby="error-nombre"
+                aria-invalid="false"
                 required
               >
+              <small class="campo-error" id="error-nombre" role="alert"></small>
             </div>
 
             <div class="field">
@@ -53,10 +121,17 @@
 
               <input
                 name="telefono"
+                id="input-telefono"
                 type="tel"
                 placeholder="10 dígitos"
+                inputmode="numeric"
+                maxlength="10"
+                autocomplete="tel"
+                aria-describedby="error-telefono"
+                aria-invalid="false"
                 required
               >
+              <small class="campo-error" id="error-telefono" role="alert"></small>
             </div>
 
           </div>
@@ -66,10 +141,16 @@
 
             <input
               name="email"
+              id="input-email"
               type="email"
               placeholder="correo@gmail.com"
+              maxlength="254"
+              autocomplete="email"
+              aria-describedby="error-email"
+              aria-invalid="false"
               required
             >
+            <small class="campo-error" id="error-email" role="alert"></small>
           </div>
 
         </div>
@@ -87,9 +168,15 @@
 
             <input
               name="direccion"
+              id="input-direccion"
               placeholder="Ej: Av. Juárez 123, Col. Centro"
+              maxlength="120"
+              autocomplete="street-address"
+              aria-describedby="error-direccion"
+              aria-invalid="false"
               required
             >
+            <small class="campo-error" id="error-direccion" role="alert"></small>
           </div>
 
           <div class="field-2col">
@@ -99,8 +186,14 @@
 
               <input
                 name="ciudad"
+                id="input-ciudad"
                 placeholder="Ciudad"
+                maxlength="40"
+                autocomplete="address-level2"
+                aria-describedby="error-ciudad"
+                aria-invalid="false"
               >
+              <small class="campo-error" id="error-ciudad" role="alert"></small>
             </div>
 
             <div class="field">
@@ -108,8 +201,15 @@
 
               <input
                 name="cp"
+                id="input-cp"
                 placeholder="00000"
+                inputmode="numeric"
+                maxlength="5"
+                autocomplete="postal-code"
+                aria-describedby="error-cp"
+                aria-invalid="false"
               >
+              <small class="campo-error" id="error-cp" role="alert"></small>
             </div>
 
           </div>
@@ -119,8 +219,14 @@
 
             <input
               name="estado"
+              id="input-estado"
               placeholder="Estado"
+              maxlength="40"
+              autocomplete="address-level1"
+              aria-describedby="error-estado"
+              aria-invalid="false"
             >
+            <small class="campo-error" id="error-estado" role="alert"></small>
           </div>
 
         </div>
@@ -138,8 +244,15 @@
 
             <textarea
               name="notas"
+              id="input-notas"
+              maxlength="300"
+              autocomplete="off"
+              aria-describedby="error-notas contador-notas"
+              aria-invalid="false"
               placeholder="Ej: timbre roto, entregar en recepción..."
             ></textarea>
+            <small class="campo-error" id="error-notas" role="alert"></small>
+            <small class="campo-contador" id="contador-notas">0 / 300</small>
           </div>
 
         </div>
@@ -252,14 +365,580 @@ document.addEventListener("DOMContentLoaded", function () {
     'button[type="submit"]'
   );
 
+  // ──────────────────────────────────────────────
+  // UTILIDADES DE SANITIZACIÓN
+  // ──────────────────────────────────────────────
+
+  // Quita caracteres de control y espacios invisibles (zero-width)
+  // que no se ven pero pueden usarse para "colar" texto inválido.
+  function quitarCaracteresInvisibles(valor) {
+    return valor.replace(/[\u0000-\u001F\u007F\u200B-\u200D\uFEFF]/g, "");
+  }
+
+  // Limpia invisibles, colapsa espacios múltiples y recorta extremos.
+  function colapsarEspacios(valor) {
+    return quitarCaracteresInvisibles(valor).replace(/\s+/g, " ").trim();
+  }
+
+  function normalizarTexto(texto) {
+    return texto
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  }
+
+  // Evita que la validación en vivo se dispare en cada tecla;
+  // espera a que el usuario haga una pausa breve al escribir.
+  function debounce(fn, delay) {
+    let temporizador;
+    return function (...args) {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => fn.apply(this, args), delay);
+    };
+  }
+
+  // ──────────────────────────────────────────────
+  // EXPRESIONES REGULARES Y LISTAS DE REFERENCIA
+  // ──────────────────────────────────────────────
+
+  // Letras (con acentos y ñ) y espacios: usado en ciudad/estado.
+  const SOLO_LETRAS = /^[A-Za-zÀ-ÖØ-öø-ÿÑñ\s]+$/;
+
+  // Nombre: letras, espacios, guion y apóstrofo (para nombres
+  // compuestos y apellidos como "Pérez-Gómez" o "D'Angelo").
+  const NOMBRE_VALIDO = /^[A-Za-zÀ-ÖØ-öø-ÿÑñ'\-\s]+$/;
+
+  // Guion/apóstrofo mal ubicado: al inicio, al final, pegado a un
+  // espacio, o repetido dos veces seguidas.
+  const GUION_MAL_UBICADO = /^['-]|['-]$|\s['-]|['-]\s|['-]{2,}/;
+
+  // Dirección: letras, números y puntuación típica de domicilios.
+  const DIRECCION_VALIDA = /^[A-Za-zÀ-ÖØ-öø-ÿÑñ0-9\s.,#°ºª\-\/]+$/;
+
+  // Email con validación más estricta que la básica "algo@algo".
+  const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
+
+  // 4 o más caracteres idénticos seguidos (ej: "aaaa", "1111").
+  const CARACTERES_REPETIDOS = /(.)\1{3,}/i;
+
+  // Caracteres que se bloquean directamente MIENTRAS se escribe
+  // (no se dejan ni teclear), por campo.
+  const PATRON_NOMBRE_CHAR = /[^A-Za-zÀ-ÖØ-öø-ÿÑñ'\-\s]/g;
+  const PATRON_LETRAS_CHAR = /[^A-Za-zÀ-ÖØ-öø-ÿÑñ\s]/g;
+  const PATRON_DIRECCION_CHAR = /[^A-Za-zÀ-ÖØ-öø-ÿÑñ0-9\s.,#°ºª\-\/]/g;
+  const PATRON_NOTAS_CHAR = /[<>`]/g;
+
+  // Estados de México normalizados (sin acentos, minúsculas) más
+  // alias comunes, para no ser demasiado estricto con la escritura.
+  const ESTADOS_VALIDOS = [
+    "aguascalientes", "baja california", "baja california sur",
+    "campeche", "chiapas", "chihuahua", "coahuila", "coahuila de zaragoza",
+    "colima", "ciudad de mexico", "cdmx", "distrito federal", "df",
+    "durango", "estado de mexico", "edomex", "mexico", "guanajuato",
+    "guerrero", "hidalgo", "jalisco", "michoacan", "michoacan de ocampo",
+    "morelos", "nayarit", "nuevo leon", "oaxaca", "puebla", "queretaro",
+    "quintana roo", "san luis potosi", "sinaloa", "sonora", "tabasco",
+    "tamaulipas", "tlaxcala", "veracruz", "veracruz de ignacio de la llave",
+    "yucatan", "zacatecas"
+  ];
+
+  // Dominios de correo temporal/desechable más comunes. Es una lista
+  // representativa (no exhaustiva) para filtrar registros falsos.
+  const DOMINIOS_DESECHABLES = [
+    "mailinator.com", "tempmail.com", "10minutemail.com",
+    "guerrillamail.com", "trashmail.com", "yopmail.com",
+    "fakeinbox.com", "getnada.com", "dispostable.com",
+    "maildrop.cc", "throwawaymail.com", "temp-mail.org",
+    "mintemail.com", "sharklasers.com", "spamgourmet.com",
+    "correotemporal.org", "emailfake.com", "moakt.com"
+  ];
+
+  // ──────────────────────────────────────────────
+  // HELPERS DE UI
+  // ──────────────────────────────────────────────
+
+  function mostrarError(inputId, errorId, mensaje) {
+    const input = document.getElementById(inputId);
+    const error = document.getElementById(errorId);
+
+    if (input) {
+      input.classList.add("input-invalid");
+      input.classList.remove("input-valido");
+      input.setAttribute("aria-invalid", "true");
+    }
+
+    if (error) {
+      error.textContent = mensaje;
+      error.classList.add("show");
+    }
+  }
+
+  function limpiarError(inputId, errorId) {
+    const input = document.getElementById(inputId);
+    const error = document.getElementById(errorId);
+
+    if (input) {
+      input.classList.remove("input-invalid");
+      input.classList.add("input-valido");
+      input.setAttribute("aria-invalid", "false");
+    }
+
+    if (error) {
+      error.textContent = "";
+      error.classList.remove("show");
+    }
+  }
+
+  // ── Nombre: requerido, nombre y apellido, solo letras válidas ──
+  function validarNombre() {
+    const input = document.getElementById("input-nombre");
+    const valor = colapsarEspacios(input.value);
+
+    input.value = valor;
+
+    if (!valor) {
+      mostrarError("input-nombre", "error-nombre", "El nombre es obligatorio.");
+      return false;
+    }
+
+    if (valor.length < 3) {
+      mostrarError("input-nombre", "error-nombre", "El nombre es demasiado corto.");
+      return false;
+    }
+
+    if (valor.length > 60) {
+      mostrarError("input-nombre", "error-nombre", "El nombre es demasiado largo.");
+      return false;
+    }
+
+    if (!NOMBRE_VALIDO.test(valor)) {
+      mostrarError("input-nombre", "error-nombre", "El nombre solo puede contener letras, espacios, guiones y apóstrofos.");
+      return false;
+    }
+
+    if (GUION_MAL_UBICADO.test(valor)) {
+      mostrarError("input-nombre", "error-nombre", "Revisa el uso de guiones o apóstrofos en tu nombre.");
+      return false;
+    }
+
+    if (CARACTERES_REPETIDOS.test(valor.replace(/[\s'-]/g, ""))) {
+      mostrarError("input-nombre", "error-nombre", "Revisa tu nombre, parece tener un error de escritura.");
+      return false;
+    }
+
+    const palabras = valor.split(" ").filter(Boolean);
+
+    if (palabras.length < 2) {
+      mostrarError("input-nombre", "error-nombre", "Ingresa tu nombre completo (nombre y apellido).");
+      return false;
+    }
+
+    if (palabras.some(p => p.replace(/['-]/g, "").length < 2)) {
+      mostrarError("input-nombre", "error-nombre", "Cada parte de tu nombre debe tener al menos 2 letras.");
+      return false;
+    }
+
+    limpiarError("input-nombre", "error-nombre");
+    return true;
+  }
+
+  // Detecta series como 0123456789 / 1234567890 (y su versión
+  // descendente 9876543210, etc.), incluyendo rotaciones.
+  function esSecuenciaNumerica(digitos) {
+    let ascendente = true;
+    let descendente = true;
+
+    for (let i = 1; i < digitos.length; i++) {
+      const anterior = Number(digitos[i - 1]);
+      const actual = Number(digitos[i]);
+
+      if ((actual - anterior + 10) % 10 !== 1) ascendente = false;
+      if ((anterior - actual + 10) % 10 !== 1) descendente = false;
+    }
+
+    return ascendente || descendente;
+  }
+
+  // ── Teléfono: 10 dígitos reales, sin patrones absurdos ──
+  function validarTelefono() {
+    const input = document.getElementById("input-telefono");
+    const valor = input.value.trim();
+
+    input.value = valor;
+
+    if (!valor) {
+      mostrarError("input-telefono", "error-telefono", "El teléfono es obligatorio.");
+      return false;
+    }
+
+    if (!/^\d{10}$/.test(valor)) {
+      mostrarError("input-telefono", "error-telefono", "Debe tener exactamente 10 dígitos.");
+      return false;
+    }
+
+    if (/^(\d)\1{9}$/.test(valor)) {
+      mostrarError("input-telefono", "error-telefono", "Ingresa un número de teléfono válido.");
+      return false;
+    }
+
+    if (esSecuenciaNumerica(valor)) {
+      mostrarError("input-telefono", "error-telefono", "Ingresa un número de teléfono válido.");
+      return false;
+    }
+
+    if (valor[0] === "0") {
+      mostrarError("input-telefono", "error-telefono", "El teléfono no puede iniciar con 0.");
+      return false;
+    }
+
+    limpiarError("input-telefono", "error-telefono");
+    return true;
+  }
+
+  // ── Email: formato estricto + bloqueo de correos desechables ──
+  function validarEmail() {
+    const input = document.getElementById("input-email");
+    const valor = quitarCaracteresInvisibles(input.value).trim();
+
+    input.value = valor;
+
+    if (!valor) {
+      mostrarError("input-email", "error-email", "El correo es obligatorio.");
+      return false;
+    }
+
+    if (valor.length > 254) {
+      mostrarError("input-email", "error-email", "El correo es demasiado largo.");
+      return false;
+    }
+
+    if (valor.includes("..")) {
+      mostrarError("input-email", "error-email", "El correo no puede tener puntos seguidos.");
+      return false;
+    }
+
+    if (!EMAIL_REGEX.test(valor)) {
+      mostrarError("input-email", "error-email", "Ingresa un correo válido.");
+      return false;
+    }
+
+    const dominio = valor.split("@")[1].toLowerCase();
+
+    if (DOMINIOS_DESECHABLES.includes(dominio)) {
+      mostrarError("input-email", "error-email", "Usa un correo permanente, no uno temporal.");
+      return false;
+    }
+
+    limpiarError("input-email", "error-email");
+    return true;
+  }
+
+  // ── Dirección: calle con letras + número exterior obligatorio ──
+  function validarDireccion() {
+    const input = document.getElementById("input-direccion");
+    const valor = colapsarEspacios(input.value);
+
+    input.value = valor;
+
+    if (!valor) {
+      mostrarError("input-direccion", "error-direccion", "La dirección es obligatoria.");
+      return false;
+    }
+
+    if (valor.length < 5) {
+      mostrarError("input-direccion", "error-direccion", "Agrega calle y número completos.");
+      return false;
+    }
+
+    if (valor.length > 120) {
+      mostrarError("input-direccion", "error-direccion", "La dirección es demasiado larga.");
+      return false;
+    }
+
+    if (!DIRECCION_VALIDA.test(valor)) {
+      mostrarError("input-direccion", "error-direccion", "La dirección contiene caracteres no permitidos.");
+      return false;
+    }
+
+    if (!/[A-Za-zÀ-ÖØ-öø-ÿÑñ]/.test(valor)) {
+      mostrarError("input-direccion", "error-direccion", "Incluye el nombre de la calle.");
+      return false;
+    }
+
+    if (!/\d/.test(valor)) {
+      mostrarError("input-direccion", "error-direccion", "Incluye el número exterior de tu domicilio.");
+      return false;
+    }
+
+    limpiarError("input-direccion", "error-direccion");
+    return true;
+  }
+
+  // ── Ciudad: opcional, pero si se llena, solo letras válidas ──
+  function validarCiudad() {
+    const input = document.getElementById("input-ciudad");
+    const valor = colapsarEspacios(input.value);
+
+    input.value = valor;
+
+    if (!valor) {
+      limpiarError("input-ciudad", "error-ciudad");
+      return true;
+    }
+
+    if (valor.length < 3) {
+      mostrarError("input-ciudad", "error-ciudad", "El nombre de la ciudad es demasiado corto.");
+      return false;
+    }
+
+    if (!SOLO_LETRAS.test(valor)) {
+      mostrarError("input-ciudad", "error-ciudad", "La ciudad solo puede contener letras.");
+      return false;
+    }
+
+    if (CARACTERES_REPETIDOS.test(valor.replace(/\s/g, ""))) {
+      mostrarError("input-ciudad", "error-ciudad", "Revisa el nombre de la ciudad.");
+      return false;
+    }
+
+    limpiarError("input-ciudad", "error-ciudad");
+    return true;
+  }
+
+  // ── Código postal: opcional, pero si se llena, debe ser válido ──
+  function validarCP() {
+    const input = document.getElementById("input-cp");
+    const valor = input.value.trim();
+
+    input.value = valor;
+
+    if (!valor) {
+      limpiarError("input-cp", "error-cp");
+      return true;
+    }
+
+    if (!/^\d{5}$/.test(valor)) {
+      mostrarError("input-cp", "error-cp", "El código postal debe tener 5 dígitos.");
+      return false;
+    }
+
+    if (Number(valor) < 100) {
+      mostrarError("input-cp", "error-cp", "Ingresa un código postal válido.");
+      return false;
+    }
+
+    limpiarError("input-cp", "error-cp");
+    return true;
+  }
+
+  // ── Estado: opcional, pero si se llena, debe ser un estado real ──
+  function validarEstado() {
+    const input = document.getElementById("input-estado");
+    const valor = colapsarEspacios(input.value);
+
+    input.value = valor;
+
+    if (!valor) {
+      limpiarError("input-estado", "error-estado");
+      return true;
+    }
+
+    if (!SOLO_LETRAS.test(valor)) {
+      mostrarError("input-estado", "error-estado", "El estado solo puede contener letras.");
+      return false;
+    }
+
+    if (!ESTADOS_VALIDOS.includes(normalizarTexto(valor))) {
+      mostrarError("input-estado", "error-estado", "Verifica el nombre del estado (ej. Hidalgo, Jalisco, CDMX).");
+      return false;
+    }
+
+    limpiarError("input-estado", "error-estado");
+    return true;
+  }
+
+  // ── Notas: opcional; solo se sanea por seguridad, no se censura
+  //    el contenido ──
+  function validarNotas() {
+    const input = document.getElementById("input-notas");
+
+    if (!input) return true;
+
+    const valor = quitarCaracteresInvisibles(input.value).trim();
+
+    if (valor.length > 300) {
+      mostrarError("input-notas", "error-notas", "Las notas no pueden superar los 300 caracteres.");
+      return false;
+    }
+
+    if (/[<>`]/.test(valor)) {
+      mostrarError("input-notas", "error-notas", "Las notas contienen caracteres no permitidos.");
+      return false;
+    }
+
+    limpiarError("input-notas", "error-notas");
+    return true;
+  }
+
+  function validarFormularioCompleto() {
+    // Se evalúan todos, sin cortocircuito, para que se marquen
+    // todos los errores a la vez y no solo el primero.
+    const resultados = [
+      validarNombre(),
+      validarTelefono(),
+      validarEmail(),
+      validarDireccion(),
+      validarCiudad(),
+      validarCP(),
+      validarEstado(),
+      validarNotas(),
+    ];
+
+    return resultados.every(valido => valido);
+  }
+
+  // ──────────────────────────────────────────────
+  // FILTRADO EN TIEMPO REAL
+  // (bloquea caracteres inválidos mientras se escribe,
+  // no solo los reporta después de salir del campo)
+  // ──────────────────────────────────────────────
+
+  function permitirSoloDigitos(input, maxLength) {
+    if (!input) return;
+
+    input.addEventListener("input", function () {
+      let limpio = input.value.replace(/\D/g, "");
+
+      if (maxLength) {
+        limpio = limpio.slice(0, maxLength);
+      }
+
+      if (limpio !== input.value) {
+        input.value = limpio;
+      }
+    });
+  }
+
+  function permitirSoloPatron(input, patronExcluir, maxLength) {
+    if (!input) return;
+
+    input.addEventListener("input", function () {
+      let limpio = input.value.replace(patronExcluir, "");
+
+      if (maxLength) {
+        limpio = limpio.slice(0, maxLength);
+      }
+
+      if (limpio !== input.value) {
+        input.value = limpio;
+      }
+    });
+  }
+
+  permitirSoloDigitos(document.getElementById("input-telefono"), 10);
+  permitirSoloDigitos(document.getElementById("input-cp"), 5);
+
+  permitirSoloPatron(document.getElementById("input-nombre"), PATRON_NOMBRE_CHAR, 60);
+  permitirSoloPatron(document.getElementById("input-ciudad"), PATRON_LETRAS_CHAR, 40);
+  permitirSoloPatron(document.getElementById("input-estado"), PATRON_LETRAS_CHAR, 40);
+  permitirSoloPatron(document.getElementById("input-direccion"), PATRON_DIRECCION_CHAR, 120);
+  permitirSoloPatron(document.getElementById("input-notas"), PATRON_NOTAS_CHAR, 300);
+
+  // ── Contador de caracteres para notas (no afecta el envío) ──
+  const inputNotas = document.getElementById("input-notas");
+  const contadorNotas = document.getElementById("contador-notas");
+
+  if (inputNotas && contadorNotas) {
+    const actualizarContador = () => {
+      const longitud = inputNotas.value.length;
+      contadorNotas.textContent = `${longitud} / 300`;
+      contadorNotas.style.color = longitud >= 280
+        ? "#f87171"
+        : "rgba(255,255,255,.45)";
+    };
+
+    inputNotas.addEventListener("input", actualizarContador);
+    actualizarContador();
+  }
+
+  // ── Mapa de campos para validación en vivo tras el primer error ──
+  const VALIDADORES = {
+    "input-nombre": validarNombre,
+    "input-telefono": validarTelefono,
+    "input-email": validarEmail,
+    "input-direccion": validarDireccion,
+    "input-ciudad": validarCiudad,
+    "input-cp": validarCP,
+    "input-estado": validarEstado,
+    "input-notas": validarNotas,
+  };
+
+  // ── Validar al salir de cada campo; una vez que un campo fue
+  //    tocado, se revalida (con una breve pausa) mientras el
+  //    usuario sigue escribiendo, para que el error desaparezca
+  //    en cuanto se corrige, sin esperar a que vuelva a salir. ──
+  Object.entries(VALIDADORES).forEach(([id, validador]) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+
+    let tocado = false;
+    const validarEnVivo = debounce(validador, 200);
+
+    input.addEventListener("blur", function () {
+      tocado = true;
+      validador();
+    });
+
+    input.addEventListener("input", function () {
+      if (tocado) {
+        validarEnVivo();
+      }
+    });
+  });
+
+  // ──────────────────────────────────────────────
+  // ENVÍO DEL FORMULARIO (misma lógica original,
+  // solo se le antepone la validación completa,
+  // la trampa anti-bots y un seguro contra doble envío)
+  // ──────────────────────────────────────────────
+
+  let envioEnProgreso = false;
+
   checkoutForm.addEventListener(
     "submit",
     async function (event) {
       event.preventDefault();
 
-      // Revisar campos obligatorios
-      if (!checkoutForm.checkValidity()) {
-        checkoutForm.reportValidity();
+      if (envioEnProgreso) {
+        return;
+      }
+
+      // Trampa anti-bots: campo oculto que un humano nunca llena.
+      // Si viene con contenido, se descarta el envío en silencio.
+      const honeypot = document.getElementById("input-sitioweb");
+
+      if (honeypot && honeypot.value.trim() !== "") {
+        console.warn("Envío bloqueado por el sistema anti-spam.");
+        return;
+      }
+
+      // Validaciones propias del formulario
+      if (!validarFormularioCompleto()) {
+        const primerError = checkoutForm.querySelector(".input-invalid");
+
+        if (primerError) {
+          primerError.focus();
+        }
+
+        Swal.fire({
+          title: "Revisa el formulario",
+          text: "Hay campos incompletos o con datos inválidos.",
+          icon: "warning",
+          confirmButtonText: "Entendido",
+          confirmButtonColor: "#2563eb"
+        });
+
         return;
       }
 
@@ -280,6 +959,8 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!confirmation.isConfirmed) {
         return;
       }
+
+      envioEnProgreso = true;
 
       const originalButton = submitButton
         ? submitButton.innerHTML
@@ -509,6 +1190,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
       } finally {
+        envioEnProgreso = false;
+
         if (submitButton) {
           submitButton.disabled = false;
           submitButton.innerHTML =
