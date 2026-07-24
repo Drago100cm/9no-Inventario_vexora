@@ -1,114 +1,289 @@
 {% load static %}
 
-<div class="modal-dialog modal-dialog-centered modal-lg">
-  <div class="modal-content">
+<div class="modal-dialog modal-dialog-centered modal-xl">
+  <div class="modal-content border-0 shadow">
 
-    <div class="modal-header bg-light p-3">
-      <h5 class="modal-title text-dark"
-          id="myLargeModalLabel">
-        Crear Empresa
-      </h5>
+    <!-- Encabezado -->
+    <div class="modal-header bg-light border-bottom p-3">
+      <div>
+        <h5 class="modal-title fw-semibold text-dark mb-1">
+          Crear empresa
+        </h5>
 
-      <button type="button"
-              class="btn-close"
-              data-bs-dismiss="modal">
+        <small class="text-muted">
+          Registra la información general, fiscal y de configuración de la empresa.
+        </small>
+      </div>
+
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="modal"
+        aria-label="Cerrar">
       </button>
     </div>
 
-    {% comment %} aqui para validaciones {% endcomment %}
-<form method="POST"
-      enctype="multipart/form-data"
-      onsubmit="return validarRequeridos(this)"
-      novalidate
-      action="{% url 'vexora:company_create' %}"><!--===========solo cambia el link de tu url-->
+    <form method="POST" enctype="multipart/form-data" action="{% url 'vexora:company_create' %}" onsubmit="return validarRequeridos(this)" novalidate>
 
       {% csrf_token %}
 
-      <div class="modal-body">
+      <div class="modal-body p-4">
 
-        <div class="tab-content mt-3">
+        <!-- Navegación -->
+        <ul class="nav nav-tabs nav-tabs-custom mb-4" role="tablist">
 
-          <div class="tab-pane active"
-               id="general_info">
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link active"
+              id="general-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#general"
+              type="button"
+              role="tab"
+              aria-controls="general"
+              aria-selected="true">
 
-            <div class="row gy-4 mb-4">
+              <i class="ri-building-line me-1"></i>
+              Información general
+            </button>
+          </li>
 
-              <div class="col-md-12">
-                <label class="fw-bold  text-dark">Nombre de la empresa<span class="text-danger">*</span></label>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="fiscal-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#fiscal"
+              type="button"
+              role="tab"
+              aria-controls="fiscal"
+              aria-selected="false">
+
+              <i class="ri-file-list-3-line me-1"></i>
+              Información fiscal
+            </button>
+          </li>
+
+        </ul>
+
+        <div class="tab-content">
+
+          <!-- Información general -->
+          <div
+            class="tab-pane fade show active"
+            id="general"
+            role="tabpanel"
+            aria-labelledby="general-tab">
+
+            <div class="row gy-4">
+
+              <div class="col-md-6">
+                <label
+                  for="{{ form.name.id_for_label }}"
+                  class="form-label fw-semibold text-dark">
+
+                  Nombre de la empresa
+                  <span class="text-danger">*</span>
+                </label>
+
                 {{ form.name }}
+
+                <div class="form-text">
+                  Nombre comercial con el que se identificará la empresa.
+                </div>
               </div>
 
-              <div class="col-md-4">
-                <label  class="fw-bold  text-dark">Email<span class="text-danger">*</span></label>
+              <div class="col-md-6">
+                  <label
+                      for="{{ form.slug.id_for_label }}"
+                      class="form-label fw-semibold text-dark">
+
+                      Slug
+                      <span class="text-danger">*</span>
+
+                      <i class="ri-question-line text-primary ms-1"
+                        role="button"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="right"
+                        title="El slug es un identificador único que se utiliza en la URL de tu empresa. Solo puede contener letras minúsculas, números y guiones. Ejemplo: mi-empresa.">
+                      </i>
+
+                  </label>
+
+                  {{ form.slug }}
+
+                  <div class="form-text">
+                      Utiliza letras minúsculas, números y guiones, sin espacios.
+                  </div>
+              </div>
+
+              <div class="col-md-6">
+                <label
+                  for="{{ form.email.id_for_label }}"
+                  class="form-label fw-semibold text-dark">
+
+                  Correo electrónico
+                  <span class="text-danger">*</span>
+                </label>
+
                 {{ form.email }}
               </div>
 
-              <div class="col-md-4">
-                <label class="fw-bold  text-dark">Dirección<span class="text-danger">*</span></label>
+              <div class="col-md-6">
+                <label
+                  for="{{ form.phone.id_for_label }}"
+                  class="form-label fw-semibold text-dark">
+
+                  Teléfono
+                  <span class="text-danger">*</span>
+                </label>
+
+                {{ form.phone }}
+              </div>
+
+              <div class="col-12">
+                <label
+                  for="{{ form.address.id_for_label }}"
+                  class="form-label fw-semibold text-dark">
+
+                  Dirección
+                  <span class="text-danger">*</span>
+                </label>
+
                 {{ form.address }}
               </div>
 
-              <div class="col-md-4">
-                <label class="fw-bold  text-dark">Teléfono<span class="text-danger">*</span></label>
-                {{ form.phone }}
-              </div>
-              <div class="col-md-4">
-                <label class="fw-bold  text-dark">
-                  Slug
-                  <span class="text-danger">*</span>
+            </div>
+          </div>
+
+          <!-- Información fiscal -->
+          <div
+            class="tab-pane fade"
+            id="fiscal"
+            role="tabpanel"
+            aria-labelledby="fiscal-tab">
+
+            <div class="row gy-4">
+
+              <div class="col-md-6">
+                <label
+                  for="{{ form.rfc.id_for_label }}"
+                  class="form-label fw-semibold text-dark">
+
+                  RFC
                 </label>
-                {{ form.slug }}
+
+                {{ form.rfc }}
+
+                <div class="form-text">
+                  Ingresa el RFC de la persona física o moral.
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label
+                  for="{{ form.tax_name.id_for_label }}"
+                  class="form-label fw-semibold text-dark">
+
+                  Razón social
+                </label>
+
+                {{ form.tax_name }}
+
+                <div class="form-text">
+                  Nombre fiscal registrado ante el SAT.
+                </div>
               </div>
 
             </div>
-
           </div>
 
-        </div>
 
+        </div>
       </div>
 
-      <div class="modal-footer">
-        <div class="hstack gap-2 justify-content-end">
+      <!-- Pie del modal -->
+      <div class="modal-footer bg-light border-top">
 
-          <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cerrar</button>
+        <button
+          type="button"
+          class="btn btn-light"
+          data-bs-dismiss="modal">
 
-          <button type="submit" class="btn btn-sm btn-success">Guardar</button>
+          Cerrar
+        </button>
 
-        </div>
+        <button
+          type="submit"
+          class="btn btn-success">
+
+          <i class="ri-save-line me-1"></i>
+          Guardar empresa
+        </button>
+
       </div>
 
     </form>
-
   </div>
 </div>
 <script>
   // Si usas SweetAlert2
-function validarRequeridos(form) {
-    const requeridos = form.querySelectorAll('[required]');
-    let errores = [];
-    
-    requeridos.forEach(campo => {
-        const label = campo.closest('.col-md-4, .col-md-12, .col-md-6')?.querySelector('label');
-        const nombre = label ? label.textContent.trim().replace('*', '').trim() : campo.name;
-        
-        if (!campo.value || campo.value.trim() === '') {
-            errores.push(nombre);
-            campo.classList.add('is-invalid');
-        } else {
-            campo.classList.remove('is-invalid');
-        }
-    });
-    
-    if (errores.length > 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Los campos marcados con * son obligatorios',
-            text: errores.join(', '),
-            confirmButtonText: 'OK'
-        });
-        return false;
+  function validarRequeridos(form) {
+      const requeridos = form.querySelectorAll('[required]');
+      let errores = [];
+      
+      requeridos.forEach(campo => {
+          const label = campo.closest('.col-md-4, .col-md-12, .col-md-6')?.querySelector('label');
+          const nombre = label ? label.textContent.trim().replace('*', '').trim() : campo.name;
+          
+          if (!campo.value || campo.value.trim() === '') {
+              errores.push(nombre);
+              campo.classList.add('is-invalid');
+          } else {
+              campo.classList.remove('is-invalid');
+          }
+      });
+      
+      if (errores.length > 0) {
+          Swal.fire({
+              icon: 'warning',
+              title: 'Los campos marcados con * son obligatorios',
+              text: errores.join(', '),
+              confirmButtonText: 'OK'
+          });
+          return false;
+      }
+      return true;
+  }
+</script>
+<script>
+  // Elimina espacios y caracteres no permitidos del slug.
+  document.addEventListener("input", function (event) {
+    if (event.target.id === "{{ form.slug.id_for_label }}") {
+      event.target.value = event.target.value
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "")
+        .replace(/-+/g, "-");
     }
-    return true;
-}
+  });
+
+  // Convierte el RFC automáticamente a mayúsculas.
+  document.addEventListener("input", function (event) {
+    if (event.target.id === "{{ form.rfc.id_for_label }}") {
+      event.target.value = event.target.value.toUpperCase();
+    }
+  });
+</script>
+```
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tooltipTriggerList = [].slice.call(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>

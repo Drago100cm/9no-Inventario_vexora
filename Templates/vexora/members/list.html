@@ -26,7 +26,7 @@
                 {% endfor %}
             {% endif %}
 
-            <!-- Cards de resumen - 4 columnas iguales -->
+            <!-- Cards de resumen - 4 columnas iguales 
             <div class="row">
                 <div class="col-xl-3 col-md-6 mb-4">
                     <div class="card border-left-primary shadow h-100 py-2">
@@ -44,70 +44,148 @@
                     </div>
                 </div>
                 
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-danger shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Administradores</div>
-                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ total_admins|default:0 }}</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-user-shield fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
                 
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-warning shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Gerentes</div>
-                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ total_managers|default:0 }}</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-user-cog fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-info shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Empleados</div>
-                                    <div class="h5 mb-0 font-weight-bold" style="color: var(--text-color) !important;">{{ total_employees|default:0 }}</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-user-tie fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+ 
+            </div>-->
+
+
+<div class="row mb-4">
+    <div class="col-12">
+
+        <div class="bg-light rounded-3 shadow-sm p-3">
+
+            <!-- Encabezado -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+
+                <h5 class="mb-0">
+                    <i class="ri-team-line me-1"></i>
+                    Miembros de la empresa
+                </h5>
+
+                {% if perms.vexora.add_companymember or perms.vexora.add_member %}
+                <button
+                    type="button"
+                    class="btn btn-success"
+                    onclick="editModal('{% url 'vexora:create_member' %}')">
+
+                    <i class="ri-add-line me-1"></i>
+                    Agregar miembro
+                </button>
+                {% endif %}
+
             </div>
 
-            <!-- CONTENEDOR BG-LIGHT CON FILTROS Y TABLA -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="bg-light rounded-3 shadow-sm p-3">
-                        <!-- Botón Agregar -->
-                        <div class="d-flex justify-content-end mb-3">
-                            {% if perms.vexora.add_companymember or perms.vexora.add_member %}
-                                <button type="button"
-                                        class="btn btn-outline-secondary btn-sm d-flex align-items-center"
-                                        onclick="editModal('{% url 'vexora:create_member' %}')">
-                                    <i class="ri-add-line me-1 align-bottom"></i>
-                                    <span>Agregar miembro</span>
-                                </button>
-                            {% endif %}
-                        </div>
+            <!-- Filtros -->
+            <form method="GET" class="row g-3 mb-4">
+
+                <div class="col-lg-4">
+                    <label class="form-label fw-semibold">
+                        Buscar
+                    </label>
+
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="ri-search-line"></i>
+                        </span>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="search"
+                            value="{{ search }}"
+                            placeholder="Nombre, usuario o correo">
+                    </div>
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label fw-semibold">
+                        Desde
+                    </label>
+
+                    <input
+                        type="date"
+                        class="form-control"
+                        name="date_from"
+                        value="{{ date_from }}">
+                </div>
+
+                <div class="col-lg-2">
+                    <label class="form-label fw-semibold">
+                        Hasta
+                    </label>
+
+                    <input
+                        type="date"
+                        class="form-control"
+                        name="date_to"
+                        value="{{ date_to }}">
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label fw-semibold">
+                        Ordenar
+                    </label>
+
+                    <select class="form-select" name="order">
+
+                        <option value="username">
+                            Nombre A-Z
+                        </option>
+
+                        <option value="-username">
+                            Nombre Z-A
+                        </option>
+
+                        <option value="-date">
+                            Más recientes
+                        </option>
+
+                        <option value="date">
+                            Más antiguos
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="col-12 d-flex justify-content-end">
+
+                    <a
+                        href="{% url 'vexora:member_list' %}"
+                        class="btn btn-light me-2">
+
+                        <i class="ri-refresh-line me-1"></i>
+                        Limpiar
+
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary">
+
+                        <i class="ri-filter-3-line me-1"></i>
+                        Filtrar
+
+                    </button>
+
+                </div>
+
+            </form>
+
+            <!-- Tabla -->
+
+            <div class="table-responsive">
+
+                <!-- Aquí dejas tu tabla exactamente como la tienes -->
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+                        
                         <!-- Tabla de miembros -->
                         <div class="table-container">
                             <div class="table-responsive">

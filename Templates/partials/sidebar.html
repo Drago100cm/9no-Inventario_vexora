@@ -360,6 +360,8 @@
         </div>
 
       {% endif %}
+      
+      {% if user.company.subscription.plan.sales_module %}
 
       <!-- TIENDA -->
       <div class="menu-module">
@@ -401,6 +403,7 @@
         </div>
 
       </div>
+      {%endif%}
 
       <!-- CONFIGURACIÓN -->
       {% if request.user.company %}

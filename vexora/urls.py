@@ -70,7 +70,6 @@ urlpatterns = [
     path('suppliers/create/', views.SupplierCreateView.as_view(), name='create_supplier'),
     path('suppliers/update/<int:id>/', views.SupplierUpdateView.as_view(), name='edit_supplier'),
     path('suppliers/delete/<int:pk>/', views.delete_supplier, name='delete_supplier'),
-
     # ============================================
     # PRODUCT URLs (Productos)
     # ============================================

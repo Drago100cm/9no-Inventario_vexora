@@ -576,7 +576,29 @@
 <body>
 
     <div class="register-card">
+            <!-- Mensajes -->
 
+            {% if messages %}
+
+                {% for m in messages %}
+
+                <script>
+
+                    Swal.fire({
+
+                        position: 'center',
+                        icon: '{{ m.level_tag }}' == 'error' ? 'error' : 'success',
+                        title: '{{ m }}',
+                        showConfirmButton: false,
+                        timer: 2500
+
+                    })
+
+                </script>
+
+                {% endfor %}
+
+            {% endif %}
         <!-- ==========================================
         HEADER - BRANDING DE LA EMPRESA
         ========================================== -->

@@ -9,7 +9,7 @@
       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
 
-    <form method="POST" action="{% url 'vexora:create_supplier' %}">
+    <form method="POST" onsubmit="return validarRequeridos(this)" novalidate action="{% url 'vexora:create_supplier' %}">
       {% csrf_token %}
       <div class="modal-body">
         
@@ -40,6 +40,7 @@
             Nombre del proveedor <span class="text-danger">*</span>
           </label>
           {{ form.name }}
+          <div id="supplier-name-feedback" class="small mt-1"></div>
           {% if form.name.errors %}
             <div class="text-danger small mt-1">{{ form.name.errors }}</div>
           {% endif %}
@@ -85,4 +86,35 @@
       }
     }
   });
+</script>
+
+<script>
+  // Si usas SweetAlert2
+  function validarRequeridos(form) {
+      const requeridos = form.querySelectorAll('[required]');
+      let errores = [];
+      
+      requeridos.forEach(campo => {
+          const label = campo.closest('.col-md-4, .col-md-12, .col-md-6')?.querySelector('label');
+          const nombre = label ? label.textContent.trim().replace('*', '').trim() : campo.name;
+          
+          if (!campo.value || campo.value.trim() === '') {
+              errores.push(nombre);
+              campo.classList.add('is-invalid');
+          } else {
+              campo.classList.remove('is-invalid');
+          }
+      });
+      
+      if (errores.length > 0) {
+          Swal.fire({
+              icon: 'warning',
+              title: 'Los campos marcados con * son obligatorios',
+              text: errores.join(', '),
+              confirmButtonText: 'OK'
+          });
+          return false;
+      }
+      return true;
+  }
 </script>

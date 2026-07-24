@@ -52,11 +52,13 @@
               📊 Ventas
             </button>
           </li>
+          {% if request.user.is_superuser %}
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="subscriptions-tab" data-bs-toggle="tab" data-bs-target="#subscriptions" type="button" role="tab">
               💰 Suscripciones
             </button>
           </li>
+          {%endif%}
           <!--<li class="nav-item" role="presentation">
             <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
               💳 Pagos

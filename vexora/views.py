@@ -33,7 +33,7 @@ from .models import SiteConfiguration, SMTPConfiguration
 from .forms import SiteConfigurationForm, SMTPConfigurationForm
 from django.db.models import F, Q
 from datetime import datetime
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from io import BytesIO
 from .services.report_service import ReportService
 from django.http import HttpResponse
@@ -1214,48 +1214,141 @@ class SupplierListView(LoginRequiredMixin, ListView):
 class SupplierCreateView(LoginRequiredMixin, CreateView):
     model = Supplier
     form_class = SupplierForm
-    template_name = 'vexora/supplier/create.html'
+    template_name = "vexora/supplier/create.html"
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
+        kwargs["user"] = self.request.user
         return kwargs
 
     def form_valid(self, form):
-        if self.request.user.company:
-            form.instance.company = self.request.user.company
-            messages.success(self.request, f"✅ Proveedor '{form.instance.name}' creado correctamente!")
-            return super().form_valid(form)
+        company = getattr(self.request.user, "company", None)
+
+        if not company:
+            messages.error(
+                self.request,
+                "❌ No tienes una empresa asignada."
+            )
+            return redirect("vexora:list_suppliers")
+
+        subscription = getattr(company, "subscription", None)
+
+        if (
+            not subscription
+            or not subscription.active
+            or subscription.status != "active"
+            or not subscription.plan.active
+        ):
+            messages.error(
+                self.request,
+                "❌ Tu empresa no tiene una suscripción activa."
+            )
+            return redirect("vexora:list_suppliers")
+
+        # Validar que el módulo esté habilitado
+        if not subscription.plan.providers_module:
+            messages.error(
+                self.request,
+                "❌ Tu plan no incluye el módulo de proveedores."
+            )
+            return redirect("vexora:list_suppliers")
+
+        # Validar límite de proveedores
+        total_providers = Supplier.objects.filter(company=company).count()
+
+        if total_providers >= subscription.plan.max_providers:
+            messages.error(
+                self.request,
+                f"❌ Tu plan permite un máximo de {subscription.plan.max_providers} proveedores. "
+                "Actualiza tu suscripción para agregar más."
+            )
+            return redirect("vexora:list_suppliers")
+
+        form.instance.company = company
+
+        messages.success(
+            self.request,
+            f"✅ Proveedor '{form.instance.name}' creado correctamente."
+        )
+
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        # Revisar específicamente el error del nombre
+        name_errors = form.errors.get("name")
+
+        if name_errors:
+            messages.error(
+                self.request,
+                f"❌ {name_errors[0]}"
+            )
         else:
-            messages.error(self.request, "❌ No tienes una empresa asignada.")
-            return redirect('vexora:list_suppliers')
+            messages.error(
+                self.request,
+                "❌ No fue posible registrar el proveedor. Revisa los datos."
+            )
+
+        return redirect("vexora:list_suppliers")
 
     def get_success_url(self):
-        return reverse('vexora:list_suppliers')
-
+        return reverse("vexora:list_suppliers")
 class SupplierUpdateView(LoginRequiredMixin, UpdateView):
     model = Supplier
     form_class = SupplierForm
-    template_name = 'vexora/supplier/update.html'
-    pk_url_kwarg = 'id'
+    template_name = "vexora/supplier/update.html"
+    pk_url_kwarg = "id"
 
     def get_queryset(self):
-        company = self.request.user.company
+        company = getattr(self.request.user, "company", None)
+
         if not company:
             return Supplier.objects.none()
+
         return Supplier.objects.filter(company=company)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
+        kwargs["user"] = self.request.user
         return kwargs
 
     def form_valid(self, form):
-        messages.success(self.request, f"✅ Proveedor '{form.instance.name}' actualizado correctamente!")
+        company = getattr(self.request.user, "company", None)
+
+        if not company:
+            messages.error(
+                self.request,
+                "❌ No tienes una empresa asignada."
+            )
+            return redirect("vexora:list_suppliers")
+
+        # Evita que cambien la empresa manipulando el formulario
+        form.instance.company = company
+
+        messages.success(
+            self.request,
+            f"✅ Proveedor '{form.instance.name}' actualizado correctamente."
+        )
+
         return super().form_valid(form)
 
+    def form_invalid(self, form):
+        name_errors = form.errors.get("name")
+
+        if name_errors:
+            messages.error(
+                self.request,
+                f"❌ {name_errors[0]}"
+            )
+        else:
+            messages.error(
+                self.request,
+                "❌ No fue posible actualizar el proveedor. Revisa los datos."
+            )
+
+        return redirect("vexora:list_suppliers")
+
     def get_success_url(self):
-        return reverse('vexora:list_suppliers')
+        return reverse("vexora:list_suppliers")
 
 def delete_supplier(request, pk):
     company = request.user.company
@@ -1500,6 +1593,7 @@ def delete_sale(request, pk):
 # ============================================
 # MEMBERS VIEWS
 # ============================================
+
 class MembersView(LoginRequiredMixin, ListView):
     model = CompanyMember
     template_name = "vexora/members/list.html"
@@ -1507,7 +1601,10 @@ class MembersView(LoginRequiredMixin, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.has_perm("vexora.view_companymember"):
-            messages.error(request, "❌ No tienes permisos para acceder a esta sección.")
+            messages.error(
+                request,
+                "❌ No tienes permisos para acceder a esta sección."
+            )
             return redirect("vexora:home")
 
         return super().dispatch(request, *args, **kwargs)
@@ -1518,12 +1615,58 @@ class MembersView(LoginRequiredMixin, ListView):
         if not company:
             return CompanyMember.objects.none()
 
-        return (
+        queryset = (
             CompanyMember.objects
             .filter(company=company)
             .select_related("user", "role")
-            .order_by("user__username")
         )
+
+        # Búsqueda por nombre, usuario o correo
+        search = self.request.GET.get("search", "").strip()
+
+        if search:
+            queryset = queryset.filter(
+                Q(user__username__icontains=search)
+                | Q(user__first_name__icontains=search)
+                | Q(user__last_name__icontains=search)
+                | Q(user__email__icontains=search)
+            )
+
+        # Filtro por rol
+        role = self.request.GET.get("role", "").strip()
+
+        if role:
+            queryset = queryset.filter(role_id=role)
+
+        # Fecha inicial
+        date_from = self.request.GET.get("date_from", "").strip()
+
+        if date_from:
+            queryset = queryset.filter(joined_at__date__gte=date_from)
+
+        # Fecha final
+        date_to = self.request.GET.get("date_to", "").strip()
+
+        if date_to:
+            queryset = queryset.filter(joined_at__date__lte=date_to)
+
+        # Ordenamiento
+        order = self.request.GET.get("order", "username")
+
+        allowed_orders = {
+            "username": "user__username",
+            "-username": "-user__username",
+            "role": "role__name",
+            "-role": "-role__name",
+            "date": "joined_at",
+            "-date": "-joined_at",
+        }
+
+        queryset = queryset.order_by(
+            allowed_orders.get(order, "user__username")
+        )
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1533,6 +1676,22 @@ class MembersView(LoginRequiredMixin, ListView):
         context["total_users"] = (
             CompanyMember.objects.filter(company=company).count()
             if company else 0
+        )
+
+        context["roles"] = (
+            Role.objects.filter(company=company, active=True)
+            .order_by("name")
+            if company else Role.objects.none()
+        )
+
+        # Mantener valores seleccionados
+        context["search"] = self.request.GET.get("search", "")
+        context["selected_role"] = self.request.GET.get("role", "")
+        context["date_from"] = self.request.GET.get("date_from", "")
+        context["date_to"] = self.request.GET.get("date_to", "")
+        context["selected_order"] = self.request.GET.get(
+            "order",
+            "username"
         )
 
         return context
@@ -1568,12 +1727,11 @@ class MembersCreateView(LoginRequiredMixin, CreateView):
 
         # Validar límite del plan
         if total_members >= plan.max_collaborators:
+
+            return redirect("vexora:subscription_list")
             messages.error(
                 request,
-                f"❌ Tu plan '{plan.name}' permite un máximo de {plan.max_collaborators} colaboradores."
-            )
-            return redirect("vexora:list_members")
-
+                f"❌ Tu plan '{plan.name}' permite un máximo de {plan.max_collaborators} colaboradores.")
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
